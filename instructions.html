@@ -210,6 +210,7 @@
                 <li><a href="#bilingual">11. Bilinguale Sprachauswahl (Language Selection)</a></li>
                 <li><a href="#decoupling">12. Decoupling von Darstellung & LBA-Standardwerten</a></li>
                 <li><a href="#vlos">13. VLOS-Sichtbarkeitsanzeige (ALOS / DLOS)</a></li>
+                <li><a href="#bestpractice">14. Best Practice für den Planungs-Workflow</a></li>
             </ul>
         </div>
         
@@ -797,6 +798,30 @@
             <li><b>ALOS &amp; DLOS Berechnung</b>: Der Radius bestimmt sich dynamisch aus der aerodynamisch/optischen Erkennungsgrenze (Attitude Line of Sight - ALOS) und dem maximal zulässigen Abstand zum UAS (Distance Line of Sight - DLOS) unter Berücksichtigung der charakteristischen Dimension (CD) des UAS.</li>
             <li><b>Echtzeit-Visualisierung</b>: Sobald die Pilotenposition auf der Karte verschoben oder die Dimensionen des UAS angepasst werden, aktualisiert sich dieser Sicherheitskreis verzögerungsfrei auf der Karte. So lässt sich unmittelbar prüfen, ob das geplante Fluggebiet vollständig innerhalb des zulässigen Sichtbereichs des Fernpiloten liegt.</li>
         </ul>
+
+        <!-- 14. BEST PRACTICE WORKFLOW -->
+        <h2 id="bestpractice">📋 14. Best Practice für den Planungs-Workflow</h2>
+        <p>Für eine reibungslose, professionelle und dauerhafte Nutzung des QUCORE-Plugins empfehlen wir dringend den folgenden bewährten Arbeitsablauf:</p>
+        
+        <h3>Option 1) Vollständige Neuerstellung eines Flugpfades</h3>
+        <ul>
+            <li><b>Routenplanung über Punkte hinzufügen</b>: Klicken Sie auf den Button <b>Wegpunkte zeichnen/modifizieren</b> und fügen Sie die gewünschten Routenstützpunkte direkt per Linksklick auf der Karte hinzu. Der geplante Flugweg und alle zugehörigen Sicherheitsvolumina (FG, CV, GRB) werden dabei zunächst als <b>temporäre Speicher-Layer (Memory-Layer)</b> in QGIS angelegt.</li>
+            <li><i>Zusätzlich bei Bedarf</i>: Setzen Sie die Pilotenposition per Klick auf <b>Pilotenposition setzen</b>, um den VLOS-Sicherheitsbereich auf der Karte anzuzeigen.</li>
+        </ul>
+        
+        <h3>Option 2) Nutzung eines vorhandenen Layers</h3>
+        <ul>
+            <li><b>Einlesen des Linien-, Punkt- oder Polygonlayers</b>: Wählen Sie einen bereits in QGIS geladenen Vektor-Layer aus (z. B. einen importierten Linien-, Punkt- oder Polygon-Layer aus KML, Shapefile, GPX oder GeoPackage).</li>
+            <li>Wählen Sie oben im Menüband <b>Datei &gt; Aktivierten QGIS-Layer einlesen...</b> oder unten im Panel <b>Aktivierten QGIS-Layer einlesen</b>, um die Stützpunkte direkt als aktive Wegpunkte in das Plugin zu übernehmen.</li>
+        </ul>
+        
+        <h3>Ab da einheitlich weiter mit:</h3>
+        <ol>
+            <li><b>Anpassen der Parameter</b>: Passen Sie bei Bedarf die globalen Berechnungsparameter (z. B. UAS-Typ, Wind, CD) im Einstellungsfenster an und modifizieren Sie die wegpunktspezifischen Parameter (Höhe, Geschwindigkeit, FG-Halbbreite) über die Tabelle <b>Höhe, FG, V_cruise pro Wegpunkt bearbeiten...</b>. Die Karte wird in Echtzeit live aktualisiert.</li>
+            <li><b>Abspeichern der temporären Flugplanung als GeoPackage (Persistent)</b>: Da temporäre Memory-Layer beim Schließen von QGIS unwiderruflich verloren gehen, sichern Sie Ihre Planung dauerhaft! Wählen Sie hierzu <b>Datei &gt; Planung als persistenten Layer (GeoPackage) speichern...</b>. Als Dateiname wird Ihnen automatisch das Format <code>QUCORE-Route_JJJJMMTT.gpkg</code> vorgeschlagen. Das Plugin speichert alle berechneten Schutzbereiche, Wegpunkte und Einstellungen als echte Dateien auf der Festplatte und lädt sie als Gruppe in Ihr QGIS-Projekt.</li>
+            <li><b>Reaktivierung &amp; nachträgliche Anpassung</b>: Bei Bedarf kann diese persistente Flugplanung mit dem QUCORE-Plugin jederzeit wieder angepasst werden. Öffnen Sie dazu einfach das QGIS-Projekt, wählen Sie den gespeicherten Flugweg (Mittelachse oder Wegpunkte aus dem GeoPackage-Layer) aus und lesen Sie ihn wieder ein (<b>Datei &gt; Aktivierten QGIS-Layer einlesen...</b>). Der vollständige Planungszustand (inklusive aller Wegpunkthöhen und SORA-Parameter) wird sofort wieder 1:1 hergestellt.</li>
+            <li><b>Änderungen sichern</b>: Um Ihre vorgenommenen Anpassungen dauerhaft zu behalten, vergessen Sie nicht, die Planung wieder über <b>Datei &gt; Planung als persistenten Layer (GeoPackage) speichern...</b> abzuspeichern. Sie können dabei die vorherige GeoPackage-Datei einfach überschreiben.</li>
+        </ol>
 
         <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
         <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">UAS-Sicherheitskorridor-Berechnungstool &copy; 2026. Alle Rechte vorbehalten.</p>

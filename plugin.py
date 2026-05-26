@@ -382,11 +382,11 @@ class DroneCorridorPlanner(object):
             # File Menu
             self.file_menu = self.menu_bar.addMenu("Datei")
             
+            self.import_active_action = self.file_menu.addAction("Aktivierten QGIS-Layer einlesen...")
+            self.import_active_action.triggered.connect(self.import_active_layer)
+            
             self.import_action = self.file_menu.addAction("Importieren...")
             self.import_action.triggered.connect(self.import_file)
-            
-            self.import_active_action = self.file_menu.addAction("Importieren aus aktivem QGIS-Layer...")
-            self.import_active_action.triggered.connect(self.import_active_layer)
             
             self.export_action = self.file_menu.addAction("Exportieren...")
             self.export_action.triggered.connect(self.export_file)
@@ -1494,6 +1494,7 @@ class DroneCorridorPlanner(object):
             self.waypoints[idx] = (w[0], w[1], alt, spd, fg)
             
         self.rebuild_and_calculate()
+        self.update_pilot_layer()
 
     def open_advanced_settings_dialog(self):
         dialog = AdvancedSettingsDialog(self.gui, self.config_path, self.params.get("stepSize", 50.0), current_params=self.params)
@@ -1506,7 +1507,30 @@ class DroneCorridorPlanner(object):
     def open_vlos_calculator(self):
         uas_type = self.params.get("uas_type", "FixedWing")
         cd = float(self.params.get("maxCharacteristicDimension", 3.6))
+        
+        # Save a single undo state when opening the dialog
+        self.push_undo()
+        
+        def on_vlos_changed(new_cd, new_uas_type):
+            self.params["maxCharacteristicDimension"] = new_cd
+            self.params["uas_type"] = new_uas_type
+            
+            # Enforce Flight Geography width min limit (3 * CD) on all waypoints
+            min_fg = 3.0 * new_cd
+            for idx in range(len(self.waypoints)):
+                w = self.waypoints[idx]
+                alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
+                spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
+                fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
+                if fg < min_fg:
+                    fg = min_fg
+                self.waypoints[idx] = (w[0], w[1], alt, spd, fg)
+                
+            self.rebuild_and_calculate()
+            self.update_pilot_layer()
+
         dialog = VlosCalculatorDialog(self.gui, uas_type, cd, current_params=self.params)
+        dialog.on_change_callback = on_vlos_changed
         dialog.exec_()
 
     def open_altitude_table(self):
@@ -1780,10 +1804,14 @@ class DroneCorridorPlanner(object):
             )
             return
 
+        from PyQt5.QtCore import QDate
+        date_str = QDate.currentDate().toString("yyyyMMdd")
+        default_filename = f"QUCORE-Route_{date_str}.gpkg"
+
         file_path, _ = QFileDialog.getSaveFileName(
             self.gui,
             "Planung als persistenten Layer (GeoPackage) speichern",
-            "",
+            default_filename,
             "GeoPackage (*.gpkg)"
         )
         if not file_path:
@@ -1976,10 +2004,14 @@ class DroneCorridorPlanner(object):
             )
             return
             
+        from PyQt5.QtCore import QDate
+        date_str = QDate.currentDate().toString("yyyyMMdd")
+        default_filename = f"QUCORE-Route_{date_str}"
+
         file_path, selected_filter = QFileDialog.getSaveFileName(
             self.gui, 
             self.tr("dialog_export_file_title", "Datei exportieren"), 
-            "", 
+            default_filename, 
             "dipul Planungsdatei (*.dipul);;KML Geometriedatei (*.kml);;SkyDemon Flugplan (*.flightplan);;GeoJSON (*.geojson);;SORA Dokumentations-Export (*.docx)"
         )
         if not file_path:
@@ -2111,10 +2143,14 @@ class DroneCorridorPlanner(object):
             )
             return
             
+        from PyQt5.QtCore import QDate
+        date_str = QDate.currentDate().toString("yyyyMMdd")
+        default_filename = f"QUCORE-Route_{date_str}.docx"
+
         file_path, _ = QFileDialog.getSaveFileName(
             self.gui, 
             self.tr("menu_sora_export", "SORA Dokumentations-Export (.docx)..."), 
-            "", 
+            default_filename, 
             "SORA Dokumentations-Export (*.docx)"
         )
         if not file_path:

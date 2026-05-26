@@ -141,3 +141,8 @@ class VlosCalculatorDialog(QDialog):
         self.lbl_alos.setText(f"{alos:.1f} m")
         self.lbl_dlos.setText(f"{dlos:.1f} m")
         self.lbl_vlos.setText(f"{vlos:.1f} m")
+        
+        # Fire callback to sync with parent planner in QGIS
+        new_uas_type = "Multikopter" if is_multicopter else "FixedWing"
+        if hasattr(self, 'on_change_callback') and self.on_change_callback:
+            self.on_change_callback(cd, new_uas_type)

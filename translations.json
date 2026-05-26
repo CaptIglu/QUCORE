@@ -640,8 +640,8 @@
     "en": "Load Active QGIS Layer"
   },
   "menu_import_active": {
-    "de": "Importieren aus aktivem QGIS-Layer...",
-    "en": "Import from Active QGIS Layer..."
+    "de": "Aktivierten QGIS-Layer einlesen...",
+    "en": "Load active QGIS layer..."
   },
   "msg_invalid_layer_title": {
     "de": "Ungültiger Layer-Typ",
