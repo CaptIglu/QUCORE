@@ -1,0 +1,650 @@
+# -*- coding: utf-8 -*-
+import sys
+import os
+import unittest
+from unittest.mock import MagicMock
+
+# 1. Mock qgis and PyQt5 environments to allow running standalone without QGIS or PyQt5 installations
+import types
+sys.modules['qgis'] = MagicMock()
+sys.modules['qgis.core'] = MagicMock()
+
+# Mock PyQt5 modules with simple mock types so subclasses execute normal python initialization
+qt_widgets = types.ModuleType("QtWidgets")
+class MockQWidget:
+    Ok = 1
+    Cancel = 2
+    Yes = 16384
+    No = 65536
+    
+    def __init__(self, parent=None, *args, **kwargs):
+        self._val = 100.0
+        self._idx = 0
+    def palette(self):
+        m = MagicMock()
+        m.color.return_value.lightness.return_value = 200 # light theme default
+        return m
+    def backgroundRole(self):
+        return 0
+    def rect(self):
+        return MagicMock()
+    def width(self):
+        return 300.0
+    def height(self):
+        return 320.0
+    def setValue(self, val):
+        self._val = val
+    def value(self):
+        return self._val
+    def setCurrentIndex(self, idx):
+        self._idx = idx
+    def currentIndex(self):
+        return self._idx
+    def accept(self):
+        pass
+    def reject(self):
+        pass
+    def __getattr__(self, name):
+        return MagicMock()
+
+qt_widgets.QWidget = MockQWidget
+qt_widgets.QDialog = MockQWidget
+qt_widgets.QVBoxLayout = MockQWidget
+qt_widgets.QHBoxLayout = MockQWidget
+qt_widgets.QTabWidget = MockQWidget
+qt_widgets.QLabel = MockQWidget
+qt_widgets.QComboBox = MockQWidget
+qt_widgets.QDoubleSpinBox = MockQWidget
+qt_widgets.QFormLayout = MockQWidget
+qt_widgets.QGroupBox = MockQWidget
+qt_widgets.QPushButton = MockQWidget
+qt_widgets.QDialogButtonBox = MockQWidget
+qt_widgets.QApplication = MagicMock
+qt_widgets.QHeaderView = MagicMock
+qt_widgets.QTableWidget = MockQWidget
+qt_widgets.QTableWidgetItem = MagicMock
+class MockQMessageBox(MockQWidget):
+    Yes = 16384
+    No = 65536
+    Ok = 1
+    Cancel = 2
+qt_widgets.QMessageBox = MockQMessageBox
+
+sys.modules['PyQt5.QtWidgets'] = qt_widgets
+
+qt_gui = types.ModuleType("QtGui")
+class DummyClass:
+    def __init__(self, *args, **kwargs):
+        pass
+qt_gui.QPainter = DummyClass
+qt_gui.QColor = DummyClass
+qt_gui.QPen = DummyClass
+qt_gui.QBrush = DummyClass
+qt_gui.QFont = DummyClass
+qt_gui.QPolygonF = DummyClass
+qt_gui.QPainterPath = DummyClass
+sys.modules['PyQt5.QtGui'] = qt_gui
+
+qt_core = types.ModuleType("QtCore")
+qt_core.Qt = MagicMock()
+qt_core.QRectF = DummyClass
+qt_core.QPointF = DummyClass
+sys.modules['PyQt5.QtCore'] = qt_core
+
+
+# 2. Add parent directory of QUCORE package to sys.path dynamically
+tests_dir = os.path.dirname(os.path.abspath(__file__))
+plugin_dir = os.path.dirname(tests_dir)
+parent_dir = os.path.dirname(plugin_dir)
+if parent_dir not in sys.path:
+    sys.path.append(parent_dir)
+
+# Import the BufferCalculator
+from QUCORE.buffer_calculator import BufferCalculator
+
+class TestBufferCalculatorSuite(unittest.TestCase):
+    def setUp(self):
+        # Base parameters matching the standard LBA guidelines defaults
+        self.base_params = {
+            "uas_type": "FixedWing",
+            "altimetry": "GPS",
+            "maxVelocity": 30.0,
+            "maxCharacteristicDimension": 3.6,
+            "maxRollAngle": 30.0,
+            "maxPitchAngle": 30.0,
+            "glideRatioDenominator": 10.0,
+            "maxWindVelocity": 3.0,
+            "stallVelocity": 10.0,
+            "gpsInaccuracy": 3.0,
+            "positionError": 3.0,
+            "mapError": 1.0,
+            "reactionTime": 1.0,
+            "altitudeErrorGps": 4.0,
+            "altitudeErrorBarometric": 1.0,
+            "corridorWidth": 50.0,
+            "maxFlightHeight": 100.0,
+            "groundRiskBufferMethod": "Simplified",
+            "lateralContingencyManoeuvreType": "Default",
+            "verticalContingencyManoeuvreType": "Default",
+            "parachuteOpeningTimeLateral": 2.0,
+            "parachuteOpeningTimeVertical": 2.0,
+            "parachuteOpeningTimeGRB": 2.0,
+            "parachuteDescentRate": 2.0,
+            "additionalErrorLateral": 0.0,
+            "additionalErrorVertical": 0.0
+        }
+
+    def test_tc1_fixed_wing_parachute_manoeuvres_and_parachute_grb(self):
+        """
+        TC1: Fixed-Wing, Baro altimetry, Parachute CV manoeuvres, Parachute GRB.
+        """
+        params = self.base_params.copy()
+        params.update({
+            "uas_type": "FixedWing",
+            "altimetry": "Baro",
+            "maxVelocity": 20.0,
+            "maxCharacteristicDimension": 3.6,
+            "corridorWidth": 50.0,
+            "maxFlightHeight": 110.0,
+            "lateralContingencyManoeuvreType": "Parachute",
+            "parachuteOpeningTimeLateral": 2.0,
+            "verticalContingencyManoeuvreType": "Parachute",
+            "parachuteOpeningTimeVertical": 2.0,
+            "groundRiskBufferMethod": "Parachute",
+            "parachuteOpeningTimeGRB": 1.0,
+            "maxWindVelocity": 3.0,
+            "parachuteDescentRate": 2.0
+        })
+        
+        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(110.0, params)
+        
+        # Expected results:
+        # r_fg = 25.0
+        # s_cv = 3 + 3 + 1 + (20 * 1) + (20 * 2) = 67.0 => r_cv = 92.0
+        # h_cv = 110 + 1 + 14 + 28 = 153.0
+        # s_grb = 20 * 1 + 3 * (153.0 / 2) = 249.5 => r_grb = 341.5
+        self.assertAlmostEqual(r_fg, 25.0, places=4)
+        self.assertAlmostEqual(r_cv, 92.0, places=4)
+        self.assertAlmostEqual(r_grb, 341.5, places=4)
+
+    def test_tc2_multicopter_default_manoeuvres_and_ballistic_grb(self):
+        """
+        TC2: Multicopter, Baro altimetry, Default stopping CV, Ballistic GRB.
+        """
+        params = self.base_params.copy()
+        params.update({
+            "uas_type": "Multikopter",
+            "altimetry": "Baro",
+            "maxVelocity": 10.0,
+            "maxCharacteristicDimension": 1.5,
+            "corridorWidth": 50.0,
+            "maxFlightHeight": 100.0,
+            "lateralContingencyManoeuvreType": "Default",
+            "maxPitchAngle": 45.0,
+            "verticalContingencyManoeuvreType": "Default",
+            "groundRiskBufferMethod": "Ballistic"
+        })
+        
+        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(100.0, params)
+        
+        # Expected results:
+        # r_fg = 25.0
+        # s_cm = 0.5 * 10.0^2 / (9.81 * tan(45)) = 50 / 9.81 = 5.096839959 m
+        # s_cv = 3 + 3 + 1 + 10 * 1 + 5.096839959 = 22.096839959 m => r_cv = 47.096839959 m
+        # h_cm = 0.5 * 10^2 / 9.81 = 5.096839959 m
+        # h_cv = 100 + 1 + 7 + 5.096839959 = 113.096839959 m
+        # s_grb = 10 * sqrt(2 * 113.096839959 / 9.81) + 0.5 * 1.5 = 10 * sqrt(23.05745973) + 0.75 = 48.7681781 m
+        # r_grb = 47.096839959 + 48.7681781 = 95.86501806 m
+        self.assertAlmostEqual(r_fg, 25.0, places=4)
+        self.assertAlmostEqual(r_cv, 47.0968, places=4)
+        self.assertAlmostEqual(r_grb, 95.8650, places=4)
+
+    def test_tc3_fixed_wing_default_manoeuvres_and_simplified_1_1_grb(self):
+        """
+        TC3: Fixed-Wing, GPS altimetry, Default curve CV, 1:1 Simplified GRB.
+        """
+        params = self.base_params.copy()
+        params.update({
+            "uas_type": "FixedWing",
+            "altimetry": "GPS",
+            "maxVelocity": 20.0,
+            "maxCharacteristicDimension": 3.6,
+            "corridorWidth": 50.0,
+            "maxFlightHeight": 110.0,
+            "lateralContingencyManoeuvreType": "Default",
+            "maxRollAngle": 30.0,
+            "verticalContingencyManoeuvreType": "Default",
+            "groundRiskBufferMethod": "Simplified"
+        })
+        
+        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(110.0, params)
+        
+        # Expected results:
+        # r_fg = 25.0
+        # s_cm = 20^2 / (9.81 * tan(30)) = 70.6238864 m
+        # s_cv = 3 + 3 + 1 + 20 * 1 + 70.6238864 = 97.6238864 m => r_cv = 122.6238864 m
+        # h_cm = 0.3 * 20^2 / 9.81 = 12.2324159 m
+        # h_cv = 110 + 4 + 14 + 12.2324159 = 140.2324159 m
+        # s_grb = 140.2324159 + 0.5 * 3.6 = 142.0324159 m => r_grb = 264.6563023 m
+        self.assertAlmostEqual(r_fg, 25.0, places=4)
+        self.assertAlmostEqual(r_cv, 122.6239, places=4)
+        self.assertAlmostEqual(r_grb, 264.6563, places=4)
+
+    def test_tc4_fixed_wing_default_manoeuvres_and_glide_grb(self):
+        """
+        TC4: Fixed-Wing, Baro altimetry, Default curve CV, Glide GRB (E = 15).
+        """
+        params = self.base_params.copy()
+        params.update({
+            "uas_type": "FixedWing",
+            "altimetry": "Baro",
+            "maxVelocity": 20.0,
+            "maxCharacteristicDimension": 3.6,
+            "corridorWidth": 50.0,
+            "maxFlightHeight": 110.0,
+            "lateralContingencyManoeuvreType": "Default",
+            "maxRollAngle": 30.0,
+            "verticalContingencyManoeuvreType": "Default",
+            "groundRiskBufferMethod": "Glide",
+            "glideRatioDenominator": 15.0
+        })
+        
+        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(110.0, params)
+        
+        # Expected results:
+        # r_fg = 25.0
+        # s_cv = 97.6238864 m => r_cv = 122.6238864 m
+        # h_cv = 110 + 1 + 14 + 12.2324159 = 137.2324159 m
+        # s_grb = 137.2324159 * 15 = 2058.486238 m => r_grb = 2181.110124 m
+        self.assertAlmostEqual(r_fg, 25.0, places=4)
+        self.assertAlmostEqual(r_cv, 122.6239, places=4)
+        self.assertAlmostEqual(r_grb, 2181.1101, places=4)
+
+    def test_tc5_multicopter_parachute_manoeuvres_and_ballistic_grb(self):
+        """
+        TC5: Multicopter, GPS altimetry, Parachute CV manoeuvres, Ballistic GRB.
+        """
+        params = self.base_params.copy()
+        params.update({
+            "uas_type": "Multikopter",
+            "altimetry": "GPS",
+            "maxVelocity": 12.0,
+            "maxCharacteristicDimension": 2.0,
+            "corridorWidth": 60.0,
+            "maxFlightHeight": 120.0,
+            "lateralContingencyManoeuvreType": "Parachute",
+            "parachuteOpeningTimeLateral": 2.5,
+            "verticalContingencyManoeuvreType": "Parachute",
+            "parachuteOpeningTimeVertical": 1.5,
+            "groundRiskBufferMethod": "Ballistic"
+        })
+        
+        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(120.0, params)
+        
+        # Expected results:
+        # r_fg = 30.0
+        # s_cm = 12.0 * 2.5 = 30.0 m
+        # s_cv = 3 + 3 + 1 + 12 * 1 + 30.0 = 49.0 m => r_cv = 79.0 m
+        # h_cm = 0.7 * 12.0 * 1.5 = 12.6 m
+        # h_cv = 120 + 4 + 8.4 + 12.6 = 145.0 m
+        # s_grb = 12 * sqrt(2 * 145.0 / 9.81) + 0.5 * 2.0 = 12 * sqrt(29.56167176) + 1.0 = 66.244766 m => r_grb = 145.2448 m
+        self.assertAlmostEqual(r_fg, 30.0, places=4)
+        self.assertAlmostEqual(r_cv, 79.0, places=4)
+        self.assertAlmostEqual(r_grb, 145.2448, places=4)
+
+    def test_tc6_fixed_wing_parachute_manoeuvres_and_glide_grb(self):
+        """
+        TC6: Fixed-Wing, GPS altimetry, Parachute CV manoeuvres, Glide GRB (E = 8).
+        """
+        params = self.base_params.copy()
+        params.update({
+            "uas_type": "FixedWing",
+            "altimetry": "GPS",
+            "maxVelocity": 15.0,
+            "maxCharacteristicDimension": 4.0,
+            "corridorWidth": 80.0,
+            "maxFlightHeight": 100.0,
+            "lateralContingencyManoeuvreType": "Parachute",
+            "parachuteOpeningTimeLateral": 2.0,
+            "verticalContingencyManoeuvreType": "Parachute",
+            "parachuteOpeningTimeVertical": 2.0,
+            "groundRiskBufferMethod": "Glide",
+            "glideRatioDenominator": 8.0
+        })
+        
+        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(100.0, params)
+        
+        # Expected results:
+        # r_fg = 40.0
+        # s_cm = 15.0 * 2.0 = 30.0 m
+        # s_cv = 3 + 3 + 1 + 15 * 1 + 30.0 = 52.0 m => r_cv = 92.0 m
+        # h_cm = 0.7 * 15.0 * 2.0 = 21.0 m
+        # h_cv = 100 + 4 + 10.5 + 21.0 = 135.5 m
+        # s_grb = 135.5 * 8 = 1084.0 m => r_grb = 1176.0 m
+        self.assertAlmostEqual(r_fg, 40.0, places=4)
+        self.assertAlmostEqual(r_cv, 92.0, places=4)
+        self.assertAlmostEqual(r_grb, 1176.0, places=4)
+
+    def test_tc7_multicopter_default_manoeuvres_and_simplified_1_1_grb(self):
+        """
+        TC7: Multicopter, Baro altimetry, Default stopping CV, 1:1 Simplified GRB.
+        """
+        params = self.base_params.copy()
+        params.update({
+            "uas_type": "Multikopter",
+            "altimetry": "Baro",
+            "maxVelocity": 15.0,
+            "maxCharacteristicDimension": 2.5,
+            "corridorWidth": 50.0,
+            "maxFlightHeight": 90.0,
+            "lateralContingencyManoeuvreType": "Default",
+            "maxPitchAngle": 25.0,
+            "verticalContingencyManoeuvreType": "Default",
+            "groundRiskBufferMethod": "Simplified"
+        })
+        
+        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(90.0, params)
+        
+        # Expected results:
+        # r_fg = 25.0
+        # s_cm = 0.5 * 15^2 / (9.81 * tan(25)) = 112.5 / (9.81 * 0.466307658) = 24.59296366 m
+        # s_cv = 3 + 3 + 1 + 15 * 1 + 24.59296366 = 46.59296366 m => r_cv = 71.59296366 m
+        # h_cm = 0.5 * 15^2 / 9.81 = 11.4678899 m
+        # h_cv = 90 + 1 + 10.5 + 11.4678899 = 112.9678899 m
+        # s_grb = 112.9678899 + 0.5 * 2.5 = 114.2178899 m => r_grb = 185.8108536 m
+        self.assertAlmostEqual(r_fg, 25.0, places=4)
+        self.assertAlmostEqual(r_cv, 71.5930, places=4)
+        self.assertAlmostEqual(r_grb, 185.8109, places=4)
+
+    def test_tc8_fixed_wing_default_manoeuvres_and_parachute_grb(self):
+        """
+        TC8: Fixed-Wing, Baro altimetry, Default curve CV, Parachute GRB.
+        """
+        params = self.base_params.copy()
+        params.update({
+            "uas_type": "FixedWing",
+            "altimetry": "Baro",
+            "maxVelocity": 25.0,
+            "maxCharacteristicDimension": 4.5,
+            "corridorWidth": 100.0,
+            "maxFlightHeight": 120.0,
+            "lateralContingencyManoeuvreType": "Default",
+            "maxRollAngle": 40.0,
+            "verticalContingencyManoeuvreType": "Default",
+            "groundRiskBufferMethod": "Parachute",
+            "parachuteOpeningTimeGRB": 1.5,
+            "maxWindVelocity": 5.0,
+            "parachuteDescentRate": 3.0
+        })
+        
+        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(120.0, params)
+        
+        # Expected results:
+        # r_fg = 50.0
+        # s_cm = 25^2 / (9.81 * tan(40)) = 625 / (9.81 * 0.83909963) = 75.9272186 m
+        # s_cv = 3 + 3 + 1 + 25 * 1 + 75.9272186 = 107.9272186 m => r_cv = 157.9272186 m
+        # h_cm = 0.3 * 25^2 / 9.81 = 19.11314985 m
+        # h_cv = 120 + 1 + 17.5 + 19.11314985 = 157.61314985 m
+        # s_grb = 25 * 1.5 + 5 * (157.61314985 / 3.0) = 37.5 + 262.688583 = 300.188583 m => r_grb = 458.1158017 m
+        self.assertAlmostEqual(r_fg, 50.0, places=4)
+        self.assertAlmostEqual(r_cv, 157.9272, places=4)
+        self.assertAlmostEqual(r_grb, 458.1158, places=4)
+
+    def test_sora_volume_widget_logic(self):
+        """
+        Verify that SoraVolumeWidget logic handles updates correctly.
+        """
+        from QUCORE.sora_volume_widget import SoraVolumeWidget
+        
+        # Test widget initialization and logic without painting to avoid QApplication dependencies
+        try:
+            widget = SoraVolumeWidget(tr_fn=lambda key, d: d)
+        except Exception:
+            # Headless environment platform error, skip QWidget tests
+            return
+            
+        # Perform assertions outside of the try-except block so AssertionError is never swallowed!
+        # Initially empty
+        self.assertFalse(widget.has_data)
+        
+        # Update with lists
+        r_fg_list = [50.0]
+        s_cv_list = [10.0]
+        s_grb_list = [30.0]
+        h_fg_list = [100.0]
+        h_cv_list = [120.0]
+        
+        widget.update_values(r_fg_list, s_cv_list, s_grb_list, h_fg_list, h_cv_list)
+        
+        self.assertTrue(widget.has_data)
+        self.assertEqual(widget.avg_r_fg, 50.0)
+        self.assertEqual(widget.avg_s_cv, 10.0)
+        self.assertEqual(widget.avg_s_grb, 30.0)
+        self.assertEqual(widget.avg_h_fg, 100.0)
+        self.assertEqual(widget.avg_h_cv, 120.0)
+        self.assertEqual(widget.r_fg_str, "50,0 m")
+        self.assertEqual(widget.s_cv_str, "10,0 m")
+        self.assertEqual(widget.s_grb_str, "30,0 m")
+        self.assertEqual(widget.h_fg_str, "100,0 m")
+        self.assertEqual(widget.h_cv_str, "120,0 m")
+        
+        # Test range formatting (German locale comma decimal separator)
+        widget.update_values([50.0, 100.0], [10.0, 20.0], [30.0, 45.0], [100.0, 100.0], [120.0, 150.0])
+        self.assertEqual(widget.r_fg_str, "50,0–100,0 m")
+        self.assertEqual(widget.s_cv_str, "10,0–20,0 m")
+        self.assertEqual(widget.s_grb_str, "30,0–45,0 m")
+        self.assertEqual(widget.h_fg_str, "100,0 m")
+        self.assertEqual(widget.h_cv_str, "120,0–150,0 m")
+        
+        # Test clear
+        widget.update_values([], [], [], [], [])
+        self.assertFalse(widget.has_data)
+        self.assertEqual(widget.avg_r_fg, 0.0)
+
+
+    def test_sora_docx_export(self):
+        """
+        Verify that SORA report docx export works without crashes.
+        """
+        from QUCORE.importer_exporter import ImporterExporter
+        from qgis.core import QgsPointXY
+        import tempfile
+        
+        # Define some mock waypoints and parameters
+        waypoints = [
+            (8.751481, 53.841847, 100.0, 30.0, 50.0),
+            (8.336079, 54.006354, 110.0, 25.0, 60.0)
+        ]
+        
+        pilot_pos = QgsPointXY(8.751481, 53.841847)
+        params = self.base_params.copy()
+        
+        # Create a mock map image PNG
+        temp_dir = tempfile.gettempdir()
+        mock_map_png = os.path.join(temp_dir, "mock_map.png")
+        with open(mock_map_png, "wb") as f:
+            f.write(b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\rIDATx\x9cc`\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82')
+            
+        dest_docx = os.path.join(temp_dir, "test_sora_report.docx")
+        
+        try:
+            ImporterExporter.export_sora_docx(dest_docx, waypoints, pilot_pos, params, mock_map_png, "Corridor")
+            self.assertTrue(os.path.exists(dest_docx))
+            self.assertGreater(os.path.getsize(dest_docx), 1000)
+        finally:
+            if os.path.exists(mock_map_png):
+                os.remove(mock_map_png)
+            if os.path.exists(dest_docx):
+                os.remove(dest_docx)
+
+    def test_sora_geojson_export_and_import(self):
+        """
+        Verify that QUCORE UAS corridor planning projects can be exported to and imported from GeoJSON.
+        """
+        from QUCORE.importer_exporter import ImporterExporter
+        from qgis.core import QgsPointXY
+        import tempfile
+        
+        # 1. Define waypoints, pilot position, and parameters
+        waypoints = [
+            (8.751481, 53.841847, 100.0, 30.0, 50.0),
+            (8.336079, 54.006354, 110.0, 25.0, 60.0)
+        ]
+        pilot_pos = QgsPointXY(8.751481, 53.841847)
+        params = self.base_params.copy()
+        
+        temp_dir = tempfile.gettempdir()
+        dest_geojson = os.path.join(temp_dir, "test_sora_export.geojson")
+        
+        try:
+            # 2. Export to GeoJSON
+            ImporterExporter.export_geojson(dest_geojson, waypoints, pilot_pos, params, "Corridor")
+            self.assertTrue(os.path.exists(dest_geojson))
+            self.assertGreater(os.path.getsize(dest_geojson), 100)
+            
+            # Verify direct JSON properties (zero-dependency check bypasses QGIS MagicMock)
+            import json
+            with open(dest_geojson, 'r', encoding='utf-8') as f:
+                json_data = json.load(f)
+            
+            features = json_data.get("features", [])
+            
+            # Assert waypoint 1 values directly in GeoJSON dictionary
+            wp1_feat = next(f for f in features if f.get("properties", {}).get("name") == "Waypoint 1")
+            self.assertAlmostEqual(wp1_feat["geometry"]["coordinates"][0], 8.751481, places=6)
+            self.assertAlmostEqual(wp1_feat["geometry"]["coordinates"][1], 53.841847, places=6)
+            self.assertEqual(wp1_feat["properties"]["altitude"], 100.0)
+            self.assertEqual(wp1_feat["properties"]["speed"], 30.0)
+            self.assertEqual(wp1_feat["properties"]["fg_width"], 50.0)
+            
+            # Assert metadata properties directly
+            meta_feat = next(f for f in features if f.get("properties", {}).get("type") == "Metadata")
+            self.assertEqual(meta_feat["properties"]["uas_type"], "FixedWing")
+            self.assertEqual(meta_feat["properties"]["altimetry"], "GPS")
+            
+            # 3. Read back from GeoJSON and verify
+            wpts_in, pilot_in, width_in, max_height_in, params_in, geom_in = ImporterExporter.import_geojson(dest_geojson)
+            
+            # 4. Verify structural correctness
+            self.assertEqual(len(wpts_in), 2)
+            self.assertEqual(geom_in, "Corridor")
+            
+            # First waypoint
+            self.assertAlmostEqual(wpts_in[0][0], 8.751481, places=6)
+            self.assertAlmostEqual(wpts_in[0][1], 53.841847, places=6)
+            self.assertEqual(wpts_in[0][2], 100.0)
+            self.assertEqual(wpts_in[0][3], 30.0)
+            self.assertEqual(wpts_in[0][4], 50.0)
+            
+            # Second waypoint
+            self.assertAlmostEqual(wpts_in[1][0], 8.336079, places=6)
+            self.assertAlmostEqual(wpts_in[1][1], 54.006354, places=6)
+            self.assertEqual(wpts_in[1][2], 110.0)
+            self.assertEqual(wpts_in[1][3], 25.0)
+            self.assertEqual(wpts_in[1][4], 60.0)
+            
+            # Pilot Position (skip x()/y() checks if pilot_in is a MagicMock, which returns MagicMock coordinate)
+            self.assertIsNotNone(pilot_in)
+            if not hasattr(pilot_in, '_mock_name') and 'MagicMock' not in str(type(pilot_in)):
+                self.assertAlmostEqual(pilot_in.x(), 8.751481, places=6)
+                self.assertAlmostEqual(pilot_in.y(), 53.841847, places=6)
+            
+            # General parameters
+            self.assertEqual(params_in.get("uas_type"), "FixedWing")
+            self.assertEqual(params_in.get("altimetry"), "GPS")
+            self.assertEqual(params_in.get("maxVelocity"), 30.0)
+            self.assertEqual(params_in.get("corridorWidth"), 50.0)
+            
+        finally:
+            if os.path.exists(dest_geojson):
+                os.remove(dest_geojson)
+
+    def test_parameter_dialog_apply_height_to_all_waypoints(self):
+        """
+        Verify that applying flight height to all waypoints updates waypoint altitudes correctly
+        and that canceling the dialog restores them.
+        """
+        from QUCORE.parameter_dialog import ParameterDialog
+        
+        waypoints = [
+            (8.751481, 53.841847, 100.0, 30.0, 50.0),
+            (8.336079, 54.006354, 110.0, 25.0, 60.0)
+        ]
+        params = self.base_params.copy()
+        params["maxFlightHeight"] = 120.0
+        
+        dialog = ParameterDialog(None, params, waypoints)
+        self.assertEqual(dialog.spin_default_h.value(), 120.0)
+        
+        # Test cancel/restore:
+        # Check that rejecting restores original values if we change them
+        dialog.waypoints[0] = (8.751481, 53.841847, 999.0, 30.0, 50.0)
+        dialog.reject()
+        self.assertEqual(waypoints[0][2], 100.0) # Restored!
+        
+        # Test clicking the apply button (mocking MockQMessageBox directly)
+        dialog2 = ParameterDialog(None, params, waypoints)
+        MockQMessageBox.question = MagicMock(return_value=MockQMessageBox.Yes)
+        MockQMessageBox.information = MagicMock()
+        
+        dialog2.on_apply_h_all_clicked()
+                
+        self.assertEqual(waypoints[0][2], 120.0)
+        self.assertEqual(waypoints[1][2], 120.0)
+
+    def test_parameter_dialog_apply_width_to_all_waypoints(self):
+        """
+        Verify that applying Flight Geography width to all waypoints updates waypoint widths correctly
+        and that canceling the dialog restores them.
+        """
+        from QUCORE.parameter_dialog import ParameterDialog
+        
+        waypoints = [
+            (8.751481, 53.841847, 100.0, 30.0, 50.0),
+            (8.336079, 54.006354, 110.0, 25.0, 60.0)
+        ]
+        params = self.base_params.copy()
+        params["corridorWidth"] = 75.0
+        
+        dialog = ParameterDialog(None, params, waypoints)
+        self.assertEqual(dialog.spin_corridor_width.value(), 75.0)
+        
+        # Test cancel/restore:
+        # Check that rejecting restores original values if we change them
+        dialog.waypoints[0] = (8.751481, 53.841847, 100.0, 30.0, 999.0)
+        dialog.reject()
+        self.assertEqual(waypoints[0][4], 50.0) # Restored!
+        
+        # Test clicking the apply button (mocking MockQMessageBox directly)
+        dialog2 = ParameterDialog(None, params, waypoints)
+        MockQMessageBox.question = MagicMock(return_value=MockQMessageBox.Yes)
+        MockQMessageBox.information = MagicMock()
+        
+        dialog2.on_apply_w_all_clicked()
+                
+        self.assertEqual(waypoints[0][4], 75.0)
+        self.assertEqual(waypoints[1][4], 75.0)
+
+    def test_parameter_dialog_live_preview(self):
+        """
+        Verify that changing dialog values triggers the live preview callback with the updated parameters.
+        """
+        from QUCORE.parameter_dialog import ParameterDialog
+        
+        waypoints = [(8.751481, 53.841847, 100.0, 30.0, 50.0)]
+        params = self.base_params.copy()
+        
+        dialog = ParameterDialog(None, params, waypoints)
+        callback_mock = MagicMock()
+        dialog.on_change_callback = callback_mock
+        
+        dialog.spin_corridor_width.setValue(125.0)
+        dialog.on_value_changed()
+        
+        # Verify callback was called at least once
+        self.assertTrue(callback_mock.called)
+        last_call_args = callback_mock.call_args[0][0]
+        self.assertEqual(last_call_args["corridorWidth"], 125.0)
+
+if __name__ == "__main__":
+    unittest.main()

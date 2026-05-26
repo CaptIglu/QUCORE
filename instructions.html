@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Benutzerhandbuch: QUCORE – UAS-Korridorplanung für QGIS</title>
+    <style>
+        /* Modern Premium CSS Reset & Styles */
+        :root {
+            --bg-color: #f8fafc;
+            --container-bg: #ffffff;
+            --text-color: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --accent-blue: #2d9cdb;
+            --accent-orange: #f2994a;
+            --accent-green: #397c59;
+            --accent-amber: #f7bb3d;
+            --accent-red: #eb5757;
+            --code-bg: #f1f5f9;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--container-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--border-color);
+        }
+        .header-title {
+            font-size: 2.2rem;
+            color: #0f172a;
+            margin-top: 0;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        h2 {
+            font-size: 1.45rem;
+            color: #1e293b;
+            margin-top: 35px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+        h3 {
+            font-size: 1.15rem;
+            color: #334155;
+            margin-top: 25px;
+        }
+        p, li {
+            font-size: 0.975rem;
+            color: #334155;
+        }
+        ul, ol {
+            padding-left: 24px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        
+        /* Alert Boxes */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 5px solid;
+            font-size: 0.95rem;
+        }
+        .alert-important {
+            background-color: #eff6ff;
+            border-left-color: var(--accent-blue);
+            color: #1e40af;
+        }
+        .alert-tip {
+            background-color: #f0fdf4;
+            border-left-color: var(--accent-green);
+            color: #166534;
+        }
+        .alert-warning {
+            background-color: #fffbeb;
+            border-left-color: var(--accent-amber);
+            color: #92400e;
+        }
+        
+        /* Color dots and indicators */
+        .dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        .dot-wp { background-color: var(--accent-blue); }
+        .dot-pilot { background-color: var(--accent-orange); }
+        .dot-fg { background-color: var(--accent-green); }
+        .dot-cv { background-color: var(--accent-amber); }
+        .dot-grb { background-color: var(--accent-red); }
+        
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.925rem;
+        }
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f5f9;
+            color: #1e293b;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .grey-cell {
+            background-color: #f8fafc;
+            color: var(--text-muted);
+        }
+        
+        /* Code blocks */
+        code {
+            font-family: Consolas, Monaco, "Andale Mono", monospace;
+            background-color: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9em;
+        }
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        
+        /* Navigation / TOC */
+        .toc {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .toc-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #0f172a;
+        }
+        .toc-list {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .toc-list li {
+            margin-bottom: 0;
+        }
+        .toc-list a {
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 0.925rem;
+        }
+        .toc-list a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="header-title">📖 QUCORE Benutzerhandbuch &amp; Dokumentation</h1>
+        
+        <p>Willkommen bei <b>QUCORE</b> (QGIS UAS Corridor Outlining & Routing Engine). Dieses Plugin wurde speziell für QGIS entwickelt, um Sicherheitskorridore für unbemannte Luftfahrzeugsysteme (UAS) gemäß den offiziellen deutschen Richtlinien der Bundesnetzagentur / des BMVD (<b>FG, CV und GRB</b>) sowie den EASA SORA-Richtlinien interaktiv zu planen, zu visualisieren und zu analysieren.</p>
+        
+        <div class="toc">
+            <div class="toc-title">📍 Inhaltsverzeichnis</div>
+            <ul class="toc-list">
+                <li><a href="#quickstart">1. Schnellstart</a></li>
+                <li><a href="#geometry">2. Geometriemodi</a></li>
+                <li><a href="#interaction">3. Karten-Interaktion, Drag & Drop & SORA-Visualisierung</a></li>
+                <li><a href="#parameter">4. Wegpunkt-Parameter (Wegpunkttabelle)</a></li>
+                <li><a href="#validation">5. Eingabe-Validierungen & 3x CD-Regel</a></li>
+                <li><a href="#safety">6. Zusatzentfernungen</a></li>
+                <li><a href="#manoeuvres">7. Dynamische Sicherheitsmanöver</a></li>
+                <li><a href="#exchange">8. Schnittstellen, Dateiexport & Layer-Import</a></li>
+                <li><a href="#maths">9. Mathematische Grundlagen</a></li>
+                <li><a href="#json_config">10. JSON-Konfiguration & Schreibschutz</a></li>
+                <li><a href="#bilingual">11. Bilinguale Sprachauswahl (Language Selection)</a></li>
+                <li><a href="#decoupling">12. Decoupling von Darstellung & LBA-Standardwerten</a></li>
+                <li><a href="#vlos">13. VLOS-Sichtbarkeitsanzeige (ALOS / DLOS)</a></li>
+            </ul>
+        </div>
+        
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+        <!-- 1. QUICKSTART -->
+        <h2 id="quickstart">🚀 1. Schnellstart in QGIS</h2>
+        <p>Um das Plugin zu starten, klicken Sie auf das Luftraum-Symbol in der Vektorsymbolleiste oder öffnen Sie das Menü <b>Vektor</b> &gt; <b>QUCORE</b> &gt; <b>QUCORE – UAS-Korridorplanung (FG/CV/GRB)</b>.</p>
+        <p>Es öffnet sich das Bedienpanel, welches standardmäßig im Vordergrund Ihrer QGIS-Karte bleibt.</p>
+
+        <!-- 2. GEOMETRY MODES -->
+        <h2 id="geometry">📐 2. Die drei Geometriemodi</h2>
+        <p>Wählen Sie vor dem Zeichnen von Wegpunkten den gewünschten Geometrietyp oben im Dropdown-Menü aus:</p>
+        
+        <div class="alert alert-important">
+            <b>🔒 Dynamische Geometrie-Sperre (UX-Schutz)</b><br>
+            Um Logikkonflikte zu verhindern (z. B. ein Wechsel des Geometrietyps mitten in einer aktiven Routenplanung), ist das Dropdown-Menü <b>nur bei einer leeren Planung (0 Wegpunkte) veränderbar</b>. Sobald Sie den ersten Wegpunkt setzen, wird die Auswahl gesperrt.
+        </div>
+
+        <h3>1. 🛣️ Korridor (Standard)</h3>
+        <ul>
+            <li>Erfordert mindestens 1 Wegpunkt (generiert Kreise) bzw. $\ge 2$ Wegpunkte für Streckensegmente.</li>
+            <li>Generiert verjüngte Kapselsegmente (<b>Tapered Corridor</b>) basierend auf den lokalen Wegpunktparametern.</li>
+            <li>Die Mittelachse wird als gestrichelte Linie gezeichnet.</li>
+        </ul>
+
+        <h3>2. ⭕ Kreis (Kreisfläche)</h3>
+        <ul>
+            <li>Erfordert genau <b>1 Wegpunkt</b> (das Kreiszentrum). Das Hinzufügen weiterer Punkte ist gesperrt.</li>
+            <li>Der Radius kann über das Feld <b>Kreis-Radius (m)</b> eingestellt werden. Jede Änderung berechnet und aktualisiert die Puffer in Echtzeit live auf der Karte.</li>
+        </ul>
+
+        <h3>3. ⬡ Polygon (Fläche)</h3>
+        <ul>
+            <li>Erfordert mindestens <b>3 Wegpunkte</b> als Eckpunkte (Vertices).</li>
+            <li>Die Flight Geography (FG) entspricht exakt der geschlossenen Polygon-Eckpunktfläche. CV und GRB werden als gleichmäßige, gleichabständige Puffer nach außen um das Polygon herum gebildet.</li>
+        </ul>
+
+        <!-- 3. INTERACTION -->
+        <h2 id="interaction">🗺️ 3. Karten-Interaktion, Drag & Drop & SORA-Visualisierung</h2>
+        <p>Das Plugin erstellt automatisch eine organisierte Layergruppe namens <b>"QUCORE-Korridorplanung"</b> in Ihrem QGIS-Projekt, die <b>immer ganz oben im Layerbaum (Index 0)</b> gehalten wird, um nicht von Hintergrundkarten verdeckt zu werden.</p>
+        
+        <h3>3.1. Visualisierung auf der Karte:</h3>
+        <ul>
+            <li><span class="dot dot-wp"></span> <b>Wegpunkte</b>: Blaue elegante Wegpunkte (Größe 3.0, im Vordergrund)</li>
+            <li><span class="dot dot-pilot"></span> <b>Pilotenposition</b>: Orangefarbener Markierungspunkt (Größe 3.5, im Vordergrund)</li>
+            <li><span class="dot dot-fg"></span> <b>Flight Geography (FG)</b>: Smaragdgrün (Opazität 40%, Rand 1.0mm)</li>
+            <li><span class="dot dot-cv"></span> <b>Contingency Volume (CV)</b>: Bernsteinorange (Opazität 40%, Rand 1.0mm)</li>
+            <li><span class="dot dot-grb"></span> <b>Ground Risk Buffer (GRB)</b>: Korallenrot (Opazität 40%, Rand 1.0mm)</li>
+        </ul>
+
+        <h3>📍 Wegpunkte zeichnen und verschieben (Drag & Drop)</h3>
+        <ol>
+            <li>Klicken Sie auf <b>Wegpunkte zeichnen/modifizieren</b>.</li>
+            <li><b>Dynamisches Maus-Feedback</b>: Ihr Mauszeiger wird auf der Karte zum <b>Fadenkreuz</b>. Bewegen Sie ihn über einen Wegpunkt, wird er zur <b>offenen Hand</b> (bereit zum Ziehen). Beim Ziehen mit gedrückter linker Maustaste verwandelt er sich in eine <b>geschlossene Hand</b>.</li>
+            <li>Beenden Sie das Zeichnen/Bearbeiten mit einem <b>Rechtsklick</b>.</li>
+            <li>Nutzen Sie die Rückgängig/Wiederholen-Buttons (↶ / ↷) für eine bequeme Historiensteuerung.</li>
+        </ol>
+
+        <h3>📊 3.2. EASA SORA-Volumen Visualisierung (Widget)</h3>
+        <p>Um die räumliche Beziehung zwischen den berechneten EASA SORA Sicherheitsvolumina unmittelbar verständlich zu machen, integriert das Plugin eine fortschrittliche grafische Anzeige direkt in das Bedienpanel:</p>
+        <ul>
+            <li><b>Zwei Perspektiven</b>: Das Widget zeichnet in Echtzeit sowohl eine <b>Draufsicht (Top-Down-Ansicht)</b> als auch eine <b>Seitenansicht (Vertikalprofil)</b> der Schutzbereiche.</li>
+            <li><b>Proportionale Skalierung</b>: Die Schachtelung der Volumina (Flight Geography $\rightarrow$ Contingency Volume $\rightarrow$ Ground Risk Buffer) wird maßstabsgetreu und proportional zueinander gerendert.</li>
+            <li><b>Premium Farbschema & Kontraste</b>:
+                <ul>
+                    <li><span class="dot" style="background-color: #2ecc71;"></span><b>Flight Geography (FG)</b>: Salbeigrün – Kernflugbereich.</li>
+                    <li><span class="dot" style="background-color: #f1c40f;"></span><b>Contingency Volume (CV)</b>: Bernsteingelb – Toleranzbereich bei Abweichungen.</li>
+                    <li><span class="dot" style="background-color: #e74c3c;"></span><b>Ground Risk Buffer (GRB)</b>: Himbeerrosa – Pufferzone zum Schutz von Dritten am Boden.</li>
+                </ul>
+            </li>
+            <li><b>Dezimalstellen & Kompaktheit</b>: Alle Maßangaben und Höhenstützpunkte werden automatisch auf komfortable Dezimaldarstellungen gerundet und in einer platzsparenden, optimierten Layoutstruktur übersichtlich dargestellt.</li>
+        </ul>
+
+        <!-- 4. WAYPOINT PARAMETERS -->
+        <h2 id="parameter">📊 4. Wegpunkt-Parameter (Wegpunkttabelle)</h2>
+        <p>Klicken Sie im Panel auf <b>Höhe, FG, V_cruise pro Wegpunkt bearbeiten...</b> (nur im Korridor-Modus aktiv), um ein tabellarisches Einstellungsfenster zu öffnen. Hier können Sie Flughöhe, Geschwindigkeit und FG-Breite pro Punkt individuell festlegen. Die Übergänge werden linear interpoliert (verjüngende Sicherheitskorridore).</p>
+        
+        <h3>Optimiertes Tabellen-Layout &amp; Barrierefreiheit:</h3>
+        <ul>
+            <li><b>Breites 8-Spalten-Layout</b>: Der Dialog <i>„Wegpunkt Spezifische Parameter bearbeiten“</i> ist auf eine komfortable Breite von <b>980 Pixeln</b> (Fenstergröße $980 \times 450\text{ px}$) konfiguriert.</li>
+            <li><b>Automatisches Spalten-Resizing</b>: Durch das integrierte <code>resizeColumnsToContents()</code>-Verfahren werden alle Spaltenbreiten automatisch an die tatsächliche Textlänge angepasst. Spaltenüberschriften und physikalische Maßeinheiten werden ohne lästige Zeilenumbrüche oder Abschneiden vollständig lesbar dargestellt.</li>
+            <li><b>Präzise Werteeingabe</b>: Alle numerischen Eingaben (inklusive der lateralen Halbbalkenbreiten und individuellen Höhenparameter) sind hochpräzise einstellbar.</li>
+        </ul>
+
+        <div class="alert alert-tip">
+            <b>⚡ Echtzeit-Kartenupdate & Excel-Tabelle kopieren</b><br>
+            Änderungen in der Tabelle aktualisieren die Korridorpuffer <b>sofort live auf der QGIS-Karte</b>. Verwenden Sie den Button <b>Tabelle kopieren (für Excel)</b> oder <code>Ctrl+C</code>, um die gesamte Tabelle im TSV-Format zu kopieren und nahtlos in MS Excel einzufügen. Klicken Sie auf <b>Abbrechen</b>, um alle Änderungen rückgängig zu machen.
+        </div>
+
+        <div class="alert alert-important">
+            <b>🔄 Massenübernahme der Standardflughöhe (Höhen zurücksetzen)</b><br>
+            Wenn Sie viele wegpunktspezifische Flughöhen eingetragen haben und diese gesammelt auf einen einheitlichen Standardwert zurücksetzen möchten, bietet das Plugin eine praktische Verknüpfung:
+            <ol>
+                <li>Öffnen Sie die <b>UAS-Berechnungsparameter</b> (Menü <i>Vektor &gt; QUCORE &gt; QUCORE – UAS-Korridorplanung</i>).</li>
+                <li>Gehen Sie in den Tab <b>Korridoreinstellungen</b> (der nun standardmäßig an erster Stelle platziert ist).</li>
+                <li>Klicken Sie auf den Button <b>Flughöhe für alle Wegpunkte übernehmen</b>.</li>
+                <li>Nach Bestätigung der Sicherheitsabfrage werden alle individuellen Wegpunkthöhen mit der dort eingestellten globalen Standardflughöhe überschrieben. Falls Sie den gesamten Berechnungsdialog abbrechen, wird diese Massenänderung zum Schutz Ihrer Daten automatisch wieder rückgängig gemacht.</li>
+            </ol>
+        </div>
+
+        <!-- 5. VALIDATIONS -->
+        <h2 id="validation">🔒 5. Eingabe-Validierungen & 3x CD-Regel</h2>
+        <p>Das Plugin implementiert strenge mathematische und logische Konsistenzregeln:</p>
+        <ul>
+            <li><b>Flughöhen- und Geschwindigkeitsgrenzen</b>: Wegpunkt-Geschwindigkeiten können niemals die globale maximale Betriebsgeschwindigkeit des UAS übersteigen. Zu hohe Werte werden live in der Tabelle automatisch auf das Maximum gedeckelt.</li>
+            <li><b>3x CD-Schutzregel für die Flight Geography</b>: Die FG-Breite (bzw. der FG-Radius im Kreismodus) muss <b>immer mindestens 3x größer sein als die Charakteristische Dimension (CD)</b> des UAS (z. B. Spannweite oder Rotordurchmesser):
+                <ul>
+                    <li>In den globalen Berechnungsparametern und der Live-Tabelle wird ein Unterschreiten sofort korrigiert und der Benutzer benachrichtigt.</li>
+                    <li>Im Kreis-Planungsmodus wird das Eingabefeld <b>Kreis-Radius (m)</b> über die Qt-Oberfläche automatisch auf ein Minimum von $3 \times CD$ begrenzt.</li>
+                </ul>
+            </li>
+        </ul>
+
+        <!-- 6. SAFETY DISTANCES -->
+        <h2 id="safety">➕ 6. Zusatzentfernungen (Zuschläge)</h2>
+        <p>Im Reiter <b>"Annahmen"</b> der Berechnungsparameter können Sie manuelle Sicherheitszuschläge (in Metern) definieren:</p>
+        <ul>
+            <li><b>Zusatzentfernung (horizontal)</b> (<code>additionalErrorLateral</code>): Wird direkt zum horizontalen Contingency Volume Puffer addiert.</li>
+            <li><b>Zusatzentfernung (vertikal)</b> (<code>additionalErrorVertical</code>): Wird direkt zur Deckenhöhe des Contingency Volume ($H_{CV}$) addiert. Dies vergrößert vollautomatisch und physikalisch korrekt auch den <b>Ground Risk Buffer (GRB)</b>.</li>
+        </ul>
+
+        <!-- 7. MANOEUVRES -->
+        <h2 id="manoeuvres">🪂 7. Dynamische Sicherheitsmanöver &amp; Deaktivierungslogik</h2>
+        <p>Im Einstellungsfenster schalten sich die Eingabefelder intelligent und kontextabhängig frei oder aus:</p>
+        <ul>
+            <li>Die Felder <b>Fallschirm Öffnungszeit (lat / vert)</b> sind standardmäßig ausgegraut. Sie werden <b>nur aktiv</b>, wenn als Manövertyp <i>„Auslösen des Fallschirms“</i> ausgewählt wird.</li>
+            <li>Wird ein Fallschirmmanöver gewählt, werden die Roll- und Nickwinkel-Felder automatisch ausgegraut, da sie für das Manöver rechnerisch irrelevant sind. Bei Standard-Manövern werden sie typgerecht (Fixed-Wing oder Multikopter) aktiviert.</li>
+            <li><b>Überziehgeschwindigkeit (stallVelocity)</b>: Dieses Eingabefeld im Reiter <i>„UAS Eigenschaften“</i> wird automatisch <b>ausgegraut (deaktiviert)</b>, wenn als UAS-Typ <i>„Multikopter“</i> ausgewählt wird. Da Multikopter über keine aerodynamische Überziehgeschwindigkeit verfügen, schützt dies vor irreführenden Parametrisierungen.</li>
+            <li><b>Gleitflug-Methode bei Multikoptern (GRB)</b>: Die Option <i>„Antrieb aus mit Gleitflug“</i> im Reiter <i>„Ground Risk Buffer“</i> wird automatisch <b>ausgegraut (deaktiviert)</b>, wenn der UAS-Typ <i>„Multikopter“</i> aktiv ist. Da Multikopter nicht antriebslos gleiten können, ist diese Methode für sie gesperrt.</li>
+            <li><b>Standardwerte-Hilfe</b>: Zur besseren Orientierung sind alle offiziellen physikalischen Standard- bzw. Richtwerte (aus dem BMVD/dipul Helgoland-Szenario) direkt im Label der Eingabefelder in Klammern aufgeführt. Zudem wurden alle Fallschirm-Öffnungszeiten einheitlich auf den sicheren Defaultwert von <b>2.0 s</b> normiert.</li>
+        </ul>
+        <p>Das Plugin unterstützt umfangreiche Datei-Schnittstellen für den flexiblen Datenaustausch und die direkte Integration in GIS-Workflows:</p>
+        
+        <h3 id="exchange">8.1. Unterstützte Dateiformate (Export / Import)</h3>
+        <ul>
+            <li><b><code>.dipul</code> (JSON)</b>: Offizielles Austauschformat des dipul MapTools. Lädt/schreibt alle Wegpunkte, den Piloten, Geometrietypen sowie sämtliche Annahmen und Sicherheitszuschläge vollkompatibel. Da DIPUL einheitliche Breiten verlangt, werden Sie beim Export nach einer Standard-Breite und -Höhe gefragt.</li>
+            <li><b><code>.geojson</code> (RFC 7946)</b>: Das moderne Standardformat für GIS-Daten. Das Plugin exportiert und importiert vollumfänglich alle planungsrelevanten Elemente:
+                <ul>
+                    <li><b>Wegpunkte</b> (Point-Features mit Attributen für individuelle Höhen, Geschwindigkeiten und FG-Breiten)</li>
+                    <li><b>Pilotenposition</b> (Point-Feature mit pilotenspezifischen Attributen)</li>
+                    <li><b>Mittelachse</b> (LineString-Feature des Flugwegs)</li>
+                    <li><b>EASA SORA Puffer-Polygone</b> (Polygon-Features für FG, CV, GRB und AA, stilisiert mit den entsprechenden Layer-Farben)</li>
+                    <li><b>Globale Metadaten</b>: Sämtliche Berechnungsannahmen, UAS-Spezifikationen und Sicherheitsmanöver werden direkt im GeoJSON-Header als standardisiertes JSON-Objekt mitgeführt, sodass die gesamte Planung beim Re-Import fehlerfrei wiederhergestellt wird.</li>
+                </ul>
+            </li>
+            <li><b><code>.docx</code> (Microsoft Word Bericht)</b>: Erstellt einen professionellen und druckfertigen Dokumentenbericht für Behörden (z. B. LBA oder Landesluftfahrtbehörden) mit allen Berechnungsergebnissen und Tabellen.
+                <br><b>Premium-Erweiterung (Parameter-Zusammenfassung)</b>: Der Word-Export bettet nun vollautomatisch einen übersichtlichen, standardisierten Zusammenfassungsabsatz der Planungsprämissen ein:
+                <pre><code>Es wurden folgende Parameter verwendet:
+    Höhe Fluggebiet H_FG: 100,0 m
+    Horizontales Contingency-Volumen Manöver: 180° Kurve
+    Vertikales Contingency Manöver: Übergang in den Sinkflug
+    Ground risk buffer manoeuver: 1:1 Regel</code></pre>
+            </li>
+            <li><b><code>.kml</code> (XML)</b>: Zur Weiterverwendung in Google Earth, Drohnen-GCS oder Webkarten. <b>Premium-Funktion:</b> Exportiert die Flugplanung exakt so, wie sie auf dem Bildschirm definiert wurde (inklusive individueller Flughöhen, Fluggeschwindigkeiten und FG-Breiten pro Wegpunkt). Der Pfad ist in 3D mit <code>relativeToGround</code> modelliert, und die Puffer-Polygone schmiegen sich über <code>clampToGround</code> und <code>tessellate</code> perfekt an das Geländeprofil an. Ein pauschalisierendes Abfragen über den Einstellungsdialog entfällt beim KML-Export vollständig.</li>
+            <li><b><code>.flightplan</code> (SkyDemon XML)</b>: Zur direkten Übernahme in die SkyDemon-Navigationssoftware.</li>
+        </ul>
+
+        <h3>8.2. Aktivierten QGIS Vektor-Layer einlesen</h3>
+        <p>Dieses hochentwickelte Feature erlaubt es Ihnen, bestehende Geometriedaten direkt aus einem in QGIS ausgewählten Vektor-Layer (z. B. Shapefile, GeoJSON, GPX oder Geopackage) als Wegpunkte einzulesen. Klicken Sie dazu auf den Button <b>Aktivierten QGIS-Layer einlesen</b> im Hauptpanel oder wählen Sie <b>Datei &gt; Importieren aus aktivem QGIS-Layer...</b> im Menüband.</p>
+
+        <div class="alert alert-important">
+            <b>🛡️ Modusspezifische Geometrie-Validierung</b><br>
+            Das System validiert den Geometrietyp des aktiven Layers passend zum aktuellen Planungsmodus:
+            <ul>
+                <li><b>Korridor- und Kreismodus</b>: Nur Linien- (Line) und Punkt-Layer (Point / Multi-Point) sind zulässig. Das Einlesen von Polygon-Layern ist gesperrt und erzeugt eine Fehlermeldung mit dem Hinweis, zuerst in den Polygon-Modus zu wechseln.</li>
+                <li><b>Polygon-Modus</b>: Unterstützt alle drei Geometrietypen (Punkt, Linie, Polygon) für maximale Flexibilität beim Erstellen der geschlossenen Fluggebietsfläche.</li>
+            </ul>
+        </div>
+
+        <div class="alert alert-tip">
+            <b>⚡ Automatische Daten-Konvertierung &amp; Bereinigung</b><br>
+            Beim Einlesen führt das Plugin vollautomatisch komplexe geometrische Anpassungen durch:
+            <ul>
+                <li><b>CRS-Transformation</b>: Der Quell-Layer wird aus seinem aktuellen Koordinatenbezugssystem (CRS) vollautomatisch in das globale WGS84-System (EPSG:4326) projiziert.</li>
+                <li><b>3D-zu-2D (Z-Point Handling)</b>: 3D-Geometrien (mit Z-Koordinaten) führen in Standard-QGIS-Routinen oft zu Typkonflikten. Das Plugin konvertiert alle Vertices robust in 2D <code>QgsPointXY</code>, um Abstürze zu verhindern.</li>
+                <li><b>Polygon-Endpunkt-Korrektur (Closed-Loop Popping)</b>: GIS-Polygone schließen sich, indem der letzte Punkt identisch mit dem ersten ist. Das Plugin erkennt diese Doppelung, entfernt den überflüssigen Endpunkt vollautomatisch und überlasst das Schließen sauber der dynamischen QGIS-Darstellung.</li>
+            </ul>
+        </div>
+
+        <h3>8.3. Intelligente Attribut-Extraktion (Mapping)</h3>
+        <p>Wenn Ihr geladener QGIS-Layer eine strukturierte Attributtabelle besitzt, sucht das Plugin vollautomatisch nach passenden Spaltennamen und extrahiert die Werte wegeweise. Groß-/Kleinschreibung wird dabei ignoriert. Folgende Spalten werden unterstützt:</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Zielgröße</th>
+                    <th>Unterstützte Spaltennamen in der Attributtabelle</th>
+                    <th>Standardwert bei Fehlen</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Flughöhe ($h$)</td>
+                    <td><code>altitude</code>, <code>height</code>, <code>hoehe</code>, <code>h</code></td>
+                    <td>Globale Standardflughöhe (z. B. $100\text{ m}$)</td>
+                </tr>
+                <tr>
+                    <td>Fluggeschwindigkeit ($v_0$)</td>
+                    <td><code>speed</code>, <code>velocity</code>, <code>geschwindigkeit</code>, <code>v</code>, <code>v0</code></td>
+                    <td>Globale maximale Betriebsgeschwindigkeit ($v_0$)</td>
+                </tr>
+                <tr>
+                    <td>Flight Geography Breite ($W_{FG}$)</td>
+                    <td><code>fg_width</code>, <code>width</code>, <code>breite</code>, <code>w_fg</code>, <code>w</code></td>
+                    <td>Globale Standard Flight Geography Breite ($50\text{ m}$)</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>Sind diese Spalten vorhanden, werden die individuellen Flughöhen, Geschwindigkeiten und Korridorbreiten punktgenau geladen und sofort live in die tabellarische Wegpunkt-Bearbeitung und Puffer-Generierung übernommen!</p>
+
+        <!-- 9. MATHS -->
+        <h2 id="maths">📐 9. Mathematische Grundlagen</h2>
+        <p>Die Puffer werden in einem lokalen UTM-Koordinatensystem (metrisch) hochpräzise berechnet:</p>
+        
+        <h3>Contingency Volume (CV)</h3>
+        <p>$$R_{CV} = R_{FG} + S_{CV}$$</p>
+        <p>$$S_{CV} = \text{gpsInaccuracy} + \text{positionError} + \text{mapError} + (v_0 \times t_{RZ}) + S_{CM} + S_{\text{add, horiz}}$$</p>
+        
+        <h3>Ground Risk Buffer (GRB)</h3>
+        <p>$$R_{GRB} = R_{CV} + S_{GRB}$$</p>
+        <ul>
+            <li><b>Simplified (1:1 Regel)</b>: $S_{GRB} = H_{CV} + 0.5 \cdot CD$</li>
+            <li><b>Ballistic Method</b>: $S_{GRB} = v_0 \cdot \sqrt{\frac{2 \cdot H_{CV}}{g}} + 0.5 \cdot CD$</li>
+            <li><b>Glide Method</b>: $S_{GRB} = H_{CV} \cdot \text{glideRatioDenominator}$</li>
+            <li><b>Parachute Method</b>: $S_{GRB} = v_0 \cdot t_{\text{para}} + v_{\text{wind}} \cdot \left(\frac{H_{CV}}{v_{\text{descent}}}\right)$</li>
+        </ul>
+        <p>$$H_{CV} = h + h_{\text{delta}} + (0.7 \cdot v_0 \cdot t_{RZ}) + H_{CM} + H_{\text{add, vert}}$$</p>
+        
+        <!-- 10. JSON CONFIGURATION -->
+        <h2 id="json_config">⚙️ 10. JSON-Konfiguration (config.json) &amp; Schreibschutz</h2>
+        <p>Das Plugin speichert alle globalen Voreinstellungen und Standardwerte in einer externen Konfigurationsdatei namens <code>config.json</code> im Plugin-Verzeichnis. Diese Datei wird beim ersten Start des Plugins automatisch mit LBA-konformen Standardwerten erzeugt und kann manuell oder über den Button in den erweiterten Einstellungen geöffnet werden. Dank des integrierten Schemas (<code>config.schema.json</code>) unterstützen moderne Editoren Auto-Vervollständigung und Echtzeit-Validierung.</p>
+
+        <div class="alert alert-important">
+            <b>🔒 Permanenter Dateischreibschutz &amp; Flüchtiger Session-Speicher (Session States)</b><br>
+            Um die Integrität der vordefinierten LBA-Standardprofile und administrativen Voreinstellungen zu garantieren, wurde ein strikter Schreibschutz implementiert:
+            <ul>
+                <li><b>Keine GUI-Schreibzugriffe</b>: Anpassungen von Parametern, Sicherheitsabständen oder UAS-Spezifikationen in der grafischen Benutzeroberfläche werden <b>niemals</b> zurück in die physische <code>config.json</code> geschrieben.</li>
+                <li><b>Session-only Speicher</b>: Alle GUI-Modifikationen werden ausschließlich im flüchtigen Arbeitsspeicher (Session Memory) des aktuell laufenden QGIS-Prozesses gehalten.</li>
+                <li><b>Profil-Integrität</b>: Dadurch wird verhindert, dass Fehlbedienungen in der GUI das dauerhafte Standard-Profil beschädigen. Eine dauerhafte Änderung der Voreinstellungen ist ausschließlich durch direktes, bewusstes Editieren der <code>config.json</code> in einem Texteditor möglich.</li>
+            </ul>
+        </div>
+        
+        <p>Die folgenden Tabellen beschreiben alle verfügbaren Parameter, deren Datentyp, Standardwerte und erlaubte Wertebereiche:</p>
+        
+        <h3>10.1. Allgemeine Einstellungen & Globale Geometrien</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter (JSON-Key)</th>
+                    <th>Datentyp</th>
+                    <th>Standardwert</th>
+                    <th>Beschreibung / Wertebereich</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>stepSize</code></td>
+                    <td>Float</td>
+                    <td><code>50.0</code></td>
+                    <td>Schrittweite (in Metern) zur feinen Stützpunkt-Interpolation entlang der Flugweg-Segmente für die GRB-Berechnung.</td>
+                </tr>
+                <tr>
+                    <td><code>corridorWidth</code></td>
+                    <td>Float</td>
+                    <td><code>50.0</code></td>
+                    <td>Standard Flight Geography Breite ($W_{FG}$) in Metern.</td>
+                </tr>
+                <tr>
+                    <td><code>maxFlightHeight</code></td>
+                    <td>Float</td>
+                    <td><code>100.0</code></td>
+                    <td>Standard Flughöhe ($h$) über Grund in Metern.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>10.2. UAS Spezifische Eigenschaften</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter (JSON-Key)</th>
+                    <th>Datentyp</th>
+                    <th>Standardwert</th>
+                    <th>Beschreibung / Wertebereich</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>uas_type</code></td>
+                    <td>String</td>
+                    <td><code>"FixedWing"</code></td>
+                    <td>Typ des UAS. Erlaubte Werte: <code>"FixedWing"</code> (Flächenflieger) oder <code>"Multikopter"</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>maxVelocity</code></td>
+                    <td>Float</td>
+                    <td><code>20.0</code></td>
+                    <td>Maximale Betriebsgeschwindigkeit ($v_0$) in m/s (zuvor 30.0).</td>
+                </tr>
+                <tr>
+                    <td><code>maxCharacteristicDimension</code></td>
+                    <td>Float</td>
+                    <td><code>1.2</code></td>
+                    <td>Charakteristische Dimension des UAS ($CD$) in Metern (z. B. Spannweite) (zuvor 3.6).</td>
+                </tr>
+                <tr>
+                    <td><code>stallVelocity</code></td>
+                    <td>Float</td>
+                    <td><code>10.0</code></td>
+                    <td>Überziehgeschwindigkeit in m/s (nur relevant für Fixed-Wing).</td>
+                </tr>
+                <tr>
+                    <td><code>maxRollAngle</code></td>
+                    <td>Float</td>
+                    <td><code>30.0</code></td>
+                    <td>Maximaler Rollwinkel ($\Phi$) in Grad für Kurvenflüge (Fixed-Wing).</td>
+                </tr>
+                <tr>
+                    <td><code>maxPitchAngle</code></td>
+                    <td>Float</td>
+                    <td><code>30.0</code></td>
+                    <td>Maximaler Nickwinkel ($\Theta$) in Grad für Bremsprozeduren (Multikopter).</td>
+                </tr>
+                <tr>
+                    <td><code>glideRatioDenominator</code></td>
+                    <td>Float</td>
+                    <td><code>10.0</code></td>
+                    <td>Gleitzahl-Nenner $E$ (z. B. 10.0 für 10:1 Gleitflug bei Triebwerksausfall).</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>10.3. Sensorik & Unsicherheiten</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter (JSON-Key)</th>
+                    <th>Datentyp</th>
+                    <th>Standardwert</th>
+                    <th>Beschreibung / Wertebereich</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>altimetry</code></td>
+                    <td>String</td>
+                    <td><code>"GPS"</code></td>
+                    <td>Höhenmessmethode. Erlaubte Werte: <code>"GPS"</code> (GPS-basiert) oder <code>"Baro"</code> (barometrisch).</td>
+                </tr>
+                <tr>
+                    <td><code>gpsInaccuracy</code></td>
+                    <td>Float</td>
+                    <td><code>3.0</code></td>
+                    <td>Horizontale GPS-Messungenauigkeit ($S_{GPS}$) in Metern.</td>
+                </tr>
+                <tr>
+                    <td><code>positionError</code></td>
+                    <td>Float</td>
+                    <td><code>3.0</code></td>
+                    <td>Positions-Haltefehler des Autopiloten ($S_{Pos}$) in Metern.</td>
+                </tr>
+                <tr>
+                    <td><code>mapError</code></td>
+                    <td>Float</td>
+                    <td><code>1.0</code></td>
+                    <td>Ungenauigkeit der Kartenquelle ($S_K$) in Metern.</td>
+                </tr>
+                <tr>
+                    <td><code>reactionTime</code></td>
+                    <td>Float</td>
+                    <td><code>1.0</code></td>
+                    <td>Reaktionszeit des Fernpiloten ($t_{RZ}$) in Sekunden.</td>
+                </tr>
+                <tr>
+                    <td><code>altitudeErrorGps</code></td>
+                    <td>Float</td>
+                    <td><code>4.0</code></td>
+                    <td>Vertikaler Messfehler bei GPS-Höhenmessung in Metern.</td>
+                </tr>
+                <tr>
+                    <td><code>altitudeErrorBarometric</code></td>
+                    <td>Float</td>
+                    <td><code>1.0</code></td>
+                    <td>Vertikaler Messfehler bei barometrischer Höhenmessung in Metern.</td>
+                </tr>
+                <tr>
+                    <td><code>additionalErrorLateral</code></td>
+                    <td>Float</td>
+                    <td><code>0.0</code></td>
+                    <td>Zusätzlicher horizontaler Sicherheitszuschlag in Metern.</td>
+                </tr>
+                <tr>
+                    <td><code>additionalErrorVertical</code></td>
+                    <td>Float</td>
+                    <td><code>0.0</code></td>
+                    <td>Zusätzlicher vertikaler Sicherheitszuschlag in Metern.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>10.4. Sicherheitsmanöver & GRB-Berechnung</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter (JSON-Key)</th>
+                    <th>Datentyp</th>
+                    <th>Standardwert</th>
+                    <th>Beschreibung / Wertebereich</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>groundRiskBufferMethod</code></td>
+                    <td>String</td>
+                    <td><code>"Simplified"</code></td>
+                    <td>Berechnungsmethode für den GRB. Erlaubte Werte: <code>"Simplified"</code> (1:1), <code>"Ballistic"</code> (ballistisch), <code>"Glide"</code> (Gleitflug), <code>"Parachute"</code> (Fallschirm).</td>
+                </tr>
+                <tr>
+                    <td><code>lateralContingencyManoeuvreType</code></td>
+                    <td>String</td>
+                    <td><code>"Default"</code></td>
+                    <td>Laterales Contingency-Manöver. Erlaubte Werte: <code>"Default"</code> (Standard-Ausweichkurve) oder <code>"Parachute"</code> (Notfall-Fallschirm).</td>
+                </tr>
+                <tr>
+                    <td><code>verticalContingencyManoeuvreType</code></td>
+                    <td>String</td>
+                    <td><code>"Default"</code></td>
+                    <td>Vertikales Contingency-Manöver. Erlaubte Werte: <code>"Default"</code> (Standard-Steigflug) oder <code>"Parachute"</code> (Notfall-Fallschirm).</td>
+                </tr>
+                <tr>
+                    <td><code>parachuteOpeningTimeLateral</code></td>
+                    <td>Float</td>
+                    <td><code>2.0</code></td>
+                    <td>Fallschirm-Öffnungszeit (in s) für die laterale Pufferkomponente bei CM.</td>
+                </tr>
+                <tr>
+                    <td><code>parachuteOpeningTimeVertical</code></td>
+                    <td>Float</td>
+                    <td><code>2.0</code></td>
+                    <td>Fallschirm-Öffnungszeit (in s) für die vertikale Pufferkomponente bei CM.</td>
+                </tr>
+                <tr>
+                    <td><code>parachuteOpeningTimeGRB</code></td>
+                    <td>Float</td>
+                    <td><code>2.0</code></td>
+                    <td>Fallschirm-Öffnungszeit (in s) für die GRB-Fallschirm-Berechnung.</td>
+                </tr>
+                <tr>
+                    <td><code>parachuteDescentRate</code></td>
+                    <td>Float</td>
+                    <td><code>2.0</code></td>
+                    <td>Sinkgeschwindigkeit am geöffneten Fallschirm ($v_Z$) in m/s.</td>
+                </tr>
+                <tr>
+                    <td><code>maxWindVelocity</code></td>
+                    <td>Float</td>
+                    <td><code>3.0</code></td>
+                    <td>Maximale zulässige Betriebs-Windgeschwindigkeit in m/s für Driftberechnung.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>10.5. Grafische Darstellung (QGIS Layers)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter (JSON-Key)</th>
+                    <th>Datentyp</th>
+                    <th>Standardwert</th>
+                    <th>Beschreibung / Wertebereich</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>linewidth_route</code></td>
+                    <td>Float</td>
+                    <td><code>1.0</code></td>
+                    <td>Linienstärke des Flugwegs (Mittelachse) in Millimetern ($0.1$ bis $10.0\text{ mm}$).</td>
+                </tr>
+                <tr>
+                    <td><code>linewidth_fg</code></td>
+                    <td>Float</td>
+                    <td><code>1.0</code></td>
+                    <td>Linienstärke der Flight Geography (FG) Kontur in Millimetern.</td>
+                </tr>
+                <tr>
+                    <td><code>linewidth_cv</code></td>
+                    <td>Float</td>
+                    <td><code>1.0</code></td>
+                    <td>Linienstärke der Contingency Volume (CV) Kontur in Millimetern.</td>
+                </tr>
+                <tr>
+                    <td><code>linewidth_grb</code></td>
+                    <td>Float</td>
+                    <td><code>1.0</code></td>
+                    <td>Linienstärke der Ground Risk Buffer (GRB) Kontur in Millimetern.</td>
+                </tr>
+                <tr>
+                    <td><code>linewidth_adjecentarea</code></td>
+                    <td>Float</td>
+                    <td><code>1.0</code></td>
+                    <td>Linienstärke der Adjacent Area (AA) Kontur in Millimetern.</td>
+                </tr>
+                <tr>
+                    <td><code>color_route</code></td>
+                    <td>String</td>
+                    <td><code>"#50505a"</code></td>
+                    <td>Konturenfarbe für den Flugweg (Mittelachse) als Hex-Farbstring (z. B. <code>"#50505a"</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>color_fg</code></td>
+                    <td>String</td>
+                    <td><code>"#397c59"</code></td>
+                    <td>Konturen- und Füllfarbe für die Flight Geography (FG) als Hex-Farbstring.</td>
+                </tr>
+                <tr>
+                    <td><code>color_cv</code></td>
+                    <td>String</td>
+                    <td><code>"#f7bb3d"</code></td>
+                    <td>Konturen- und Füllfarbe für das Contingency Volume (CV) als Hex-Farbstring.</td>
+                </tr>
+                <tr>
+                    <td><code>color_grb</code></td>
+                    <td>String</td>
+                    <td><code>"#eb5757"</code></td>
+                    <td>Konturen- und Füllfarbe für den Ground Risk Buffer (GRB) als Hex-Farbstring.</td>
+                </tr>
+                <tr>
+                    <td><code>color_adjecentarea</code></td>
+                    <td>String</td>
+                    <td><code>"#2980b9"</code></td>
+                    <td>Konturen- und Füllfarbe für das Adjacent Area (AA) als Hex-Farbstring.</td>
+                </tr>
+                <tr>
+                    <td><code>opacity_fg</code></td>
+                    <td>Integer</td>
+                    <td><code>15</code></td>
+                    <td>Füll-Deckkraft der Flight Geography (FG) in Prozent ($0\%$ bis $100\%$).</td>
+                </tr>
+                <tr>
+                    <td><code>opacity_cv</code></td>
+                    <td>Integer</td>
+                    <td><code>15</code></td>
+                    <td>Füll-Deckkraft des Contingency Volume (CV) in Prozent ($0\%$ bis $100\%$).</td>
+                </tr>
+                <tr>
+                    <td><code>opacity_grb</code></td>
+                    <td>Integer</td>
+                    <td><code>15</code></td>
+                    <td>Füll-Deckkraft des Ground Risk Buffers (GRB) in Prozent ($0\%$ bis $100\%$).</td>
+                </tr>
+                <tr>
+                    <td><code>opacity_adjecentarea</code></td>
+                    <td>Integer</td>
+                    <td><code>0</code></td>
+                    <td>Füll-Deckkraft des Adjacent Area (AA) in Prozent ($0\%$ bis $100\%$, standardmäßig transparent).</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 11. BILINGUAL SUPPORT -->
+        <h2 id="bilingual">🌐 11. Bilinguale Sprachauswahl (Language Selection)</h2>
+        <p>Um eine breite internationale Anwendbarkeit zu gewährleisten, ist das gesamte Plugin zweisprachig in <b>Deutsch (DE)</b> und <b>Englisch (EN)</b> implementiert:</p>
+        <ul>
+            <li><b>Einfache Umschaltung</b>: Die Sprache kann jederzeit im Menüband über <b>Einstellungen &gt; Sprache / Language</b> gewechselt werden.</li>
+            <li><b>Sprachcode EN</b>: Gemäß offizieller Vorgaben wird Englisch einheitlich und präzise mit dem Kurzzeichen <b>EN</b> (und nicht mit <i>GB</i> oder anderen Länderkürzeln) bezeichnet.</li>
+            <li><b>Dynamisches Live-Interface</b>: Die Übersetzung aller Dialoge, Tooltips, Tabellenüberschriften, Statusmeldungen und sogar Fehlermeldungen erfolgt verzögerungsfrei in Echtzeit, ohne dass QGIS oder das Plugin neu gestartet werden müssen.</li>
+            <li><b>Externe Lokalisierungsdatei</b>: Sämtliche Übersetzungstexte sind in einer übersichtlichen, standardisierten JSON-Datei (<code>translations.json</code>) im Plugin-Verzeichnis hinterlegt. Fortgeschrittene Anwender können diese Datei problemlos bearbeiten oder zusätzliche Übersetzungen einfügen.</li>
+        </ul>
+
+        <!-- 12. DECOUPLING -->
+        <h2 id="decoupling">🎨 12. Decoupling von Darstellung &amp; LBA-Standardwerten</h2>
+        <p>Um die Benutzeroberfläche übersichtlicher und logisch konsistenter zu gestalten, wurden die <b>grafischen Darstellungseigenschaften</b> vollständig von den <b>physikalischen Berechnungs-Standardwerten</b> entkoppelt:</p>
+        <ul>
+            <li><b>Eigener Reiter "Darstellung"</b>: Alle ästhetischen Einstellungen wie Linienstärken (Linewidths in Millimetern), Farben (über eine komfortable Farbauswahl) und Deckkräfte (Opazitäten) für Flugweg, Flight Geography, Contingency Volume, Ground Risk Buffer und Adjacent Area befinden sich jetzt exklusiv im dedizierten Reiter <b>Darstellung</b> der erweiterten Einstellungen.</li>
+            <li><b>Bereinigte LBA-Richtlinien-Standardwerte</b>: Der schreibgeschützte Baum im Reiter <b>Standardwerte (LBA-Leitfaden)</b> zeigt ausschließlich die offiziellen physikalisch-technischen Standardwerte gemäß den gesetzlichen Richtlinien (z. B. UAS-Eigenschaften, Sensorungenauigkeiten, Reaktionszeiten und globale Korridormaße).</li>
+            <li><b>Sicherheit und Klarheit</b>: Diese strikte Trennung verhindert, dass rein visuelle Layout-Einstellungen fälschlicherweise als Teil der behördlich vorgegebenen Berechnungs-Standardwerte interpretiert werden.</li>
+        </ul>
+
+        <!-- 13. VLOS-SICHTBARKEIT -->
+        <h2 id="vlos">👁️ 13. VLOS-Sichtbarkeitsanzeige (ALOS / DLOS)</h2>
+        <p>Das Plugin unterstützt eine visuelle Darstellung der maximalen Sichtweite (Visual Line of Sight, VLOS) des Fernpiloten:</p>
+        <ul>
+            <li><b>Dynamischer VLOS-Kreis</b>: Um die Pilotenposition herum wird ein kreisförmiger Indikator auf der Karte gezeichnet, der die maximale Sichtbarkeitsgrenze darstellt.</li>
+            <li><b>ALOS &amp; DLOS Berechnung</b>: Der Radius bestimmt sich dynamisch aus der aerodynamisch/optischen Erkennungsgrenze (Attitude Line of Sight - ALOS) und dem maximal zulässigen Abstand zum UAS (Distance Line of Sight - DLOS) unter Berücksichtigung der charakteristischen Dimension (CD) des UAS.</li>
+            <li><b>Echtzeit-Visualisierung</b>: Sobald die Pilotenposition auf der Karte verschoben oder die Dimensionen des UAS angepasst werden, aktualisiert sich dieser Sicherheitskreis verzögerungsfrei auf der Karte. So lässt sich unmittelbar prüfen, ob das geplante Fluggebiet vollständig innerhalb des zulässigen Sichtbereichs des Fernpiloten liegt.</li>
+        </ul>
+
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+        <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">UAS-Sicherheitskorridor-Berechnungstool &copy; 2026. Alle Rechte vorbehalten.</p>
+    </div>
+</body>
+</html>

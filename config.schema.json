@@ -1,0 +1,285 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "QUCORE Configuration Schema",
+  "type": "object",
+  "properties": {
+    "$schema": { 
+      "type": "string",
+      "description": "Link to the JSON schema file."
+    },
+    "stepSize": {
+      "type": "number",
+      "minimum": 1.0,
+      "maximum": 1000.0,
+      "default": 50.0,
+      "description": "Interpolation step size along flight path segments in meters."
+    },
+    "language": {
+      "type": "string",
+      "enum": ["de", "en"],
+      "default": "de",
+      "description": "Preferred language for the plugin interface. Allowed: de (German), en (English)."
+    },
+    "uas_type": {
+      "type": "string",
+      "enum": ["FixedWing", "Multikopter"],
+      "description": "UAS Aircraft Type. Allowed: FixedWing (Flächenflieger), Multikopter."
+    },
+    "altimetry": {
+      "type": "string",
+      "enum": ["GPS", "Baro"],
+      "description": "Altitude measurement method. Allowed: GPS (GPS-basiert), Baro (barometrisch)."
+    },
+    "maxVelocity": {
+      "type": "number",
+      "minimum": 0.1,
+      "description": "Maximum operational speed (v0) in m/s."
+    },
+    "maxCharacteristicDimension": {
+      "type": "number",
+      "minimum": 0.01,
+      "description": "Maximum characteristic dimension of the UAV (CD) in meters."
+    },
+    "maxRollAngle": {
+      "type": "number",
+      "minimum": 5.0,
+      "maximum": 80.0,
+      "description": "Maximum roll angle for Fixed-Wing curves in degrees."
+    },
+    "maxPitchAngle": {
+      "type": "number",
+      "minimum": 5.0,
+      "maximum": 80.0,
+      "description": "Maximum pitch angle for Multicopter stopping in degrees."
+    },
+    "glideRatioDenominator": {
+      "type": "number",
+      "minimum": 1.0,
+      "description": "Glide ratio denominator E (e.g. 10.0 for 10:1 glide)."
+    },
+    "maxWindVelocity": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Maximum operational wind speed in m/s."
+    },
+    "stallVelocity": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Stall speed in clean configuration in m/s."
+    },
+    "gpsInaccuracy": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Horizontal GPS inaccuracy (S_GPS) in meters."
+    },
+    "positionError": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Horizontal position holding error (S_Pos) in meters."
+    },
+    "mapError": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Horizontal map source error (S_K) in meters."
+    },
+    "reactionTime": {
+      "type": "number",
+      "minimum": 0.1,
+      "description": "Remote pilot reaction time (t_RZ) in seconds."
+    },
+    "altitudeErrorGps": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Vertical GPS altitude error in meters."
+    },
+    "altitudeErrorBarometric": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Vertical Barometric altitude error in meters."
+    },
+    "corridorWidth": {
+      "type": "number",
+      "minimum": 1.0,
+      "description": "Default Flight Geography width (W_FG) in meters."
+    },
+    "maxFlightHeight": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Default Flight Geography height (H_FG) in meters."
+    },
+    "groundRiskBufferMethod": {
+      "type": "string",
+      "enum": ["Simplified", "Ballistic", "Glide", "Parachute"],
+      "description": "Ground Risk Buffer calculation method. Allowed: Simplified (1:1), Ballistic, Glide, Parachute."
+    },
+    "lateralContingencyManoeuvreType": {
+      "type": "string",
+      "enum": ["Default", "Parachute"],
+      "description": "Lateral Contingency Maneuver type. Allowed: Default (Stop/Turn), Parachute."
+    },
+    "verticalContingencyManoeuvreType": {
+      "type": "string",
+      "enum": ["Default", "Parachute"],
+      "description": "Vertical Contingency Maneuver type. Allowed: Default (Energy/Climb), Parachute."
+    },
+    "parachuteOpeningTimeLateral": {
+      "type": "number",
+      "minimum": 0.1,
+      "description": "Parachute opening latency for lateral CM in seconds."
+    },
+    "parachuteOpeningTimeVertical": {
+      "type": "number",
+      "minimum": 0.1,
+      "description": "Parachute opening latency for vertical CM in seconds."
+    },
+    "parachuteOpeningTimeGRB": {
+      "type": "number",
+      "minimum": 0.1,
+      "description": "Parachute opening latency for GRB in seconds."
+    },
+    "parachuteDescentRate": {
+      "type": "number",
+      "minimum": 0.1,
+      "description": "Parachute vertical sink rate (v_z) in m/s."
+    },
+    "additionalErrorLateral": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Additional lateral safety margin in meters."
+    },
+    "additionalErrorVertical": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Additional vertical safety margin in meters."
+    },
+    "linewidth_route": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 10.0,
+      "default": 1.0,
+      "description": "Grafische Linienstärke für den Flugweg (Mittelachse) in mm."
+    },
+    "linewidth_fg": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 10.0,
+      "default": 1.0,
+      "description": "Grafische Linienstärke für die Flight Geography (FG) Kontur in mm."
+    },
+    "linewidth_cv": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 10.0,
+      "default": 1.0,
+      "description": "Grafische Linienstärke für das Contingency Volume (CV) Kontur in mm."
+    },
+    "linewidth_grb": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 10.0,
+      "default": 1.0,
+      "description": "Grafische Linienstärke für das Ground Risk Buffer (GRB) Kontur in mm."
+    },
+    "linewidth_adjacentarea": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 10.0,
+      "default": 1.0,
+      "description": "Grafische Linienstärke für das Adjacent Area (AA) Kontur in mm."
+    },
+    "linewidth_vlos": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 10.0,
+      "default": 0.8,
+      "description": "Grafische Linienstärke für die VLOS-Reichweite in mm."
+    },
+    "color_route": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "default": "#50505a",
+      "description": "Grafische Farbe für den Flugweg (Mittelachse) als Hex-String."
+    },
+    "color_fg": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "default": "#397c59",
+      "description": "Grafische Farbe für die Flight Geography (FG) als Hex-String."
+    },
+    "color_cv": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "default": "#f7bb3d",
+      "description": "Grafische Farbe für das Contingency Volume (CV) als Hex-String."
+    },
+    "color_grb": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "default": "#eb5757",
+      "description": "Grafische Farbe für den Ground Risk Buffer (GRB) als Hex-String."
+    },
+    "color_adjacentarea": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "default": "#2980b9",
+      "description": "Grafische Farbe für das Adjacent Area (AA) als Hex-String."
+    },
+    "color_vlos": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "default": "#2d9cdb",
+      "description": "Grafische Farbe für die VLOS-Reichweite als Hex-String."
+    },
+    "opacity_fg": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 15,
+      "description": "Füll-Deckkraft für die Flight Geography (FG) in Prozent."
+    },
+    "opacity_cv": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 15,
+      "description": "Füll-Deckkraft für das Contingency Volume (CV) in Prozent."
+    },
+    "opacity_grb": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 15,
+      "description": "Füll-Deckkraft für den Ground Risk Buffer (GRB) in Prozent."
+    },
+    "opacity_adjacentarea": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 0,
+      "description": "Füll-Deckkraft für das Adjacent Area (AA) in Prozent."
+    },
+    "opacity_vlos": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 0,
+      "description": "Füll-Deckkraft für die VLOS-Reichweite in Prozent."
+    }
+  },
+  "required": [
+    "stepSize",
+    "uas_type",
+    "altimetry",
+    "maxVelocity",
+    "maxCharacteristicDimension",
+    "groundRiskBufferMethod",
+    "lateralContingencyManoeuvreType",
+    "verticalContingencyManoeuvreType",
+    "linewidth_route",
+    "linewidth_fg",
+    "linewidth_cv",
+    "linewidth_grb",
+    "linewidth_adjacentarea",
+    "linewidth_vlos"
+  ]
+}

@@ -1,0 +1,1902 @@
+# -*- coding: utf-8 -*-
+import os
+import math
+import uuid
+import tempfile
+from PyQt5.QtCore import Qt, QVariant
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (
+    QAction,
+    QMessageBox,
+    QFileDialog,
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QLabel,
+    QGroupBox,
+    QInputDialog,
+    QStyle,
+    QComboBox,
+    QDoubleSpinBox
+)
+from qgis.core import (
+    QgsProject,
+    QgsVectorLayer,
+    QgsField,
+    QgsFeature,
+    QgsGeometry,
+    QgsPointXY,
+    QgsCoordinateTransform,
+    QgsCoordinateReferenceSystem,
+    QgsSimpleFillSymbolLayer,
+    QgsSimpleLineSymbolLayer,
+    QgsSimpleMarkerSymbolLayer,
+    QgsSymbol,
+    QgsSingleSymbolRenderer
+)
+from qgis.gui import QgsMapToolEmitPoint, QgsMapTool, QgsMapMouseEvent
+
+import json
+from .buffer_calculator import BufferCalculator
+from .parameter_dialog import ParameterDialog
+from .altitude_table_dialog import AltitudeTableDialog
+from .importer_exporter import ImporterExporter
+from .export_settings_dialog import ExportSettingsDialog
+from .advanced_settings_dialog import AdvancedSettingsDialog
+from .vlos_calculator_dialog import VlosCalculatorDialog
+from .sora_volume_widget import SoraVolumeWidget
+
+class WaypointMapTool(QgsMapTool):
+    def __init__(self, canvas, plugin):
+        super(WaypointMapTool, self).__init__(canvas)
+        self.canvas = canvas
+        self.plugin = plugin
+        self.dragging_idx = -1
+        
+    def activate(self):
+        super(WaypointMapTool, self).activate()
+        self.canvas.setCursor(Qt.CrossCursor)
+        
+    def deactivate(self):
+        super(WaypointMapTool, self).deactivate()
+        self.canvas.setCursor(Qt.ArrowCursor)
+        
+    def canvasPressEvent(self, e: QgsMapMouseEvent):
+        if e.button() == Qt.LeftButton:
+            # Check if we clicked close to an existing waypoint (in pixel coordinates)
+            click_pixel = e.pos()
+            closest_idx = -1
+            min_dist = 15.0 # pixel threshold for drag selection
+            
+            for idx, w in enumerate(self.plugin.waypoints):
+                pt_wgs = QgsPointXY(w[0], w[1])
+                pt_canvas = self.plugin.transform_from_wgs84(pt_wgs)
+                pt_pixel = self.toCanvasCoordinates(pt_canvas)
+                
+                dx = pt_pixel.x() - click_pixel.x()
+                dy = pt_pixel.y() - click_pixel.y()
+                dist = math.sqrt(dx*dx + dy*dy)
+                if dist < min_dist:
+                    min_dist = dist
+                    closest_idx = idx
+                    
+            if closest_idx != -1:
+                # Enter drag-and-drop mode
+                self.plugin.push_undo() # Push state before dragging
+                self.dragging_idx = closest_idx
+                self.plugin.is_dragging = True
+                self.canvas.setCursor(Qt.ClosedHandCursor)
+            else:
+                # If Circle, enforce exactly 1 waypoint (center)
+                if self.plugin.geometry_type == "Circle" and len(self.plugin.waypoints) >= 1:
+                    return
+                    
+                # Not close to any existing waypoint -> add a new waypoint
+                pt_wgs = self.plugin.transform_to_wgs84(e.mapPoint())
+                def_alt = float(self.plugin.params.get("maxFlightHeight", 100.0))
+                def_spd = float(self.plugin.params.get("maxVelocity", 30.0))
+                
+                if self.plugin.geometry_type == "Circle":
+                    def_fg = self.plugin.spn_circle_radius.value()
+                else:
+                    def_fg = float(self.plugin.params.get("corridorWidth", 50.0))
+                    
+                self.plugin.push_undo() # Push state before adding waypoint
+                self.plugin.waypoints.append((pt_wgs.x(), pt_wgs.y(), def_alt, def_spd, def_fg))
+                self.plugin.rebuild_and_calculate()
+                
+        elif e.button() == Qt.RightButton:
+            # Right-click exits waypoint editing mode
+            self.plugin.btn_draw_wp.setChecked(False)
+            self.canvas.unsetMapTool(self)
+            
+    def canvasMoveEvent(self, e: QgsMapMouseEvent):
+        if self.dragging_idx != -1:
+            # Dragging: update coordinates of the selected waypoint
+            pt_wgs = self.plugin.transform_to_wgs84(e.mapPoint())
+            w = self.plugin.waypoints[self.dragging_idx]
+            alt = w[2] if len(w) > 2 else float(self.plugin.params.get("maxFlightHeight", 100.0))
+            spd = w[3] if len(w) > 3 else float(self.plugin.params.get("maxVelocity", 30.0))
+            fg = w[4] if len(w) > 4 else float(self.plugin.params.get("corridorWidth", 50.0))
+            
+            self.plugin.waypoints[self.dragging_idx] = (pt_wgs.x(), pt_wgs.y(), alt, spd, fg)
+            
+            # Recalculate in real time to morph the corridor live
+            self.plugin.rebuild_and_calculate()
+        else:
+            # Check if hovering near a waypoint
+            hover_pixel = e.pos()
+            hover_idx = -1
+            min_dist = 15.0
+            
+            for idx, w in enumerate(self.plugin.waypoints):
+                pt_wgs = QgsPointXY(w[0], w[1])
+                pt_canvas = self.plugin.transform_from_wgs84(pt_wgs)
+                pt_pixel = self.toCanvasCoordinates(pt_canvas)
+                
+                dx = pt_pixel.x() - hover_pixel.x()
+                dy = pt_pixel.y() - hover_pixel.y()
+                dist = math.sqrt(dx*dx + dy*dy)
+                if dist < min_dist:
+                    min_dist = dist
+                    hover_idx = idx
+                    
+            if hover_idx != -1:
+                self.canvas.setCursor(Qt.OpenHandCursor)
+            else:
+                self.canvas.setCursor(Qt.CrossCursor)
+            
+    def canvasReleaseEvent(self, e: QgsMapMouseEvent):
+        if e.button() == Qt.LeftButton and self.dragging_idx != -1:
+            # Finish dragging
+            self.dragging_idx = -1
+            self.plugin.is_dragging = False
+            self.canvas.setCursor(Qt.OpenHandCursor)
+            self.plugin.rebuild_and_calculate()
+
+    def canvasDoubleClickEvent(self, e: QgsMapMouseEvent):
+        """Double-click on a waypoint to delete it."""
+        if e.button() == Qt.LeftButton:
+            click_pixel = e.pos()
+            closest_idx = -1
+            min_dist = 15.0
+            
+            for idx, w in enumerate(self.plugin.waypoints):
+                pt_wgs = QgsPointXY(w[0], w[1])
+                pt_canvas = self.plugin.transform_from_wgs84(pt_wgs)
+                pt_pixel = self.toCanvasCoordinates(pt_canvas)
+                
+                dx = pt_pixel.x() - click_pixel.x()
+                dy = pt_pixel.y() - click_pixel.y()
+                dist = math.sqrt(dx*dx + dy*dy)
+                if dist < min_dist:
+                    min_dist = dist
+                    closest_idx = idx
+                    
+            if closest_idx != -1:
+                self.plugin.push_undo()
+                self.plugin.waypoints.pop(closest_idx)
+                self.plugin.rebuild_and_calculate()
+
+class DroneCorridorPlanner(object):
+    def __init__(self, iface):
+        self.iface = iface
+        self.canvas = self.iface.mapCanvas()
+        self.plugin_dir = os.path.dirname(__file__)
+        
+        # State
+        self.waypoints = [] # List of tuples: (lon, lat, height)
+        self.pilot_pos = None # QgsPointXY in EPSG:4326
+        self.geometry_type = "Corridor" # "Corridor", "Circle", or "Polygon"
+        self.is_dragging = False # State flag for drag-and-drop performance optimization
+        
+        # Setup Default parameters from Helgoland / config.json
+        self.config_path = os.path.join(self.plugin_dir, "config.json")
+        
+        # Load translations
+        self.tr_strings = {}
+        tr_path = os.path.join(self.plugin_dir, "translations.json")
+        if os.path.exists(tr_path):
+            try:
+                with open(tr_path, 'r', encoding='utf-8') as f:
+                    self.tr_strings = json.load(f)
+            except Exception:
+                pass
+                
+        self.params = self.load_config_params()
+        
+        # Undo/Redo stacks
+        self.undo_stack = []
+        self.redo_stack = []
+        
+        # UI controls
+        self.action = None
+        self.gui = None
+        self.wp_tool = None
+        self.pilot_tool = None
+        
+        # Memory layers
+        self.layer_group = None
+        self.lyr_waypoints = None
+        self.lyr_pilot = None
+        self.lyr_route = None
+        self.lyr_fg = None
+        self.lyr_cv = None
+        self.lyr_grb = None
+        self.lyr_aga = None
+        self.lyr_vlos = None
+
+    def load_config_params(self):
+        """
+        Loads parameters from config.json. If the file doesn't exist,
+        creates it with standard default parameters.
+        Preserves active session styling overrides in memory.
+        """
+        defaults = ParameterDialog().params.copy()
+        defaults["stepSize"] = 50.0
+        defaults["language"] = "de"
+        defaults["linewidth_route"] = 1.0
+        defaults["linewidth_fg"] = 1.0
+        defaults["linewidth_cv"] = 1.0
+        defaults["linewidth_grb"] = 1.0
+        defaults["linewidth_adjacentarea"] = 1.0
+        defaults["linewidth_vlos"] = 0.8
+        defaults["color_route"] = "#50505a"
+        defaults["color_fg"] = "#397c59"
+        defaults["color_cv"] = "#f7bb3d"
+        defaults["color_grb"] = "#eb5757"
+        defaults["color_adjacentarea"] = "#2980b9"
+        defaults["color_vlos"] = "#2d9cdb"
+        defaults["opacity_fg"] = 15
+        defaults["opacity_cv"] = 15
+        defaults["opacity_grb"] = 15
+        defaults["opacity_adjacentarea"] = 0
+        defaults["opacity_vlos"] = 0
+        
+        # Capture session styling modifications if self.params already exists
+        session_styles = {}
+        if hasattr(self, 'params') and self.params:
+            style_keys = [
+                "linewidth_route", "linewidth_fg", "linewidth_cv", "linewidth_grb", "linewidth_adjacentarea", "linewidth_vlos",
+                "color_route", "color_fg", "color_cv", "color_grb", "color_adjacentarea", "color_vlos",
+                "opacity_fg", "opacity_cv", "opacity_grb", "opacity_adjacentarea", "opacity_vlos"
+            ]
+            for key in style_keys:
+                if key in self.params:
+                    session_styles[key] = self.params[key]
+                    
+        if os.path.exists(self.config_path):
+            try:
+                with open(self.config_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    defaults.update(data)
+            except Exception:
+                pass
+        else:
+            try:
+                with open(self.config_path, 'w', encoding='utf-8') as f:
+                    json.dump(defaults, f, indent=2, ensure_ascii=False)
+            except Exception:
+                pass
+                
+        # Restore active session style overrides
+        defaults.update(session_styles)
+        
+        # Migration: map old typo keys to new corrected keys
+        typo_map = {
+            "linewidth_adjecentarea": "linewidth_adjacentarea",
+            "color_adjecentarea": "color_adjacentarea",
+            "opacity_adjecentarea": "opacity_adjacentarea"
+        }
+        for old_key, new_key in typo_map.items():
+            if old_key in defaults and new_key not in defaults:
+                defaults[new_key] = defaults.pop(old_key)
+            elif old_key in defaults:
+                defaults.pop(old_key)
+        
+        return defaults
+
+    def save_config_params(self):
+        """
+        Disallowed writing to config.json from GUI as per user preference.
+        Custom defaults can only be changed manually in config.json.
+        """
+        pass
+
+    def tr(self, key, default=""):
+        lang = self.params.get("language", "de")
+        return self.tr_strings.get(key, {}).get(lang, default)
+
+    def initGui(self):
+        """
+        Adds action to QGIS toolbar and menus.
+        """
+        icon_path = os.path.join(self.plugin_dir, "icon.png")
+        icon = QIcon(icon_path)
+        
+        self.action = QAction(
+            icon, 
+            "QUCORE – UAS-Korridorplanung (FG/CV/GRB)", 
+            self.iface.mainWindow()
+        )
+        self.action.triggered.connect(self.run)
+        
+        # Add to Toolbar and Menu
+        self.iface.addVectorToolBarIcon(self.action)
+        self.iface.addPluginToVectorMenu("QUCORE", self.action)
+        
+        # Add Help Action
+        self.help_action = QAction(
+            self.iface.mainWindow().style().standardIcon(QStyle.SP_MessageBoxQuestion),
+            "Anleitung / Hilfe...",
+            self.iface.mainWindow()
+        )
+        self.help_action.triggered.connect(self.open_help)
+        self.iface.addPluginToVectorMenu("QUCORE", self.help_action)
+        
+        # Initialize custom Map Tools
+        self.wp_tool = WaypointMapTool(self.canvas, self)
+        
+        self.pilot_tool = QgsMapToolEmitPoint(self.canvas)
+        self.pilot_tool.canvasClicked.connect(self.on_pilot_clicked)
+
+    def unload(self):
+        """
+        Removes action from QGIS toolbar and menus.
+        """
+        if self.action:
+            self.iface.removePluginVectorMenu("QUCORE", self.action)
+            self.iface.removeVectorToolBarIcon(self.action)
+            
+        if hasattr(self, 'help_action') and self.help_action:
+            self.iface.removePluginVectorMenu("QUCORE", self.help_action)
+            
+        # Deactivate tools if active
+        if self.canvas.mapTool() in [self.wp_tool, self.pilot_tool]:
+            self.canvas.unsetMapTool(self.canvas.mapTool())
+
+    def run(self):
+        """
+        Runs the plugin main control panel GUI.
+        """
+        if not self.gui:
+            self.gui = QDialog(self.iface.mainWindow())
+            self.gui.setWindowTitle(self.tr("dialog_title", "QUCORE – UAS-Korridorplanung (FG/CV/GRB)"))
+            self.gui.resize(330, 580)
+            self.gui.setWindowFlags(Qt.Tool)
+            
+            # Close dialog when QGIS is about to quit to prevent blocking modal exit dialogs
+            from qgis.core import QgsApplication
+            QgsApplication.instance().aboutToQuit.connect(self.gui.reject)
+            
+            self.gui.finished.connect(self.on_gui_finished)
+            
+            layout = QVBoxLayout(self.gui)
+            
+            # Create a Menu Bar at the top of the dialog
+            from PyQt5.QtWidgets import QMenuBar
+            self.menu_bar = QMenuBar(self.gui)
+            layout.setMenuBar(self.menu_bar)
+            
+            # File Menu
+            self.file_menu = self.menu_bar.addMenu("Datei")
+            
+            self.import_action = self.file_menu.addAction("Importieren...")
+            self.import_action.triggered.connect(self.import_file)
+            
+            self.import_active_action = self.file_menu.addAction("Importieren aus aktivem QGIS-Layer...")
+            self.import_active_action.triggered.connect(self.import_active_layer)
+            
+            self.export_action = self.file_menu.addAction("Exportieren...")
+            self.export_action.triggered.connect(self.export_file)
+            
+            self.sora_export_action = self.file_menu.addAction("SORA Dokumentations-Export (.docx)...")
+            self.sora_export_action.triggered.connect(self.export_sora_report)
+            
+            self.file_menu.addSeparator()
+            
+            self.reset_action = self.file_menu.addAction("Planung zurücksetzen")
+            self.reset_action.triggered.connect(self.reset_planning)
+            
+            # Settings Menu
+            self.settings_menu = self.menu_bar.addMenu("Einstellungen")
+            
+            self.calc_params_action = self.settings_menu.addAction("Berechnungsparameter...")
+            self.calc_params_action.triggered.connect(self.open_parameter_dialog)
+            
+            self.adv_settings_action = self.settings_menu.addAction("Erweiterte Einstellungen...")
+            self.adv_settings_action.triggered.connect(self.open_advanced_settings_dialog)
+            
+            self.settings_menu.addSeparator()
+            
+            # Language Submenu
+            self.lang_menu = self.settings_menu.addMenu("Sprache / Language")
+            self.lang_de_action = self.lang_menu.addAction("🇩🇪 Deutsch (DE)")
+            self.lang_de_action.setCheckable(True)
+            self.lang_de_action.triggered.connect(lambda: self.change_language("de"))
+            
+            self.lang_en_action = self.lang_menu.addAction("🇬🇧 English (EN)")
+            self.lang_en_action.setCheckable(True)
+            self.lang_en_action.triggered.connect(lambda: self.change_language("en"))
+            
+            # Check the active language
+            active_lang = self.params.get("language", "de")
+            self.lang_de_action.setChecked(active_lang == "de")
+            self.lang_en_action.setChecked(active_lang == "en")
+            
+            # Tools Menu
+            self.tools_menu = self.menu_bar.addMenu("Werkzeuge")
+            self.vlos_calc_action = self.tools_menu.addAction("VLOS-Rechner (ALOS/DLOS)...")
+            self.vlos_calc_action.triggered.connect(self.open_vlos_calculator)
+            
+            # Help Menu
+            self.help_menu = self.menu_bar.addMenu("Hilfe")
+            
+            self.help_action_menu = self.help_menu.addAction("Anleitung / Hilfe...")
+            self.help_action_menu.triggered.connect(self.open_help)
+            
+            # Header
+            self.header_label = QLabel("<b>Drohnen-Sicherheitskorridore</b><br>Kartenbasierte interaktive Planung")
+            self.header_label.setAlignment(Qt.AlignCenter)
+            layout.addWidget(self.header_label)
+            
+            # Geometry type dropdown
+            lay_geom = QHBoxLayout()
+            self.lbl_geom = QLabel("Geometrietyp:")
+            self.cmb_geom_type = QComboBox()
+            self.cmb_geom_type.currentIndexChanged.connect(self.on_geometry_type_changed)
+            lay_geom.addWidget(self.lbl_geom)
+            lay_geom.addWidget(self.cmb_geom_type)
+            layout.addLayout(lay_geom)
+            
+            # Circle radius spinner (only visible/enabled in Circle mode)
+            self.lay_circle_rad = QHBoxLayout()
+            self.lbl_circle_rad = QLabel("Kreis-Radius (m):")
+            self.spn_circle_radius = QDoubleSpinBox()
+            self.spn_circle_radius.setRange(5.0, 50000.0)
+            self.spn_circle_radius.setValue(50.0)
+            self.spn_circle_radius.setDecimals(1)
+            self.spn_circle_radius.setSingleStep(5.0)
+            self.spn_circle_radius.valueChanged.connect(self.on_circle_radius_changed)
+            self.lay_circle_rad.addWidget(self.lbl_circle_rad)
+            self.lay_circle_rad.addWidget(self.spn_circle_radius)
+            layout.addLayout(self.lay_circle_rad)
+            
+            # Initially hidden
+            self.lbl_circle_rad.setVisible(False)
+            self.spn_circle_radius.setVisible(False)
+            
+            # Map interaction group
+            self.grp_map = QGroupBox("Karten-Interaktion")
+            lay_map = QVBoxLayout(self.grp_map)
+            
+            # Row for Draw Waypoints, Undo, and Redo
+            lay_wp_row = QHBoxLayout()
+            
+            self.btn_draw_wp = QPushButton("Wegpunkte zeichnen/modifizieren")
+            self.btn_draw_wp.setCheckable(True)
+            self.btn_draw_wp.clicked.connect(self.toggle_waypoint_drawing)
+            lay_wp_row.addWidget(self.btn_draw_wp)
+            
+            self.btn_undo = QPushButton()
+            self.btn_undo.setFixedSize(30, 30)
+            self.btn_undo.setIcon(self.gui.style().standardIcon(QStyle.SP_ArrowBack))
+            self.btn_undo.clicked.connect(self.undo)
+            lay_wp_row.addWidget(self.btn_undo)
+            
+            self.btn_redo = QPushButton()
+            self.btn_redo.setFixedSize(30, 30)
+            self.btn_redo.setIcon(self.gui.style().standardIcon(QStyle.SP_ArrowForward))
+            self.btn_redo.clicked.connect(self.redo)
+            lay_wp_row.addWidget(self.btn_redo)
+            
+            lay_map.addLayout(lay_wp_row)
+            
+            self.btn_set_pilot = QPushButton("Pilotenposition setzen")
+            self.btn_set_pilot.setCheckable(True)
+            self.btn_set_pilot.clicked.connect(self.toggle_pilot_setting)
+            lay_map.addWidget(self.btn_set_pilot)
+            
+            self.btn_load_active_layer = QPushButton("Aktivierten QGIS-Layer einlesen")
+            self.btn_load_active_layer.clicked.connect(self.import_active_layer)
+            lay_map.addWidget(self.btn_load_active_layer)
+            
+            layout.addWidget(self.grp_map)
+            
+            # Parameter Group Box
+            self.grp_params = QGroupBox("Parameter")
+            lay_params = QVBoxLayout(self.grp_params)
+            
+            self.btn_params = QPushButton("Berechnungsparameter anpassen...")
+            self.btn_params.clicked.connect(self.open_parameter_dialog)
+            lay_params.addWidget(self.btn_params)
+            
+            self.btn_alt = QPushButton("Höhe, FG-Breite, Geschwindigkeit pro Wegpunkt bearbeiten...")
+            self.btn_alt.clicked.connect(self.open_altitude_table)
+            lay_params.addWidget(self.btn_alt)
+            
+            layout.addWidget(self.grp_params)
+            
+            # Results Group Box
+            self.grp_results = QGroupBox("Berechnungsergebnis")
+            self.grp_results.setMinimumHeight(220) # Enforce a clean height so that the visualization box fits snugly without empty spaces
+            lay_results = QVBoxLayout(self.grp_results)
+            lay_results.setContentsMargins(6, 12, 6, 6)
+            lay_results.setSpacing(2)
+            
+            self.lbl_results = QLabel()
+            self.lbl_results.setWordWrap(True)
+            self.lbl_results.setStyleSheet("font-size: 11px; color: #333; padding: 2px;")
+            self.lbl_results.setTextFormat(Qt.RichText)
+            lay_results.addWidget(self.lbl_results)
+            
+            # Sora dynamic visualization widget
+            self.sora_viz = SoraVolumeWidget(self.gui, tr_fn=self.tr)
+            lay_results.addWidget(self.sora_viz)
+            
+            layout.addWidget(self.grp_results)
+            
+            # Action buttons laid out horizontally to save valuable screen height
+            lay_actions = QHBoxLayout()
+            lay_actions.setSpacing(6)
+            
+            self.btn_reset_panel = QPushButton("Planung zurücksetzen")
+            self.btn_reset_panel.setStyleSheet("QPushButton { color: red; font-weight: bold; }")
+            self.btn_reset_panel.clicked.connect(self.reset_planning)
+            lay_actions.addWidget(self.btn_reset_panel)
+            
+            self.btn_close_panel = QPushButton("Planung abschließen")
+            self.btn_close_panel.setStyleSheet("QPushButton { color: green; font-weight: bold; }")
+            self.btn_close_panel.clicked.connect(self.gui.accept)
+            lay_actions.addWidget(self.btn_close_panel)
+            
+            layout.addLayout(lay_actions)
+            
+            # Status Label
+            self.lbl_status = QLabel()
+            self.lbl_status.setAlignment(Qt.AlignCenter)
+            layout.addWidget(self.lbl_status)
+            
+        self.apply_translations()
+        self.update_undo_redo_buttons()
+        
+        # Sync combobox to self.geometry_type
+        if hasattr(self, 'cmb_geom_type'):
+            types = ["Corridor", "Circle", "Polygon"]
+            if self.geometry_type in types:
+                self.cmb_geom_type.blockSignals(True)
+                self.cmb_geom_type.setCurrentIndex(types.index(self.geometry_type))
+                self.cmb_geom_type.blockSignals(False)
+                
+        # Position self.gui at the center of the QGIS main window
+        try:
+            qgis_win = self.iface.mainWindow()
+            qgis_geom = qgis_win.geometry()
+            dialog_width = self.gui.width() if self.gui.width() > 100 else 310
+            dialog_height = self.gui.height() if self.gui.height() > 100 else 410
+            x_pos = qgis_geom.x() + (qgis_geom.width() - dialog_width) // 2
+            y_pos = qgis_geom.y() + (qgis_geom.height() - dialog_height) // 2
+            if x_pos < qgis_geom.x():
+                x_pos = qgis_geom.x()
+            if y_pos < qgis_geom.y():
+                y_pos = qgis_geom.y()
+            self.gui.move(x_pos, y_pos)
+        except Exception:
+            pass
+
+        self.gui.show()
+        self.rebuild_and_calculate()
+
+    def change_language(self, lang):
+        self.params["language"] = lang
+        self.save_config_params()
+        
+        # Update check marks
+        self.lang_de_action.setChecked(lang == "de")
+        self.lang_en_action.setChecked(lang == "en")
+        
+        self.apply_translations()
+
+    def apply_translations(self):
+        # Update Window Title of main GUI
+        if self.gui:
+            self.gui.setWindowTitle(self.tr("dialog_title", "QUCORE – UAS-Korridorplanung (FG/CV/GRB)"))
+            
+        # Update Menu Titles
+        if hasattr(self, 'menu_bar'):
+            self.file_menu.setTitle(self.tr("menu_file", "Datei"))
+            self.import_action.setText(self.tr("menu_import", "Importieren..."))
+            if hasattr(self, 'import_active_action'):
+                self.import_active_action.setText(self.tr("menu_import_active", "Importieren aus aktivem QGIS-Layer..."))
+            self.export_action.setText(self.tr("menu_export", "Exportieren..."))
+            if hasattr(self, 'sora_export_action'):
+                self.sora_export_action.setText(self.tr("menu_sora_export", "SORA Dokumentations-Export (.docx)..."))
+            self.reset_action.setText(self.tr("menu_reset", "Planung zurücksetzen"))
+            
+            self.settings_menu.setTitle(self.tr("menu_settings", "Einstellungen"))
+            self.calc_params_action.setText(self.tr("menu_calc_params", "Berechnungsparameter..."))
+            self.adv_settings_action.setText(self.tr("menu_adv_settings", "Erweiterte Einstellungen..."))
+            self.lang_menu.setTitle(self.tr("menu_lang", "Sprache / Language"))
+            self.lang_de_action.setText(self.tr("menu_lang_de", "🇩🇪 Deutsch (DE)"))
+            self.lang_en_action.setText(self.tr("menu_lang_en", "🇬🇧 English (EN)"))
+            
+            self.tools_menu.setTitle(self.tr("menu_tools", "Werkzeuge"))
+            self.vlos_calc_action.setText(self.tr("menu_vlos_calc", "VLOS-Rechner (ALOS/DLOS)..."))
+            
+            self.help_menu.setTitle(self.tr("menu_help", "Hilfe"))
+            self.help_action_menu.setText(self.tr("menu_instructions", "Anleitung / Hilfe..."))
+
+        # Update Widget Texts in Planning Panel
+        if hasattr(self, 'header_label'):
+            self.header_label.setText(self.tr("header_title", "<b>Drohnen-Sicherheitskorridore</b><br>Kartenbasierte interaktive Planung"))
+            self.lbl_geom.setText(self.tr("geom_type", "Geometrietyp:"))
+            self.lbl_circle_rad.setText(self.tr("circle_rad", "Kreis-Radius (m):"))
+            
+            # Update ComboBox items without triggering signals
+            self.cmb_geom_type.blockSignals(True)
+            curr_idx = self.cmb_geom_type.currentIndex()
+            self.cmb_geom_type.clear()
+            self.cmb_geom_type.addItems([
+                self.tr("geom_corridor", "Korridor"),
+                self.tr("geom_circle", "Kreis"),
+                self.tr("geom_polygon", "Polygon")
+            ])
+            if curr_idx != -1:
+                self.cmb_geom_type.setCurrentIndex(curr_idx)
+            self.cmb_geom_type.blockSignals(False)
+            
+            self.grp_map.setTitle(self.tr("map_interaction_grp", "Karten-Interaktion"))
+            self.btn_draw_wp.setText(self.tr("btn_draw_wp", "Wegpunkte zeichnen/modifizieren"))
+            self.btn_set_pilot.setText(self.tr("btn_set_pilot", "Pilotenposition setzen"))
+            if hasattr(self, 'btn_load_active_layer'):
+                self.btn_load_active_layer.setText(self.tr("btn_load_active_layer", "Aktivierten QGIS-Layer einlesen"))
+            self.btn_undo.setToolTip(self.tr("btn_undo_tooltip", "Rückgängig (Undo)"))
+            self.btn_redo.setToolTip(self.tr("btn_redo_tooltip", "Wiederholen (Redo)"))
+            
+            self.grp_params.setTitle(self.tr("params_grp", "Parameter"))
+            self.btn_params.setText(self.tr("btn_params", "Berechnungsparameter anpassen..."))
+            self.btn_alt.setText(self.tr("btn_alt", "Höhe, FG-Breite, Geschwindigkeit pro Wegpunkt bearbeiten..."))
+            
+            if hasattr(self, 'grp_results'):
+                self.grp_results.setTitle(self.tr("results_grp", "Berechnungsergebnis"))
+            
+            self.btn_reset_panel.setText(self.tr("btn_reset", "Planung zurücksetzen"))
+            self.btn_close_panel.setText(self.tr("btn_close", "Planung abschließen"))
+            
+            # Update Status text
+            if self.waypoints:
+                self.lbl_status.setText(self.tr("status_calculated", "Wegpunkte: {wp} | Puffer: Berechnet").format(wp=len(self.waypoints)))
+            else:
+                self.lbl_status.setText(self.tr("status_ready", "Wegpunkte: {wp} | Puffer: Bereit").format(wp=0))
+
+    def open_help(self):
+        """
+        Opens the local HTML help guide in the user's default web browser.
+        """
+        from PyQt5.QtCore import QUrl
+        from PyQt5.QtGui import QDesktopServices
+        
+        help_path = os.path.join(self.plugin_dir, "instructions.html")
+        if os.path.exists(help_path):
+            QDesktopServices.openUrl(QUrl.fromLocalFile(help_path))
+        else:
+            QMessageBox.warning(
+                self.gui if self.gui else self.iface.mainWindow(),
+                "Hilfe nicht gefunden",
+                "Die Hilfedatei 'instructions.html' konnte im Plugin-Ordner nicht gefunden werden."
+            )
+
+    def on_geometry_type_changed(self, index):
+        types = ["Corridor", "Circle", "Polygon"]
+        self.geometry_type = types[index]
+        self.rebuild_and_calculate()
+
+    def on_circle_radius_changed(self, val):
+        if self.geometry_type == "Circle" and self.waypoints:
+            cd = float(self.params.get("maxCharacteristicDimension", 3.6))
+            min_radius = 3.0 * cd
+            if val < min_radius:
+                val = min_radius
+            self.push_undo()
+            w = self.waypoints[0]
+            alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
+            spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
+            self.waypoints[0] = (w[0], w[1], alt, spd, val)
+            self.rebuild_and_calculate()
+
+    # ----------------------------------------------------
+    # LAYER MANAGEMENT & STYLING
+    # ----------------------------------------------------
+    def initialize_layers(self, force_restyle=False):
+        """
+        Creates memory layers in a custom project group at the very top of the layer tree.
+        """
+        self._force_restyle = force_restyle
+        root = QgsProject.instance().layerTreeRoot()
+        self.layer_group = root.findGroup("QUCORE-Korridorplanung")
+        if self.layer_group is None:
+            self.layer_group = root.insertGroup(0, "QUCORE-Korridorplanung")
+            self.layer_group.setItemVisibilityChecked(True)
+        else:
+            # Ensure it is at the very top (index 0) of the layer tree
+            if root.children() and root.children()[0] != self.layer_group:
+                try:
+                    parent = self.layer_group.parent()
+                    if parent:
+                        node = parent.takeChildNode(self.layer_group)
+                        root.insertChildNode(0, node)
+                except Exception:
+                    pass
+
+        # Get linewidths from self.params
+        lw_route = float(self.params.get("linewidth_route", 1.0))
+        lw_fg = float(self.params.get("linewidth_fg", 1.0))
+        lw_cv = float(self.params.get("linewidth_cv", 1.0))
+        lw_grb = float(self.params.get("linewidth_grb", 1.0))
+        lw_aga = float(self.params.get("linewidth_adjacentarea", 1.0))
+
+        # Convert hex colors and opacities to RGBA format for QGIS styling
+        def hex_to_rgba(hex_str, opacity):
+            try:
+                h = hex_str.lstrip('#')
+                r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+                alpha = int(round(float(opacity) * 255 / 100))
+                return f"{r},{g},{b},{alpha}"
+            except Exception:
+                return "200,200,200,40"
+
+        def hex_to_border_rgba(hex_str):
+            try:
+                h = hex_str.lstrip('#')
+                r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+                return f"{r},{g},{b},255"
+            except Exception:
+                return "100,100,100,255"
+
+        color_route = self.params.get("color_route", "#50505a")
+        color_fg = self.params.get("color_fg", "#397c59")
+        color_cv = self.params.get("color_cv", "#f7bb3d")
+        color_grb = self.params.get("color_grb", "#eb5757")
+        color_adj = self.params.get("color_adjacentarea", "#2980b9")
+
+        opacity_fg = self.params.get("opacity_fg", 15)
+        opacity_cv = self.params.get("opacity_cv", 15)
+        opacity_grb = self.params.get("opacity_grb", 15)
+        opacity_adj = self.params.get("opacity_adjacentarea", 0)
+
+        # 1. Ground Risk Buffer (GRB)
+        self.lyr_grb = self.setup_layer(self.lyr_grb, "Polygon?crs=EPSG:4326", "Ground Risk Buffer (GRB)", self.style_polygon_layer, hex_to_rgba(color_grb, opacity_grb), hex_to_border_rgba(color_grb), lw_grb)
+            
+        # 2. Contingency Volume (CV)
+        self.lyr_cv = self.setup_layer(self.lyr_cv, "Polygon?crs=EPSG:4326", "Contingency Volume (CV)", self.style_polygon_layer, hex_to_rgba(color_cv, opacity_cv), hex_to_border_rgba(color_cv), lw_cv)
+            
+        # 3. Flight Geography (FG)
+        self.lyr_fg = self.setup_layer(self.lyr_fg, "Polygon?crs=EPSG:4326", "Flight Geography (FG)", self.style_polygon_layer, hex_to_rgba(color_fg, opacity_fg), hex_to_border_rgba(color_fg), lw_fg)
+            
+        # 4. Route Centerline
+        self.lyr_route = self.setup_layer(self.lyr_route, "LineString?crs=EPSG:4326", "Flugweg (Mittelachse)", self.style_line_layer, hex_to_border_rgba(color_route), lw_route, Qt.DashLine)
+
+        # 5. Adjacent Area (AA)
+        self.lyr_aga = self.setup_layer(self.lyr_aga, "Polygon?crs=EPSG:4326", "Adjacent Area (AA)", self.style_aga_layer, color_adj, opacity_adj, lw_aga)
+            
+        # 6. Pilot Position
+        self.lyr_pilot = self.setup_layer(self.lyr_pilot, "Point?crs=EPSG:4326", "Pilotenposition", self.style_point_layer, "242,153,74,255", "255,255,255,255", 3.5)
+            
+        # 7. Waypoints
+        # Special initialization for waypoints to add fields
+        exists = self.is_layer_valid(self.lyr_waypoints)
+        if not exists:
+            self.lyr_waypoints = QgsVectorLayer("Point?crs=EPSG:4326", "Wegpunkte", "memory")
+            # Fields
+            self.lyr_waypoints.dataProvider().addAttributes([
+                QgsField("index", QVariant.Int),
+                QgsField("altitude", QVariant.Double),
+                QgsField("speed", QVariant.Double),
+                QgsField("fg_width", QVariant.Double)
+            ])
+            self.lyr_waypoints.updateFields()
+            self.style_point_layer(self.lyr_waypoints, "45,156,219,255", "255,255,255,255", 3.0)
+            QgsProject.instance().addMapLayer(self.lyr_waypoints, False)
+            
+        node = self.layer_group.findLayer(self.lyr_waypoints.id())
+        if node is None:
+            node = self.layer_group.addLayer(self.lyr_waypoints)
+        if node:
+            node.setItemVisibilityChecked(True)
+
+        # 8. VLOS Range Circle (display only)
+        self.lyr_vlos = self.setup_layer(self.lyr_vlos, "Polygon?crs=EPSG:4326", "VLOS-Reichweite (Pilotenposition)", self.style_vlos_layer)
+ 
+        # Enforce exact layer order inside the group (Top to Bottom): Waypoints, Route, FG, CV, GRB, VLOS, AA, Pilot
+        expected_order = [
+            self.lyr_waypoints,
+            self.lyr_route,
+            self.lyr_fg,
+            self.lyr_cv,
+            self.lyr_grb,
+            self.lyr_vlos,
+            self.lyr_aga,
+            self.lyr_pilot
+        ]
+        expected_order = [lyr for lyr in expected_order if self.is_layer_valid(lyr)]
+        for target_idx, lyr in enumerate(expected_order):
+            node = self.layer_group.findLayer(lyr.id())
+            if node:
+                parent = node.parent()
+                if parent:
+                    try:
+                        current_idx = parent.children().index(node)
+                        if current_idx != target_idx:
+                            taken_node = parent.takeChildNode(node)
+                            parent.insertChildNode(target_idx, taken_node)
+                    except Exception:
+                        pass
+
+    def is_layer_valid(self, layer):
+        """
+        Safely checks if a layer exists and its underlying C++ object has not been deleted.
+        """
+        if layer is None:
+            return False
+        try:
+            # If the C++ layer was deleted, calling id() raises RuntimeError
+            layer_id = layer.id()
+            return QgsProject.instance().mapLayer(layer_id) is not None
+        except RuntimeError:
+            return False
+
+    def setup_layer(self, layer_var, layer_type, layer_name, style_fn, *style_args):
+        """
+        Ensures a layer is registered in the project and added/visible in the custom group.
+        """
+        exists = self.is_layer_valid(layer_var)
+        if not exists:
+            layer_var = QgsVectorLayer(layer_type, layer_name, "memory")
+            QgsProject.instance().addMapLayer(layer_var, False)
+            style_fn(layer_var, *style_args)
+        elif getattr(self, '_force_restyle', False):
+            style_fn(layer_var, *style_args)
+        
+        node = self.layer_group.findLayer(layer_var.id())
+        if node is None:
+            node = self.layer_group.addLayer(layer_var)
+        if node:
+            node.setItemVisibilityChecked(True)
+        return layer_var
+
+    def style_aga_layer(self, layer, color_hex, opacity_pct, border_width):
+        def hex_to_rgba(hex_str, opacity):
+            try:
+                h = hex_str.lstrip('#')
+                r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+                alpha = int(round(float(opacity) * 255 / 100))
+                return f"{r},{g},{b},{alpha}"
+            except Exception:
+                return "0,0,0,0"
+
+        def hex_to_border_rgba(hex_str):
+            try:
+                h = hex_str.lstrip('#')
+                r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+                return f"{r},{g},{b},255"
+            except Exception:
+                return "41,128,185,255"
+
+        props = {
+            'color': hex_to_rgba(color_hex, opacity_pct),
+            'outline_color': hex_to_border_rgba(color_hex),
+            'outline_width': str(border_width),
+            'outline_style': 'dash',
+            'style': 'solid' if float(opacity_pct) > 0 else 'no'
+        }
+        symbol_layer = QgsSimpleFillSymbolLayer.create(props)
+        symbol = QgsSymbol.defaultSymbol(layer.geometryType())
+        symbol.changeSymbolLayer(0, symbol_layer)
+        renderer = QgsSingleSymbolRenderer(symbol)
+        layer.setRenderer(renderer)
+        layer.triggerRepaint()
+
+    def style_polygon_layer(self, layer, fill_rgba, border_rgba, border_width):
+        props = {
+            'color': fill_rgba,
+            'outline_color': border_rgba,
+            'outline_width': str(border_width),
+            'style': 'solid'
+        }
+        symbol_layer = QgsSimpleFillSymbolLayer.create(props)
+        symbol = QgsSymbol.defaultSymbol(layer.geometryType())
+        symbol.changeSymbolLayer(0, symbol_layer)
+        renderer = QgsSingleSymbolRenderer(symbol)
+        layer.setRenderer(renderer)
+        layer.triggerRepaint()
+
+    def style_line_layer(self, layer, rgba, width, pen_style):
+        props = {
+            'color': rgba,
+            'width': str(width),
+            'style': 'solid'
+        }
+        symbol_layer = QgsSimpleLineSymbolLayer.create(props)
+        symbol_layer.setPenStyle(pen_style)
+        symbol = QgsSymbol.defaultSymbol(layer.geometryType())
+        symbol.changeSymbolLayer(0, symbol_layer)
+        renderer = QgsSingleSymbolRenderer(symbol)
+        layer.setRenderer(renderer)
+        layer.triggerRepaint()
+
+    def style_point_layer(self, layer, fill_rgba, border_rgba, size):
+        props = {
+            'color': fill_rgba,
+            'outline_color': border_rgba,
+            'size': str(size),
+            'outline_width': '1.0'
+        }
+        symbol_layer = QgsSimpleMarkerSymbolLayer.create(props)
+        symbol = QgsSymbol.defaultSymbol(layer.geometryType())
+        symbol.changeSymbolLayer(0, symbol_layer)
+        renderer = QgsSingleSymbolRenderer(symbol)
+        layer.setRenderer(renderer)
+        layer.triggerRepaint()
+
+    def style_vlos_layer(self, layer):
+        """
+        Styles the VLOS range circle: thin blue dash-dot outline, no fill.
+        """
+        color_hex = self.params.get("color_vlos", "#2d9cdb")
+        opacity_pct = self.params.get("opacity_vlos", 0)
+        border_width = self.params.get("linewidth_vlos", 0.8)
+
+        def hex_to_rgba(hex_str, opacity):
+            try:
+                h = hex_str.lstrip('#')
+                r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+                alpha = int(round(float(opacity) * 255 / 100))
+                return f"{r},{g},{b},{alpha}"
+            except Exception:
+                return "0,0,0,0"
+
+        def hex_to_border_rgba(hex_str):
+            try:
+                h = hex_str.lstrip('#')
+                r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+                return f"{r},{g},{b},255"
+            except Exception:
+                return "45,156,219,255"
+
+        props = {
+            'color': hex_to_rgba(color_hex, opacity_pct),
+            'outline_color': hex_to_border_rgba(color_hex),
+            'outline_width': str(border_width),
+            'outline_style': 'dash_dot',
+            'style': 'solid' if float(opacity_pct) > 0 else 'no'
+        }
+        symbol_layer = QgsSimpleFillSymbolLayer.create(props)
+        symbol = QgsSymbol.defaultSymbol(layer.geometryType())
+        symbol.changeSymbolLayer(0, symbol_layer)
+        renderer = QgsSingleSymbolRenderer(symbol)
+        layer.setRenderer(renderer)
+        layer.triggerRepaint()
+
+    def on_gui_finished(self, result):
+        if self.canvas.mapTool() in [self.wp_tool, self.pilot_tool]:
+            self.canvas.unsetMapTool(self.canvas.mapTool())
+        if hasattr(self, 'btn_draw_wp'):
+            self.btn_draw_wp.setChecked(False)
+        if hasattr(self, 'btn_set_pilot'):
+            self.btn_set_pilot.setChecked(False)
+
+    def toggle_waypoint_drawing(self, checked):
+        if checked:
+            self.btn_set_pilot.setChecked(False)
+            self.canvas.setMapTool(self.wp_tool)
+        else:
+            if self.canvas.mapTool() == self.wp_tool:
+                self.canvas.unsetMapTool(self.wp_tool)
+
+    def toggle_pilot_setting(self, checked):
+        if checked:
+            self.btn_draw_wp.setChecked(False)
+            self.canvas.setMapTool(self.pilot_tool)
+        else:
+            if self.canvas.mapTool() == self.pilot_tool:
+                self.canvas.unsetMapTool(self.pilot_tool)
+
+    def push_undo(self):
+        """
+        Pushes a copy of the current waypoints list onto the undo stack and clears the redo stack.
+        """
+        self.undo_stack.append(list(self.waypoints))
+        self.redo_stack.clear()
+        self.update_undo_redo_buttons()
+
+    def undo(self):
+        if self.undo_stack:
+            self.redo_stack.append(list(self.waypoints))
+            self.waypoints = self.undo_stack.pop()
+            self.rebuild_and_calculate()
+            self.update_pilot_layer()
+            self.update_undo_redo_buttons()
+
+    def redo(self):
+        if self.redo_stack:
+            self.undo_stack.append(list(self.waypoints))
+            self.waypoints = self.redo_stack.pop()
+            self.rebuild_and_calculate()
+            self.update_pilot_layer()
+            self.update_undo_redo_buttons()
+
+    def update_undo_redo_buttons(self):
+        if hasattr(self, 'btn_undo'):
+            self.btn_undo.setEnabled(len(self.undo_stack) > 0)
+        if hasattr(self, 'btn_redo'):
+            self.btn_redo.setEnabled(len(self.redo_stack) > 0)
+
+    def transform_to_wgs84(self, point_canvas):
+        """
+        Transforms a point from the active QGIS Canvas CRS to EPSG:4326 WGS 84.
+        """
+        canvas_crs = self.canvas.mapSettings().destinationCrs()
+        wgs_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+        transform = QgsCoordinateTransform(canvas_crs, wgs_crs, QgsProject.instance())
+        return transform.transform(point_canvas)
+
+    def transform_from_wgs84(self, point_wgs):
+        """
+        Transforms a point from EPSG:4326 WGS 84 to the active QGIS Canvas CRS.
+        """
+        canvas_crs = self.canvas.mapSettings().destinationCrs()
+        wgs_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+        transform = QgsCoordinateTransform(wgs_crs, canvas_crs, QgsProject.instance())
+        return transform.transform(point_wgs)
+
+    def on_waypoint_clicked(self, point, button):
+        """
+        Handles clicks when waypoint drawing is active.
+        """
+        if button == Qt.LeftButton:
+            pt_wgs = self.transform_to_wgs84(point)
+            
+            # Set default altitude to params default altitude
+            def_alt = float(self.params.get("maxFlightHeight", 100.0))
+            self.waypoints.append((pt_wgs.x(), pt_wgs.y(), def_alt))
+            
+            # Recalculate
+            self.rebuild_and_calculate()
+        elif button == Qt.RightButton:
+            # Done drawing, turn off map tool
+            self.btn_draw_wp.setChecked(False)
+            self.canvas.unsetMapTool(self.wp_tool)
+
+    def on_pilot_clicked(self, point, button):
+        """
+        Handles clicks when setting pilot position is active.
+        """
+        if button == Qt.LeftButton:
+            pt_wgs = self.transform_to_wgs84(point)
+            self.pilot_pos = pt_wgs
+            
+            # Deactivate tool
+            self.btn_set_pilot.setChecked(False)
+            self.canvas.unsetMapTool(self.pilot_tool)
+            
+            # Update layer
+            self.update_pilot_layer()
+
+    # ----------------------------------------------------
+    # BERECHNUNG & LAYER REBUILDS
+    # ----------------------------------------------------
+    def rebuild_and_calculate(self, force_restyle=False):
+        """
+        Rebuilds waypoints, route, and buffer layers and re-runs the safety calculations.
+        """
+        self.initialize_layers(force_restyle=force_restyle)
+        
+        # Lock geometry type dropdown as soon as waypoints are added
+        if hasattr(self, 'cmb_geom_type'):
+            self.cmb_geom_type.setEnabled(len(self.waypoints) == 0)
+            
+        # Hide/show circle radius controls and disable parameter dialog if not Corridor
+        show_circle = (self.geometry_type == "Circle")
+        cd = float(self.params.get("maxCharacteristicDimension", 3.6))
+        min_radius = 3.0 * cd
+        
+        if hasattr(self, 'spn_circle_radius'):
+            self.spn_circle_radius.setMinimum(min_radius)
+            if show_circle and self.waypoints:
+                w = self.waypoints[0]
+                rad = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
+                if rad < min_radius:
+                    rad = min_radius
+                    alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
+                    spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
+                    self.waypoints[0] = (w[0], w[1], alt, spd, rad)
+                # Sync spinbox value without triggering recursive events
+                self.spn_circle_radius.blockSignals(True)
+                self.spn_circle_radius.setValue(rad)
+                self.spn_circle_radius.blockSignals(False)
+
+        if hasattr(self, 'lbl_circle_rad'):
+            self.lbl_circle_rad.setVisible(show_circle)
+        if hasattr(self, 'spn_circle_radius'):
+            self.spn_circle_radius.setVisible(show_circle)
+        if hasattr(self, 'btn_alt'):
+            self.btn_alt.setEnabled(self.geometry_type == "Corridor")
+        
+        # 1. Update waypoints point layer
+        self.lyr_waypoints.dataProvider().truncate()
+        wp_features = []
+        for idx, w in enumerate(self.waypoints):
+            lon, lat = w[0], w[1]
+            alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
+            spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
+            fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
+            
+            f = QgsFeature(self.lyr_waypoints.fields())
+            f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(lon, lat)))
+            f.setAttributes([idx, alt, spd, fg])
+            wp_features.append(f)
+        self.lyr_waypoints.dataProvider().addFeatures(wp_features)
+        self.lyr_waypoints.updateExtents()
+        self.lyr_waypoints.triggerRepaint()
+        
+        # 2. Update route centerline layer
+        self.lyr_route.dataProvider().truncate()
+        if self.geometry_type == "Corridor" and len(self.waypoints) >= 2:
+            pts = [QgsPointXY(w[0], w[1]) for w in self.waypoints]
+            f = QgsFeature(self.lyr_route.fields())
+            f.setGeometry(QgsGeometry.fromPolylineXY(pts))
+            self.lyr_route.dataProvider().addFeatures([f])
+        elif self.geometry_type == "Polygon" and len(self.waypoints) >= 3:
+            pts = [QgsPointXY(w[0], w[1]) for w in self.waypoints]
+            pts.append(pts[0]) # close the loop
+            f = QgsFeature(self.lyr_route.fields())
+            f.setGeometry(QgsGeometry.fromPolylineXY(pts))
+            self.lyr_route.dataProvider().addFeatures([f])
+        self.lyr_route.updateExtents()
+        self.lyr_route.triggerRepaint()
+        
+        # 3. Calculate and update buffer polygon layers
+        self.lyr_fg.dataProvider().truncate()
+        self.lyr_cv.dataProvider().truncate()
+        self.lyr_grb.dataProvider().truncate()
+        if self.lyr_aga:
+            self.lyr_aga.dataProvider().truncate()
+        
+        if self.waypoints:
+            calc_params = self.params.copy()
+            if getattr(self, 'is_dragging', False):
+                # Dynamically set a larger stepSize for extreme performance optimization during real-time dragging.
+                # A stepSize of 1000m reduces convex hull/union computations to the absolute minimum, keeping dragging perfectly fluid.
+                calc_params["stepSize"] = 1000.0
+                
+            fg_geom, cv_geom, grb_geom, aga_geom = BufferCalculator.generate_buffers(self.waypoints, calc_params, self.geometry_type)
+            
+            if not fg_geom.isEmpty():
+                f_fg = QgsFeature(self.lyr_fg.fields())
+                f_fg.setGeometry(fg_geom)
+                self.lyr_fg.dataProvider().addFeatures([f_fg])
+                
+            if not cv_geom.isEmpty():
+                f_cv = QgsFeature(self.lyr_cv.fields())
+                f_cv.setGeometry(cv_geom)
+                self.lyr_cv.dataProvider().addFeatures([f_cv])
+                
+            if not grb_geom.isEmpty():
+                f_grb = QgsFeature(self.lyr_grb.fields())
+                f_grb.setGeometry(grb_geom)
+                self.lyr_grb.dataProvider().addFeatures([f_grb])
+                
+            if self.lyr_aga and not aga_geom.isEmpty():
+                f_aga = QgsFeature(self.lyr_aga.fields())
+                f_aga.setGeometry(aga_geom)
+                self.lyr_aga.dataProvider().addFeatures([f_aga])
+                
+        self.lyr_fg.updateExtents()
+        self.lyr_fg.triggerRepaint()
+        
+        self.lyr_cv.updateExtents()
+        self.lyr_cv.triggerRepaint()
+        
+        self.lyr_grb.updateExtents()
+        self.lyr_grb.triggerRepaint()
+        
+        if self.lyr_aga:
+            self.lyr_aga.updateExtents()
+            self.lyr_aga.triggerRepaint()
+        
+        # Update Status bar
+        if self.waypoints:
+            self.lbl_status.setText(self.tr("status_calculated", "Wegpunkte: {wp} | Puffer: Berechnet").format(wp=len(self.waypoints)))
+        else:
+            self.lbl_status.setText(self.tr("status_ready", "Wegpunkte: {wp} | Puffer: Bereit").format(wp=0))
+        
+        # Update Results Panel
+        self.update_results_panel()
+        
+        # Avoid blocking synchronous canvas refreshes during interactive waypoint dragging
+        is_dragging = False
+        if hasattr(self, 'wp_tool') and self.wp_tool is not None:
+            is_dragging = (self.wp_tool.dragging_idx != -1)
+        if not is_dragging:
+            self.canvas.refresh()
+
+    def update_pilot_layer(self):
+        """
+        Updates the pilot position layer feature and the VLOS range circle.
+        """
+        self.initialize_layers()
+        self.lyr_pilot.dataProvider().truncate()
+        if self.is_layer_valid(self.lyr_vlos):
+            self.lyr_vlos.dataProvider().truncate()
+        
+        if self.pilot_pos:
+            f = QgsFeature(self.lyr_pilot.fields())
+            f.setGeometry(QgsGeometry.fromPointXY(self.pilot_pos))
+            self.lyr_pilot.dataProvider().addFeatures([f])
+            
+            # Draw VLOS range circle around pilot position
+            # Uses the exact same UTM buffer pattern as BufferCalculator.generate_buffers (Circle mode)
+            if self.is_layer_valid(self.lyr_vlos):
+                try:
+                    uas_type = self.params.get("uas_type", "FixedWing")
+                    cd = float(self.params.get("maxCharacteristicDimension", 3.6))
+                    is_mc = (uas_type in ["Multikopter", "Rotorcraft"])
+                    
+                    # ALOS calculation (same formula as VlosCalculatorDialog)
+                    if is_mc:
+                        alos = 327.0 * cd + 20.0
+                    else:
+                        alos = 490.0 * cd + 30.0
+                    
+                    # DLOS = 0.3 * GV (assume max 5000m ground visibility)
+                    dlos = 0.3 * 5000.0
+                    vlos_range = min(alos, dlos)
+                    
+                    # Same pattern as BufferCalculator.generate_buffers Circle mode
+                    lon = self.pilot_pos.x()
+                    lat = self.pilot_pos.y()
+                    from .buffer_calculator import get_utm_epsg, BUFFER_SEGMENTS
+                    utm_epsg = get_utm_epsg(lon, lat)
+                    
+                    src_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+                    dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg}")
+                    
+                    project = QgsProject.instance()
+                    transform = QgsCoordinateTransform(src_crs, dest_crs, project)
+                    inverse_transform = QgsCoordinateTransform(dest_crs, src_crs, project)
+                    
+                    pt_wgs = QgsPointXY(lon, lat)
+                    center_utm = transform.transform(pt_wgs)
+                    
+                    circle_geom = QgsGeometry.fromPointXY(center_utm).buffer(vlos_range, BUFFER_SEGMENTS)
+                    circle_geom.transform(inverse_transform)
+                    
+                    f_vlos = QgsFeature(self.lyr_vlos.fields())
+                    f_vlos.setGeometry(circle_geom)
+                    self.lyr_vlos.dataProvider().addFeatures([f_vlos])
+                except Exception as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    QgsMessageLog.logMessage(f"VLOS circle error: {e}", "DroneCorridorPlanner", Qgis.Warning)
+        
+        self.lyr_pilot.updateExtents()
+        self.lyr_pilot.triggerRepaint()
+        if self.is_layer_valid(self.lyr_vlos):
+            self.lyr_vlos.updateExtents()
+            self.lyr_vlos.triggerRepaint()
+        self.canvas.refresh()
+
+    def update_results_panel(self):
+        """
+        Updates the results summary panel with calculated buffer widths.
+        Shows min–max range when waypoint parameters vary.
+        """
+        if not hasattr(self, 'lbl_results'):
+            return
+            
+        if not self.waypoints:
+            self.lbl_results.setText(
+                f"<i style='color:#999;'>{self.tr('results_no_data', 'Noch keine Wegpunkte gesetzt.')}</i>"
+            )
+            if hasattr(self, 'sora_viz'):
+                self.sora_viz.update_values([], [], [], [], [])
+            return
+        
+        try:
+            from .buffer_calculator import BufferCalculator
+            
+            r_fg_list = []
+            r_cv_list = []
+            r_grb_list = []
+            s_cv_list = []
+            s_grb_list = []
+            h_fg_list = []
+            h_cv_list = []
+            
+            for w in self.waypoints:
+                h = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
+                spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
+                fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
+                
+                params_wp = self.params.copy()
+                params_wp["maxVelocity"] = spd
+                params_wp["corridorWidth"] = fg
+                
+                r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params_wp)
+                
+                r_fg_list.append(r_fg)
+                r_cv_list.append(r_cv)
+                r_grb_list.append(r_grb)
+                s_cv_list.append(r_cv - r_fg)
+                s_grb_list.append(r_grb - r_cv)
+                h_fg_list.append(h)
+                h_cv_list.append(h_cv)
+            
+            def fmt_range(values, unit="m"):
+                mn, mx = min(values), max(values)
+                if abs(mn - mx) < 0.05:
+                    return f"{mn:.1f} {unit}"
+                return f"{mn:.1f}–{mx:.1f} {unit}"
+            
+            lbl_rfg = "R<sub>FG</sub>"
+            lbl_rcv = "R<sub>CV</sub>"
+            lbl_rgrb = "R<sub>GRB</sub>"
+            
+            html = (
+                f"<table style='border-collapse:collapse; width:100%; font-size:11px;'>"
+                f"<tr>"
+                f"<td style='padding: 2px 2px;'><b>{lbl_rfg}:</b> {fmt_range(r_fg_list)}</td>"
+                f"<td style='padding: 2px 2px; text-align:center;'><b>{lbl_rcv}:</b> {fmt_range(r_cv_list)}</td>"
+                f"<td style='padding: 2px 2px; text-align:right;'><b>{lbl_rgrb}:</b> {fmt_range(r_grb_list)}</td>"
+                f"</tr>"
+                f"</table>"
+            )
+            
+            self.lbl_results.setText(html)
+            if hasattr(self, 'sora_viz'):
+                self.sora_viz.update_values(r_fg_list, s_cv_list, s_grb_list, h_fg_list, h_cv_list)
+        except Exception:
+            self.lbl_results.setText(
+                f"<i style='color:#c00;'>{self.tr('results_error', 'Berechnungsfehler')}</i>"
+            )
+            if hasattr(self, 'sora_viz'):
+                self.sora_viz.update_values([], [], [], [], [])
+
+    # ----------------------------------------------------
+    # DIALOG ACTIONS
+    # ----------------------------------------------------
+    def open_parameter_dialog(self):
+        params_backup = dict(self.params)
+        dialog = ParameterDialog(self.gui, self.params, self.waypoints)
+        
+        # Connect live preview callback
+        dialog.on_change_callback = self.on_parameter_dialog_changed
+        
+        if dialog.exec_() == QDialog.Accepted:
+            self.push_undo() # Push state before finalizing accepted changes
+            self.on_parameter_dialog_changed(dialog.get_parameters())
+        else:
+            # Restore original parameters
+            self.params.clear()
+            self.params.update(params_backup)
+            
+            # The dialog's reject() has already restored self.waypoints, 
+            # so we just need to trigger a final recalculation to redraw the original state!
+            self.rebuild_and_calculate()
+
+    def on_parameter_dialog_changed(self, new_params):
+        old_v0 = self.params.get("maxVelocity", 30.0)
+        self.params.update(new_params)
+        
+        new_v0 = self.params.get("maxVelocity", 30.0)
+        new_cd = self.params.get("maxCharacteristicDimension", 3.6)
+        min_fg = 3.0 * new_cd
+        
+        for idx in range(len(self.waypoints)):
+            w = self.waypoints[idx]
+            alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
+            spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
+            fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
+            
+            if abs(new_v0 - old_v0) > 1e-5:
+                spd = new_v0
+            elif spd > new_v0:
+                spd = new_v0
+                
+            if fg < min_fg:
+                fg = min_fg
+                
+            self.waypoints[idx] = (w[0], w[1], alt, spd, fg)
+            
+        self.rebuild_and_calculate()
+
+    def open_advanced_settings_dialog(self):
+        dialog = AdvancedSettingsDialog(self.gui, self.config_path, self.params.get("stepSize", 50.0), current_params=self.params)
+        if dialog.exec_() == QDialog.Accepted:
+            self.push_undo()
+            self.params["stepSize"] = dialog.get_step_size()
+            self.params.update(dialog.get_style_params())
+            self.rebuild_and_calculate(force_restyle=True)
+
+    def open_vlos_calculator(self):
+        uas_type = self.params.get("uas_type", "FixedWing")
+        cd = float(self.params.get("maxCharacteristicDimension", 3.6))
+        dialog = VlosCalculatorDialog(self.gui, uas_type, cd, current_params=self.params)
+        dialog.exec_()
+
+    def open_altitude_table(self):
+        if not self.waypoints:
+            QMessageBox.information(
+                self.gui, 
+                self.tr("msg_no_wp_title", "Keine Wegpunkte"), 
+                self.tr("msg_no_wp_text", "Zeichnen Sie bitte zuerst Wegpunkte auf der Karte ein.")
+            )
+            return
+            
+        original_waypoints = list(self.waypoints)
+        
+        def on_waypoint_edited():
+            updated_params = dialog.get_waypoint_params()
+            for idx in range(len(self.waypoints)):
+                lon, lat, new_alt, new_spd, new_fg = updated_params[idx]
+                self.waypoints[idx] = (lon, lat, new_alt, new_spd, new_fg)
+            self.rebuild_and_calculate()
+            
+        dialog = AltitudeTableDialog(self.gui, self.waypoints, self.params, on_change_callback=on_waypoint_edited)
+        if dialog.exec_() == QDialog.Accepted:
+            # Commit changes and add to undo stack
+            self.undo_stack.append(list(original_waypoints))
+            self.redo_stack.clear()
+            self.update_undo_redo_buttons()
+            # Already updated on the map, but a final calculation ensures everything is clean
+            self.rebuild_and_calculate()
+        else:
+            # Revert to original waypoints on cancel
+            self.waypoints = original_waypoints
+            self.rebuild_and_calculate()
+
+    def reset_planning(self):
+        reply = QMessageBox.question(
+            self.gui, 
+            self.tr("msg_reset_title", "Planung zurücksetzen"), 
+            self.tr("msg_reset_text", "Möchten Sie die gesamte Route, den Piloten und alle berechneten Korridore löschen?"),
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if reply == QMessageBox.Yes:
+            self.push_undo() # Save state before reset
+            # Clear state
+            self.waypoints = []
+            self.pilot_pos = None
+            
+            # Clear layers
+            self.rebuild_and_calculate()
+            self.update_pilot_layer()
+
+    def import_active_layer(self):
+        from qgis.core import QgsWkbTypes, QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsProject, QgsVectorLayer
+        from PyQt5.QtWidgets import QMessageBox
+        
+        layer = self.iface.activeLayer()
+        if not layer or not isinstance(layer, QgsVectorLayer):
+            QMessageBox.warning(
+                self.gui,
+                self.tr("msg_invalid_layer_title", "Ungültiger Layer-Typ"),
+                self.tr("msg_invalid_layer_text", "Bitte wählen Sie zuerst einen Vektor-Layer vom Typ Linie (Line) oder Punkt (Point / Multi-Point) in QGIS aus.")
+            )
+            return
+
+        geom_type = layer.geometryType()
+        if self.geometry_type == "Polygon":
+            # In Polygon mode, we only allow Polygon layers (no Lines or Points!)
+            allowed_geoms = [QgsWkbTypes.PolygonGeometry]
+            if geom_type not in allowed_geoms:
+                QMessageBox.warning(
+                    self.gui,
+                    self.tr("msg_invalid_layer_title", "Ungültiger Layer-Typ"),
+                    self.tr("msg_invalid_polygon_layer_text", "Im Polygon-Modus können nur Vektor-Layer vom Typ Polygon eingelesen werden.")
+                )
+                return
+        else:
+            # In Corridor/Circle mode, we only allow Line and Point layers (no Polygons!)
+            allowed_geoms = [QgsWkbTypes.LineGeometry, QgsWkbTypes.PointGeometry]
+            if geom_type not in allowed_geoms:
+                if geom_type == QgsWkbTypes.PolygonGeometry:
+                    # Specific helpful error explaining they must switch to Polygon mode first
+                    QMessageBox.warning(
+                        self.gui,
+                        self.tr("msg_invalid_layer_title", "Ungültiger Layer-Typ"),
+                        self.tr("msg_polygon_mode_required_text", "Ein Polygon-Layer kann nur im Planungsmodus 'Polygon' eingelesen werden. Bitte wechseln Sie zuerst den Geometrietyp auf 'Polygon'.")
+                    )
+                else:
+                    QMessageBox.warning(
+                        self.gui,
+                        self.tr("msg_invalid_layer_title", "Ungültiger Layer-Typ"),
+                        self.tr("msg_invalid_layer_text", "Bitte wählen Sie zuerst einen Vektor-Layer vom Typ Linie (Line) oder Punkt (Point / Multi-Point) in QGIS aus.")
+                    )
+                return
+
+        self.push_undo() # Save state before importing
+
+        try:
+            # Setup coordinate transform to WGS 84 (EPSG:4326)
+            src_crs = layer.crs()
+            dest_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+            transform = QgsCoordinateTransform(src_crs, dest_crs, QgsProject.instance())
+
+            default_alt = float(self.params.get("maxFlightHeight", 100.0))
+            default_spd = float(self.params.get("maxVelocity", 30.0))
+            default_fg = float(self.params.get("corridorWidth", 50.0))
+
+            raw_waypoints = []
+
+            # Check if columns for altitude, speed, or width exist
+            fields = layer.fields()
+            
+            def find_field(names):
+                for name in names:
+                    idx = fields.indexOf(name)
+                    if idx != -1:
+                        return idx
+                return -1
+
+            alt_idx = find_field(["altitude", "height", "hoehe", "h"])
+            spd_idx = find_field(["speed", "velocity", "geschwindigkeit", "v", "v0"])
+            fg_idx = find_field(["fg_width", "width", "breite", "w_fg", "w"])
+
+            # Iterate through features
+            for feature in layer.getFeatures():
+                geom = feature.geometry()
+                if geom.isNull():
+                    continue
+
+                # Read attributes if fields exist
+                alt = default_alt
+                if alt_idx != -1:
+                    val = feature.attribute(alt_idx)
+                    # NULL is a QVariant NULL representation which is not None in some python mappings, check both
+                    from qgis.core import NULL
+                    if val is not None and val != NULL and str(val) != 'NULL' and str(val) != '':
+                        try:
+                            alt = float(val)
+                        except ValueError:
+                            pass
+
+                spd = default_spd
+                if spd_idx != -1:
+                    val = feature.attribute(spd_idx)
+                    from qgis.core import NULL
+                    if val is not None and val != NULL and str(val) != 'NULL' and str(val) != '':
+                        try:
+                            spd = float(val)
+                        except ValueError:
+                            pass
+
+                fg = default_fg
+                if fg_idx != -1:
+                    val = feature.attribute(fg_idx)
+                    from qgis.core import NULL
+                    if val is not None and val != NULL and str(val) != 'NULL' and str(val) != '':
+                        try:
+                            fg = float(val)
+                        except ValueError:
+                            pass
+
+                # Extract vertices from geometry
+                for vertex in geom.vertices():
+                    from qgis.core import QgsPointXY
+                    pt_xy = QgsPointXY(vertex.x(), vertex.y())
+                    pt_wgs = transform.transform(pt_xy)
+                    raw_waypoints.append((pt_wgs.x(), pt_wgs.y(), alt, spd, fg))
+
+            # Filter out consecutive duplicate points (within 1e-7 degrees, ~1cm)
+            filtered_waypoints = []
+            for wp in raw_waypoints:
+                if not filtered_waypoints:
+                    filtered_waypoints.append(wp)
+                else:
+                    last = filtered_waypoints[-1]
+                    dx = wp[0] - last[0]
+                    dy = wp[1] - last[1]
+                    dist = math.sqrt(dx*dx + dy*dy)
+                    if dist > 1e-7:
+                        filtered_waypoints.append(wp)
+
+            if not filtered_waypoints:
+                raise ValueError("Keine gültigen Geometrie-Stützpunkte im ausgewählten Layer gefunden.")
+
+            # If Polygon mode, and first and last points are identical, discard the last one to let renderer close it dynamically
+            if self.geometry_type == "Polygon" and len(filtered_waypoints) >= 3:
+                first = filtered_waypoints[0]
+                last = filtered_waypoints[-1]
+                dx = first[0] - last[0]
+                dy = first[1] - last[1]
+                dist = math.sqrt(dx*dx + dy*dy)
+                if dist < 1e-7:
+                    filtered_waypoints.pop()
+
+            self.waypoints = filtered_waypoints
+            self.redo_stack.clear()
+            self.update_undo_redo_buttons()
+
+            # Set geometry type
+            if self.geometry_type == "Polygon":
+                # Keep it as Polygon mode!
+                pass
+            elif geom_type == QgsWkbTypes.LineGeometry:
+                self.geometry_type = "Corridor"
+            elif geom_type == QgsWkbTypes.PointGeometry:
+                self.geometry_type = "Corridor"
+
+            # Sync GUI geometry type selection combobox if visible
+            if hasattr(self, 'cmb_geom_type'):
+                types = ["Corridor", "Circle", "Polygon"]
+                if self.geometry_type in types:
+                    self.cmb_geom_type.blockSignals(True)
+                    self.cmb_geom_type.setCurrentIndex(types.index(self.geometry_type))
+                    self.cmb_geom_type.blockSignals(False)
+
+            self.rebuild_and_calculate()
+            self.update_pilot_layer()
+
+            QMessageBox.information(
+                self.gui,
+                self.tr("msg_import_success_title", "Import erfolgreich"),
+                self.tr("msg_import_active_success", "Import abgeschlossen!\n{count} Wegpunkte aus Layer '{name}' geladen.")
+                    .format(count=len(self.waypoints), name=layer.name())
+            )
+
+        except Exception as e:
+            # Revert state on failure
+            self.undo() if self.undo_stack else None
+            QMessageBox.critical(
+                self.gui,
+                self.tr("msg_import_error_title", "Import Fehler"),
+                self.tr("msg_import_error_text", "Fehler beim Importieren der Datei:\n{error}").format(error=str(e))
+            )
+
+    # ----------------------------------------------------
+    # FILE IMPORTS / EXPORTS
+    # ----------------------------------------------------
+    def import_file(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self.gui, 
+            self.tr("dialog_import_title", "Datei importieren"), 
+            "", 
+            "Planungsdateien (*.dipul *.kml *.flightplan *.geojson);;dipul Planungsdatei (*.dipul);;KML Geometriedatei (*.kml);;SkyDemon Flugplan (*.flightplan);;GeoJSON (*.geojson)"
+        )
+        if not file_path:
+            return
+            
+        self.push_undo() # Save state before import
+        try:
+            imported_geom_type = "Corridor"
+            if file_path.lower().endswith('.dipul'):
+                waypoints, pilot_pos, width, max_height, params, geom_type = ImporterExporter.import_dipul(file_path)
+                self.waypoints = waypoints
+                self.pilot_pos = pilot_pos
+                self.params.update(params)
+                imported_geom_type = geom_type
+            elif file_path.lower().endswith('.flightplan'):
+                waypoints, pilot_pos, width, max_height, params, geom_type = ImporterExporter.import_flightplan(file_path)
+                self.waypoints = waypoints
+                self.pilot_pos = pilot_pos
+                self.params.update(params)
+                imported_geom_type = geom_type
+            elif file_path.lower().endswith('.geojson'):
+                waypoints, pilot_pos, width, max_height, params, geom_type = ImporterExporter.import_geojson(file_path)
+                self.waypoints = waypoints
+                self.pilot_pos = pilot_pos
+                self.params.update(params)
+                imported_geom_type = geom_type
+            else:
+                # KML
+                waypoints, pilot_pos, geom_type = ImporterExporter.import_kml(file_path)
+                self.waypoints = waypoints
+                self.pilot_pos = pilot_pos
+                imported_geom_type = geom_type
+                
+            self.geometry_type = imported_geom_type
+            if hasattr(self, 'cmb_geom_type'):
+                types = ["Corridor", "Circle", "Polygon"]
+                if self.geometry_type in types:
+                    self.cmb_geom_type.blockSignals(True)
+                    self.cmb_geom_type.setCurrentIndex(types.index(self.geometry_type))
+                    self.cmb_geom_type.blockSignals(False)
+                
+            self.rebuild_and_calculate()
+            self.update_pilot_layer()
+            
+            QMessageBox.information(
+                self.gui, 
+                self.tr("msg_import_success_title", "Import erfolgreich"), 
+                self.tr("msg_import_success_text", "Import abgeschlossen!\n{count} Wegpunkte geladen.").format(count=len(self.waypoints))
+            )
+        except Exception as e:
+            QMessageBox.critical(
+                self.gui, 
+                self.tr("msg_import_error_title", "Import Fehler"), 
+                self.tr("msg_import_error_text", "Fehler beim Importieren der Datei:\n{error}").format(error=str(e))
+            )
+
+    def export_file(self):
+        if not self.waypoints:
+            QMessageBox.warning(
+                self.gui, 
+                self.tr("msg_export_error_title", "Export Fehler"), 
+                self.tr("msg_export_no_wp_text", "Es gibt keine Wegpunkte zum Exportieren.")
+            )
+            return
+            
+        file_path, selected_filter = QFileDialog.getSaveFileName(
+            self.gui, 
+            self.tr("dialog_export_file_title", "Datei exportieren"), 
+            "", 
+            "dipul Planungsdatei (*.dipul);;KML Geometriedatei (*.kml);;SkyDemon Flugplan (*.flightplan);;GeoJSON (*.geojson);;SORA Dokumentations-Export (*.docx)"
+        )
+        if not file_path:
+            return
+            
+        # Ensure correct extension
+        is_kml = file_path.lower().endswith('.kml') or "kml" in selected_filter.lower()
+        is_flightplan = file_path.lower().endswith('.flightplan') or "flightplan" in selected_filter.lower()
+        is_geojson = file_path.lower().endswith('.geojson') or "geojson" in selected_filter.lower()
+        is_docx = file_path.lower().endswith('.docx') or "docx" in selected_filter.lower()
+        
+        if is_kml and not file_path.lower().endswith('.kml'):
+            file_path += '.kml'
+        elif is_flightplan and not file_path.lower().endswith('.flightplan'):
+            file_path += '.flightplan'
+        elif is_geojson and not file_path.lower().endswith('.geojson'):
+            file_path += '.geojson'
+        elif is_docx and not file_path.lower().endswith('.docx'):
+            file_path += '.docx'
+        elif not is_kml and not is_flightplan and not is_docx and not is_geojson and not file_path.lower().endswith('.dipul'):
+            file_path += '.dipul'
+            
+        if is_kml:
+            try:
+                ImporterExporter.export_kml(file_path, self.waypoints, self.pilot_pos, self.params, self.geometry_type)
+                QMessageBox.information(
+                    self.gui, 
+                    self.tr("msg_export_success_title", "Export erfolgreich"), 
+                    self.tr("msg_export_success_text", "Die Datei wurde erfolgreich exportiert unter:\n{path}").format(path=file_path)
+                )
+            except Exception as e:
+                QMessageBox.critical(
+                    self.gui, 
+                    self.tr("msg_export_error_title", "Export Fehler"), 
+                    self.tr("msg_export_error_text", "Fehler beim Exportieren der Datei:\n{error}").format(error=str(e))
+                )
+            return
+            
+        if is_geojson:
+            try:
+                ImporterExporter.export_geojson(file_path, self.waypoints, self.pilot_pos, self.params, self.geometry_type)
+                QMessageBox.information(
+                    self.gui, 
+                    self.tr("msg_export_success_title", "Export erfolgreich"), 
+                    self.tr("msg_export_success_text", "Die Datei wurde erfolgreich exportiert unter:\n{path}").format(path=file_path)
+                )
+            except Exception as e:
+                QMessageBox.critical(
+                    self.gui, 
+                    self.tr("msg_export_error_title", "Export Fehler"), 
+                    self.tr("msg_export_error_text", "Fehler beim Exportieren der Datei:\n{error}").format(error=str(e))
+                )
+            return
+            
+        if is_docx:
+            try:
+                temp_map_path = os.path.join(tempfile.gettempdir(), f"qgis_map_export_{uuid.uuid4().hex[:8]}.png")
+                self.iface.mapCanvas().saveAsImage(temp_map_path)
+                
+                ImporterExporter.export_sora_docx(file_path, self.waypoints, self.pilot_pos, self.params, temp_map_path, self.geometry_type)
+                
+                if os.path.exists(temp_map_path):
+                    try:
+                        os.remove(temp_map_path)
+                    except Exception:
+                        pass
+                        
+                QMessageBox.information(
+                    self.gui, 
+                    self.tr("msg_export_success_title", "Export erfolgreich"), 
+                    self.tr("msg_export_success_text", "Die Datei wurde erfolgreich exportiert unter:\n{path}").format(path=file_path)
+                )
+            except Exception as e:
+                QMessageBox.critical(
+                    self.gui, 
+                    self.tr("msg_export_error_title", "Export Fehler"), 
+                    self.tr("msg_export_error_text", "Fehler beim Exportieren der Datei:\n{error}").format(error=str(e))
+                )
+            return
+            
+        # Display unified PyQt5 ExportSettingsDialog
+        default_h = float(self.params.get("maxFlightHeight", 100.0))
+        default_spd = float(self.params.get("maxVelocity", 30.0))
+        default_fg = float(self.params.get("corridorWidth", 50.0))
+        
+        # If there are waypoints, we can also pre-populate using the first waypoint's altitude, speed, and FG width
+        if self.waypoints:
+            w0 = self.waypoints[0]
+            if len(w0) > 2:
+                default_h = w0[2]
+            if len(w0) > 3:
+                default_spd = w0[3]
+            if len(w0) > 4:
+                default_fg = w0[4]
+                
+        dialog = ExportSettingsDialog(self.gui, default_h, default_spd, default_fg, params=self.params)
+        if dialog.exec_() != QDialog.Accepted:
+            return
+            
+        const_height, const_speed, const_fg_width = dialog.get_values()
+            
+        try:
+            params_export = self.params.copy()
+            params_export["corridorWidth"] = const_fg_width
+            
+            if file_path.lower().endswith('.flightplan'):
+                ImporterExporter.export_flightplan(file_path, self.waypoints, const_height)
+            else:
+                ImporterExporter.export_dipul(file_path, self.waypoints, self.pilot_pos, const_height, const_speed, params_export, self.geometry_type)
+                
+            QMessageBox.information(
+                self.gui, 
+                self.tr("msg_export_success_title", "Export erfolgreich"), 
+                self.tr("msg_export_success_text", "Die Datei wurde erfolgreich exportiert unter:\n{path}").format(path=file_path)
+            )
+        except Exception as e:
+            QMessageBox.critical(
+                self.gui, 
+                self.tr("msg_export_error_title", "Export Fehler"), 
+                self.tr("msg_export_error_text", "Fehler beim Exportieren der Datei:\n{error}").format(error=str(e))
+            )
+
+    def export_sora_report(self):
+        if not self.waypoints:
+            QMessageBox.warning(
+                self.gui, 
+                self.tr("msg_export_error_title", "Export Fehler"), 
+                self.tr("msg_export_no_wp_text", "Es gibt keine Wegpunkte zum Exportieren.")
+            )
+            return
+            
+        file_path, _ = QFileDialog.getSaveFileName(
+            self.gui, 
+            self.tr("menu_sora_export", "SORA Dokumentations-Export (.docx)..."), 
+            "", 
+            "SORA Dokumentations-Export (*.docx)"
+        )
+        if not file_path:
+            return
+            
+        if not file_path.lower().endswith('.docx'):
+            file_path += '.docx'
+            
+        try:
+            # Synchronously save the QGIS map canvas as a PNG
+            temp_map_path = os.path.join(tempfile.gettempdir(), f"qgis_map_export_{uuid.uuid4().hex[:8]}.png")
+            self.iface.mapCanvas().saveAsImage(temp_map_path)
+            
+            # Run SORA DOCX Export
+            ImporterExporter.export_sora_docx(file_path, self.waypoints, self.pilot_pos, self.params, temp_map_path, self.geometry_type)
+            
+            # Clean up temporary PNG
+            if os.path.exists(temp_map_path):
+                try:
+                    os.remove(temp_map_path)
+                except Exception:
+                    pass
+                    
+            QMessageBox.information(
+                self.gui, 
+                self.tr("msg_export_success_title", "Export erfolgreich"), 
+                self.tr("msg_export_success_text", "Die Datei wurde erfolgreich exportiert unter:\n{path}").format(path=file_path)
+            )
+        except Exception as e:
+            QMessageBox.critical(
+                self.gui, 
+                self.tr("msg_export_error_title", "Export Fehler"), 
+                self.tr("msg_export_error_text", "Fehler beim Exportieren der Datei:\n{error}").format(error=str(e))
+            )

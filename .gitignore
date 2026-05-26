@@ -1,0 +1,20 @@
+# Python bytecode and caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Local configurations
+config.json
+
+# IDEs and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Backup or temporary files
+*.bak
+*.tmp
+temp_eval.xlsx

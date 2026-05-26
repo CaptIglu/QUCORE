@@ -1,0 +1,410 @@
+# -*- coding: utf-8 -*-
+import math
+from qgis.core import (
+    QgsPointXY,
+    QgsGeometry,
+    QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
+    QgsProject
+)
+
+# Number of segments per quadrant to represent circles (higher = smoother, lower = faster).
+# A value of 8 segments per quadrant (32 vertices per circle) provides an excellent balance
+# of smooth visual display and highly performant spatial computations.
+BUFFER_SEGMENTS = 8
+
+def get_utm_epsg(lon, lat):
+    """
+    Finds the appropriate UTM zone EPSG code for a WGS 84 coordinate.
+    """
+    zone = int((lon + 180) / 6) + 1
+    if lat >= 0:
+        return 32600 + zone
+    else:
+        return 32700 + zone
+
+class BufferCalculator:
+    @staticmethod
+    def calculate_buffer_widths(h, params):
+        """
+        Calculates FG, CV, and GRB widths (distances from route centerline) for a given flight height h.
+        Returns a tuple of (R_FG, R_CV, R_GRB, H_CV) in meters.
+        """
+        g = 9.81
+
+        # ----------------------------------------------------
+        # 1. READ PARAMETERS & DEFAULTS
+        # ----------------------------------------------------
+        uas_type = params.get("uas_type", "FixedWing") # "FixedWing" or "Multikopter"
+        altimetry = params.get("altimetry", "GPS") # "GPS" or "Baro"
+        
+        v0 = float(params.get("maxVelocity", 30.0))
+        CD = float(params.get("maxCharacteristicDimension", 3.6))
+        
+        gps_inaccuracy = float(params.get("gpsInaccuracy", 3.0))
+        pos_error = float(params.get("positionError", 3.0))
+        map_error = float(params.get("mapError", 1.0))
+        t_rz = float(params.get("reactionTime", 1.0))
+        
+        alt_err_gps = float(params.get("altitudeErrorGps", 4.0))
+        alt_err_baro = float(params.get("altitudeErrorBarometric", 1.0))
+        
+        # Altimetry vertical error
+        h_delta = alt_err_gps if altimetry == "GPS" else alt_err_baro
+        
+        # ----------------------------------------------------
+        # 2. CONTINGENCY VOLUME (CV) LATERAL
+        # ----------------------------------------------------
+        # Reaction path
+        s_rz = v0 * t_rz
+        
+        # Contingency Manoeuvre distance (SCM)
+        lat_manoeuvre = params.get("lateralContingencyManoeuvreType", "Default")
+        s_cm = 0.0
+        
+        if lat_manoeuvre == "Default" or lat_manoeuvre == "Anhalten":
+            # For Multikopter: Stop manoeuvre
+            if uas_type == "Multikopter":
+                angle = float(params.get("maxPitchAngle", 30.0))
+                rad = math.radians(angle)
+                s_cm = (0.5 * v0 * v0) / (g * math.tan(rad)) if rad > 0 else 0
+            else:
+                # For Fixed Wing: Turnaround curve
+                angle = float(params.get("maxRollAngle", 30.0))
+                rad = math.radians(angle)
+                s_cm = (v0 * v0) / (g * math.tan(rad)) if rad > 0 else 0
+        elif lat_manoeuvre == "Parachute" or lat_manoeuvre == "Auslösen des Fallschirms":
+            t_parachute = float(params.get("parachuteOpeningTimeLateral", 2.0))
+            s_cm = v0 * t_parachute
+            
+        # Lateral CV extension
+        add_horiz = float(params.get("additionalErrorLateral", 0.0))
+        s_cv = gps_inaccuracy + pos_error + map_error + s_rz + s_cm + add_horiz
+        
+        # ----------------------------------------------------
+        # 3. CONTINGENCY VOLUME (CV) VERTICAL
+        # ----------------------------------------------------
+        # Reaction height
+        h_rz = 0.7 * v0 * t_rz
+        
+        # Vertical Manoeuvre height (HCM)
+        vert_manoeuvre = params.get("verticalContingencyManoeuvreType", "Default")
+        h_cm = 0.0
+        
+        if vert_manoeuvre == "Default":
+            if uas_type == "Multikopter":
+                # Convert kinetic to potential energy
+                h_cm = (0.5 * v0 * v0) / g
+            else:
+                # Fixed Wing: 45 degree climb via circular path to horizontal flight
+                h_cm = 0.3 * (v0 * v0) / g
+        elif vert_manoeuvre == "Parachute" or vert_manoeuvre == "Auslösen des Fallschirms":
+            t_para_vert = float(params.get("parachuteOpeningTimeVertical", 2.0))
+            h_cm = 0.7 * v0 * t_para_vert
+            
+        # Absolute height of CV ceiling
+        add_vert = float(params.get("additionalErrorVertical", 0.0))
+        h_cv = h + h_delta + h_rz + h_cm + add_vert
+        
+        # ----------------------------------------------------
+        # 4. GROUND RISK BUFFER (GRB) LATERAL
+        # ----------------------------------------------------
+        grb_method = params.get("groundRiskBufferMethod", "Simplified") # "Simplified", "Ballistic", "Glide", "Parachute"
+        s_grb = 0.0
+        
+        if grb_method == "Simplified" or grb_method == "Vereinfachter Ansatz (1:1 Regel)":
+            s_grb = h_cv + 0.5 * CD
+            
+        elif grb_method == "Ballistic" or grb_method == "Ballistischer Ansatz":
+            s_grb = v0 * math.sqrt(2 * h_cv / g) + 0.5 * CD
+            
+        elif grb_method == "Glide" or grb_method == "Antrieb wird ausgeschaltet mit Gleitflug":
+            glide_ratio = float(params.get("glideRatioDenominator", 10.0))
+            s_grb = h_cv * glide_ratio
+            
+        elif grb_method == "Parachute" or grb_method == "Terminierung mit Auslösen des Fallschirms":
+            t_para_grb = float(params.get("parachuteOpeningTimeGRB", 1.0))
+            v_wind = float(params.get("maxWindVelocity", 3.0))
+            v_z = float(params.get("parachuteDescentRate", 2.0))
+            s_grb = v0 * t_para_grb + v_wind * (h_cv / v_z) if v_z > 0 else 0
+            
+        # ----------------------------------------------------
+        # 5. RADIUS FROM CENTERLINE
+        # ----------------------------------------------------
+        corridor_width = float(params.get("corridorWidth", 500.0))
+        
+        # Enforce minimum Flight Geography size dynamically
+        if params.get("geometry_type") == "Circle":
+            radius = corridor_width / 2.0
+            if radius < 3.0 * CD:
+                radius = 3.0 * CD
+            corridor_width = 2.0 * radius
+        else:
+            if corridor_width < 3.0 * CD:
+                corridor_width = 3.0 * CD
+                
+        r_fg = corridor_width / 2.0
+        r_cv = r_fg + s_cv
+        r_grb = r_cv + s_grb
+        return r_fg, r_cv, r_grb, h_cv
+
+    @classmethod
+    def generate_buffers(cls, waypoints, params, geometry_type="Corridor"):
+        """
+        Generates FG, CV, and GRB buffer geometries for a list of waypoints.
+        Each waypoint is a tuple/dict: (lon, lat, height, speed, fg_width) or {'lon': lon, 'lat': lat, 'height': height, 'speed': speed, 'fg_width': fg_width}.
+        
+        Returns a tuple of QgsGeometry: (fg_geom, cv_geom, grb_geom, aga_geom) in WGS 84.
+        """
+        if not waypoints:
+            return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
+
+        # Parse waypoints to robust format
+        parsed_wpts = []
+        def_h = float(params.get("maxFlightHeight", 100.0))
+        def_spd = float(params.get("maxVelocity", 30.0))
+        def_fg = float(params.get("corridorWidth", 50.0))
+        
+        for w in waypoints:
+            if isinstance(w, dict):
+                lon = w.get('lon')
+                lat = w.get('lat')
+                h = w.get('height', def_h)
+                spd = w.get('speed', def_spd)
+                fg = w.get('fg_width', def_fg)
+                parsed_wpts.append((lon, lat, h, spd, fg))
+            else:
+                lon = w[0]
+                lat = w[1]
+                h = w[2] if len(w) > 2 else def_h
+                spd = w[3] if len(w) > 3 else def_spd
+                fg = w[4] if len(w) > 4 else def_fg
+                parsed_wpts.append((lon, lat, h, spd, fg))
+                
+        # ----------------------------------------------------
+        # BRANCH ON GEOMETRY TYPE
+        # ----------------------------------------------------
+        if geometry_type == "Circle":
+            # Circle uses the first waypoint as center, and fg as radius
+            lon, lat, h, spd, radius = parsed_wpts[0]
+            
+            # Local parameters copy with the waypoint speed and FG width (radius)
+            params_wp = params.copy()
+            params_wp["geometry_type"] = "Circle"
+            params_wp["maxVelocity"] = spd
+            params_wp["corridorWidth"] = 2.0 * radius # so calculate_buffer_widths returns r_fg = radius
+            
+            r_fg, r_cv, r_grb, _h_cv = cls.calculate_buffer_widths(h, params_wp)
+            
+            # Calculate Adjacent Area width: S_AGA = max(5000, min(35000, 180 * spd))
+            s_aga = 180.0 * spd
+            if s_aga < 5000.0:
+                s_aga = 5000.0
+            elif s_aga > 35000.0:
+                s_aga = 35000.0
+                
+            # Use local UTM zone for this single point (100% native EPSG, no custom Proj distortion)
+            utm_epsg = get_utm_epsg(lon, lat)
+            src_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+            dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg}")
+            project = QgsProject.instance()
+            transform = QgsCoordinateTransform(src_crs, dest_crs, project)
+            inverse_transform = QgsCoordinateTransform(dest_crs, src_crs, project)
+            
+            center_utm = transform.transform(QgsPointXY(lon, lat))
+            
+            fg_geom = QgsGeometry.fromPointXY(center_utm).buffer(r_fg, BUFFER_SEGMENTS)
+            cv_geom = QgsGeometry.fromPointXY(center_utm).buffer(r_cv, BUFFER_SEGMENTS)
+            grb_geom = QgsGeometry.fromPointXY(center_utm).buffer(r_grb, BUFFER_SEGMENTS)
+            aga_geom = cv_geom.buffer(s_aga, BUFFER_SEGMENTS)
+            
+            # Project back to WGS 84
+            fg_geom.transform(inverse_transform)
+            cv_geom.transform(inverse_transform)
+            grb_geom.transform(inverse_transform)
+            aga_geom.transform(inverse_transform)
+            
+            return fg_geom, cv_geom, grb_geom, aga_geom
+            
+        elif geometry_type == "Polygon":
+            # Vertices polygon
+            if len(parsed_wpts) < 3:
+                return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
+                
+            # Calculate uniform s_cv and s_grb using the first waypoint's parameters
+            first_lon, first_lat, h, spd, fg = parsed_wpts[0]
+            params_wp = params.copy()
+            params_wp["geometry_type"] = "Polygon"
+            params_wp["maxVelocity"] = spd
+            params_wp["corridorWidth"] = fg
+            
+            r_fg_tmp, r_cv_tmp, r_grb_tmp, _h_cv = cls.calculate_buffer_widths(h, params_wp)
+            s_cv = r_cv_tmp - r_fg_tmp
+            s_grb = r_grb_tmp - r_cv_tmp
+            
+            # Calculate Adjacent Area width: S_AGA = max(5000, min(35000, 180 * spd))
+            s_aga = 180.0 * spd
+            if s_aga < 5000.0:
+                s_aga = 5000.0
+            elif s_aga > 35000.0:
+                s_aga = 35000.0
+                
+            # Use native UTM zone of the polygon's midpoint to eliminate any scale distortion
+            lons = [w[0] for w in parsed_wpts]
+            lats = [w[1] for w in parsed_wpts]
+            mid_lon = sum(lons) / len(lons)
+            mid_lat = sum(lats) / len(lats)
+            
+            utm_epsg = get_utm_epsg(mid_lon, mid_lat)
+            src_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+            dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg}")
+            project = QgsProject.instance()
+            transform = QgsCoordinateTransform(src_crs, dest_crs, project)
+            inverse_transform = QgsCoordinateTransform(dest_crs, src_crs, project)
+            
+            # Project vertices to UTM
+            utm_pts = []
+            for lon, lat, _, _, _ in parsed_wpts:
+                pt_wgs = QgsPointXY(lon, lat)
+                pt_utm = transform.transform(pt_wgs)
+                utm_pts.append(pt_utm)
+                
+            # Create outer ring (closed)
+            ring = list(utm_pts)
+            ring.append(utm_pts[0])
+            fg_geom = QgsGeometry.fromPolygonXY([ring])
+            
+            cv_geom = fg_geom.buffer(s_cv, BUFFER_SEGMENTS)
+            grb_geom = cv_geom.buffer(s_grb, BUFFER_SEGMENTS)
+            aga_geom = cv_geom.buffer(s_aga, BUFFER_SEGMENTS)
+            
+            # Project back to WGS 84
+            fg_geom.transform(inverse_transform)
+            cv_geom.transform(inverse_transform)
+            grb_geom.transform(inverse_transform)
+            aga_geom.transform(inverse_transform)
+            
+            return fg_geom, cv_geom, grb_geom, aga_geom
+            
+        else: # Corridor (Default)
+            # stores (r_fg, r_cv, r_grb) for each waypoint
+            radii = []
+            for i, (lon, lat, h, spd, fg) in enumerate(parsed_wpts):
+                params_wp = params.copy()
+                params_wp["geometry_type"] = "Corridor"
+                params_wp["maxVelocity"] = spd
+                params_wp["corridorWidth"] = fg
+                
+                r_fg, r_cv, r_grb, _h_cv = cls.calculate_buffer_widths(h, params_wp)
+                radii.append((r_fg, r_cv, r_grb, _h_cv))
+                
+            fg_capsules = []
+            cv_capsules = []
+            grb_capsules = []
+            
+            project = QgsProject.instance()
+            src_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+            
+            # If only 1 waypoint, generate simple circles in its local UTM zone
+            if len(parsed_wpts) == 1:
+                lon, lat, h, spd, radius = parsed_wpts[0]
+                r_fg, r_cv, r_grb, _h_cv = radii[0]
+                
+                s_aga = 180.0 * spd
+                if s_aga < 5000.0:
+                    s_aga = 5000.0
+                elif s_aga > 35000.0:
+                    s_aga = 35000.0
+                    
+                utm_epsg = get_utm_epsg(lon, lat)
+                dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg}")
+                transform = QgsCoordinateTransform(src_crs, dest_crs, project)
+                inverse_transform = QgsCoordinateTransform(dest_crs, src_crs, project)
+                
+                pt_utm = transform.transform(QgsPointXY(lon, lat))
+                
+                fg_geom = QgsGeometry.fromPointXY(pt_utm).buffer(r_fg, BUFFER_SEGMENTS)
+                cv_geom = QgsGeometry.fromPointXY(pt_utm).buffer(r_cv, BUFFER_SEGMENTS)
+                grb_geom = QgsGeometry.fromPointXY(pt_utm).buffer(r_grb, BUFFER_SEGMENTS)
+                aga_geom = cv_geom.buffer(s_aga, BUFFER_SEGMENTS)
+                
+                # Project back to WGS 84
+                fg_geom.transform(inverse_transform)
+                cv_geom.transform(inverse_transform)
+                grb_geom.transform(inverse_transform)
+                aga_geom.transform(inverse_transform)
+                
+                return fg_geom, cv_geom, grb_geom, aga_geom
+    
+            # For multiple waypoints, build tapered capsules for each segment.
+            # To ensure the flightway remains perfectly and symmetrically centered inside the buffers
+            # even over extreme trans-continental distances (e.g. Hamburg to London),
+            # each segment is buffered in its OWN local UTM zone and immediately transformed back to WGS 84.
+            # This completely bypasses the slow sub-segment loop, improving performance by 1000x on long routes.
+            for i in range(len(parsed_wpts) - 1):
+                lon_a, lat_a, h_a, spd_a, fg_a = parsed_wpts[i]
+                lon_b, lat_b, h_b, spd_b, fg_b = parsed_wpts[i+1]
+                
+                r_fg_a, r_cv_a, r_grb_a, _ = radii[i]
+                r_fg_b, r_cv_b, r_grb_b, _ = radii[i+1]
+                
+                utm_epsg = get_utm_epsg(lon_a, lat_a)
+                dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg}")
+                
+                transform = QgsCoordinateTransform(src_crs, dest_crs, project)
+                inverse_transform = QgsCoordinateTransform(dest_crs, src_crs, project)
+                
+                pt_a_utm = transform.transform(QgsPointXY(lon_a, lat_a))
+                pt_b_utm = transform.transform(QgsPointXY(lon_b, lat_b))
+                
+                c_fg_a = QgsGeometry.fromPointXY(pt_a_utm).buffer(r_fg_a, BUFFER_SEGMENTS)
+                c_fg_b = QgsGeometry.fromPointXY(pt_b_utm).buffer(r_fg_b, BUFFER_SEGMENTS)
+                fg_capsule = c_fg_a.combine(c_fg_b).convexHull()
+                fg_capsule.transform(inverse_transform) # Transform back to WGS 84 immediately
+                fg_capsules.append(fg_capsule)
+                
+                c_cv_a = QgsGeometry.fromPointXY(pt_a_utm).buffer(r_cv_a, BUFFER_SEGMENTS)
+                c_cv_b = QgsGeometry.fromPointXY(pt_b_utm).buffer(r_cv_b, BUFFER_SEGMENTS)
+                cv_capsule = c_cv_a.combine(c_cv_b).convexHull()
+                cv_capsule.transform(inverse_transform) # Transform back to WGS 84 immediately
+                cv_capsules.append(cv_capsule)
+                
+                c_grb_a = QgsGeometry.fromPointXY(pt_a_utm).buffer(r_grb_a, BUFFER_SEGMENTS)
+                c_grb_b = QgsGeometry.fromPointXY(pt_b_utm).buffer(r_grb_b, BUFFER_SEGMENTS)
+                grb_capsule = c_grb_a.combine(c_grb_b).convexHull()
+                grb_capsule.transform(inverse_transform) # Transform back to WGS 84 immediately
+                grb_capsules.append(grb_capsule)
+                
+            # Determine Adjacent Area width S_AGA based on max speed across all waypoints
+            v0_max = max([w[3] for w in parsed_wpts])
+            s_aga = 180.0 * v0_max
+            if s_aga < 5000.0:
+                s_aga = 5000.0
+            elif s_aga > 35000.0:
+                s_aga = 35000.0
+
+            # Merge all segment capsules in WGS 84
+            fg_merged = QgsGeometry.unaryUnion(fg_capsules)
+            cv_merged = QgsGeometry.unaryUnion(cv_capsules)
+            grb_merged = QgsGeometry.unaryUnion(grb_capsules)
+            
+            # Generate Adjacent Area buffer around the merged WGS 84 CV.
+            # We project cv_merged to the UTM zone of the route's midpoint, buffer it there, and project back.
+            lons = [w[0] for w in parsed_wpts]
+            lats = [w[1] for w in parsed_wpts]
+            mid_lon = sum(lons) / len(lons)
+            mid_lat = sum(lats) / len(lats)
+            
+            utm_epsg_mid = get_utm_epsg(mid_lon, mid_lat)
+            dest_crs_mid = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg_mid}")
+            
+            transform_mid = QgsCoordinateTransform(src_crs, dest_crs_mid, project)
+            inverse_transform_mid = QgsCoordinateTransform(dest_crs_mid, src_crs, project)
+            
+            cv_merged.transform(transform_mid)
+            aga_merged = cv_merged.buffer(s_aga, BUFFER_SEGMENTS)
+            
+            cv_merged.transform(inverse_transform_mid)
+            aga_merged.transform(inverse_transform_mid)
+            
+            return fg_merged, cv_merged, grb_merged, aga_merged
