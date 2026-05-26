@@ -91,6 +91,10 @@
     "de": "SORA Dokumentations-Export (.docx)...",
     "en": "SORA Documentation Export (.docx)..."
   },
+  "menu_save_persistent": {
+    "de": "Planung als persistenten Layer (GeoPackage) speichern...",
+    "en": "Save Planning as Persistent Layer (GeoPackage)..."
+  },
   "menu_reset": {
     "de": "Planung zurücksetzen",
     "en": "Reset Planning"

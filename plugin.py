@@ -394,6 +394,9 @@ class DroneCorridorPlanner(object):
             self.sora_export_action = self.file_menu.addAction("SORA Dokumentations-Export (.docx)...")
             self.sora_export_action.triggered.connect(self.export_sora_report)
             
+            self.save_persistent_action = self.file_menu.addAction("Planung als persistenten Layer (GeoPackage) speichern...")
+            self.save_persistent_action.triggered.connect(self.save_as_persistent_layer)
+            
             self.file_menu.addSeparator()
             
             self.reset_action = self.file_menu.addAction("Planung zurücksetzen")
@@ -558,6 +561,38 @@ class DroneCorridorPlanner(object):
             self.lbl_status.setAlignment(Qt.AlignCenter)
             layout.addWidget(self.lbl_status)
             
+            # Trial Warning Label
+            self.lbl_trial_warning = QLabel()
+            self.lbl_trial_warning.setAlignment(Qt.AlignCenter)
+            self.lbl_trial_warning.setWordWrap(True)
+            layout.addWidget(self.lbl_trial_warning)
+            
+        # Check trial status and display warning if necessary
+        from PyQt5.QtCore import QSettings, QDateTime, Qt
+        settings = QSettings()
+        install_date_str = settings.value("QUCORE/install_date", "")
+        if not install_date_str:
+            install_date_str = QDateTime.currentDateTime().toString(Qt.ISODate)
+            settings.setValue("QUCORE/install_date", install_date_str)
+            
+        install_date = QDateTime.fromString(install_date_str, Qt.ISODate)
+        days_since_install = install_date.daysTo(QDateTime.currentDateTime())
+        
+        is_commercial_unlocked = self.params.get("commercial_unlocked", False)
+        if isinstance(is_commercial_unlocked, str):
+            is_commercial_unlocked = (is_commercial_unlocked.lower() == "true" or is_commercial_unlocked == "QUCORE-COMM-2026")
+            
+        if hasattr(self, 'lbl_trial_warning'):
+            if days_since_install > 30 and not is_commercial_unlocked:
+                self.lbl_trial_warning.setText(
+                    "<div style='color: #eb5757; font-size: 10px; font-weight: bold; margin-top: 4px; text-align: center;'>"
+                    "⚠️ Testphase abgelaufen (Kommerzielle Nutzung erfordert eine Lizenz. Bitte kontaktieren Sie den Autor unter tim.strohbach@gmx.de.)"
+                    "</div>"
+                )
+                self.lbl_trial_warning.setVisible(True)
+            else:
+                self.lbl_trial_warning.setVisible(False)
+            
         self.apply_translations()
         self.update_undo_redo_buttons()
         
@@ -612,6 +647,8 @@ class DroneCorridorPlanner(object):
             self.export_action.setText(self.tr("menu_export", "Exportieren..."))
             if hasattr(self, 'sora_export_action'):
                 self.sora_export_action.setText(self.tr("menu_sora_export", "SORA Dokumentations-Export (.docx)..."))
+            if hasattr(self, 'save_persistent_action'):
+                self.save_persistent_action.setText(self.tr("menu_save_persistent", "Planung als persistenten Layer (GeoPackage) speichern..."))
             self.reset_action.setText(self.tr("menu_reset", "Planung zurücksetzen"))
             
             self.settings_menu.setTitle(self.tr("menu_settings", "Einstellungen"))
@@ -1031,6 +1068,54 @@ class DroneCorridorPlanner(object):
             self.btn_undo.setEnabled(len(self.undo_stack) > 0)
         if hasattr(self, 'btn_redo'):
             self.btn_redo.setEnabled(len(self.redo_stack) > 0)
+
+    def serialize_state(self):
+        """
+        Serializes the complete current planning state (waypoints, pilot, geometry_type, params) to JSON.
+        """
+        import json
+        state = {
+            "waypoints": self.waypoints,
+            "pilot_pos": [self.pilot_pos.x(), self.pilot_pos.y()] if self.pilot_pos else None,
+            "geometry_type": self.geometry_type,
+            "params": self.params
+        }
+        return json.dumps(state, ensure_ascii=False)
+
+    def deserialize_state(self, state_json):
+        """
+        Deserializes state JSON and restores the complete planning environment.
+        """
+        import json
+        from qgis.core import QgsPointXY
+        
+        state = json.loads(state_json)
+        self.waypoints = [tuple(wp) for wp in state.get("waypoints", [])]
+        
+        pilot_coords = state.get("pilot_pos")
+        if pilot_coords:
+            self.pilot_pos = QgsPointXY(pilot_coords[0], pilot_coords[1])
+        else:
+            self.pilot_pos = None
+            
+        self.geometry_type = state.get("geometry_type", "Corridor")
+        self.params.update(state.get("params", {}))
+        
+        # Clear undo/redo stacks when re-activating a saved state
+        self.undo_stack.clear()
+        self.redo_stack.clear()
+        self.update_undo_redo_buttons()
+        
+        # Sync UI combobox if visible
+        if hasattr(self, 'cmb_geom_type'):
+            types = ["Corridor", "Circle", "Polygon"]
+            if self.geometry_type in types:
+                self.cmb_geom_type.blockSignals(True)
+                self.cmb_geom_type.setCurrentIndex(types.index(self.geometry_type))
+                self.cmb_geom_type.blockSignals(False)
+                
+        self.rebuild_and_calculate()
+        self.update_pilot_layer()
 
     def transform_to_wgs84(self, point_canvas):
         """
@@ -1473,7 +1558,7 @@ class DroneCorridorPlanner(object):
             self.update_pilot_layer()
 
     def import_active_layer(self):
-        from qgis.core import QgsWkbTypes, QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsProject, QgsVectorLayer
+        from qgis.core import QgsWkbTypes, QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsProject, QgsVectorLayer, NULL
         from PyQt5.QtWidgets import QMessageBox
         
         layer = self.iface.activeLayer()
@@ -1484,6 +1569,30 @@ class DroneCorridorPlanner(object):
                 self.tr("msg_invalid_layer_text", "Bitte wählen Sie zuerst einen Vektor-Layer vom Typ Linie (Line) oder Punkt (Point / Multi-Point) in QGIS aus.")
             )
             return
+
+        # Check if the layer contains our persistent state attribute (reactivation)
+        fields = layer.fields()
+        state_idx = fields.indexOf("qucore_state")
+        if state_idx != -1:
+            features = list(layer.getFeatures())
+            if features:
+                state_json = features[0].attribute(state_idx)
+                if state_json and state_json != NULL and str(state_json) != 'NULL' and str(state_json) != '':
+                    try:
+                        self.push_undo() # Save state before restoring
+                        self.deserialize_state(str(state_json))
+                        QMessageBox.information(
+                            self.gui,
+                            self.tr("msg_import_success_title", "Planung reaktiviert"),
+                            "Interaktive Drohnen-Korridorplanung erfolgreich aus Layer '{name}' reaktiviert!".format(name=layer.name())
+                        )
+                        return
+                    except Exception as e:
+                        QMessageBox.warning(
+                            self.gui,
+                            self.tr("msg_import_error_title", "Reaktivierungsfehler"),
+                            "Fehler beim Reaktivieren der Planung aus Layer:\n{error}".format(error=str(e))
+                        )
 
         geom_type = layer.geometryType()
         if self.geometry_type == "Polygon":
@@ -1653,6 +1762,147 @@ class DroneCorridorPlanner(object):
                 self.tr("msg_import_error_title", "Import Fehler"),
                 self.tr("msg_import_error_text", "Fehler beim Importieren der Datei:\n{error}").format(error=str(e))
             )
+
+    def save_as_persistent_layer(self):
+        """
+        Saves all current planning layers into a single GeoPackage file,
+        adding a hidden 'qucore_state' field to the Wegpunkte layer,
+        and adds them permanently to the QGIS project.
+        """
+        from qgis.core import QgsVectorFileWriter, QgsProject, QgsField, QgsFeature, QgsGeometry, QgsVectorLayer
+        from PyQt5.QtCore import QVariant
+        from PyQt5.QtWidgets import QFileDialog, QMessageBox
+        
+        if not self.waypoints:
+            QMessageBox.warning(
+                self.gui,
+                self.tr("msg_export_error_title", "Export Fehler"),
+                self.tr("msg_export_no_wp_text", "Es gibt keine Wegpunkte zum Exportieren.")
+            )
+            return
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self.gui,
+            "Planung als persistenten Layer (GeoPackage) speichern",
+            "",
+            "GeoPackage (*.gpkg)"
+        )
+        if not file_path:
+            return
+
+        if not file_path.lower().endswith('.gpkg'):
+            file_path += '.gpkg'
+
+        # 1. Prepare serialize state string
+        state_json = self.serialize_state()
+
+        # 2. Add the field "qucore_state" temporarily to waypoints memory layer
+        dp = self.lyr_waypoints.dataProvider()
+        fields = self.lyr_waypoints.fields()
+        state_idx = fields.indexOf("qucore_state")
+        
+        if state_idx == -1:
+            dp.addAttributes([QgsField("qucore_state", QVariant.String, len=100000)])
+            self.lyr_waypoints.updateFields()
+            fields = self.lyr_waypoints.fields()
+            state_idx = fields.indexOf("qucore_state")
+
+        # Set the state JSON attribute on the first feature of Wegpunkte
+        self.lyr_waypoints.startEditing()
+        for f in self.lyr_waypoints.getFeatures():
+            f.setAttribute(state_idx, state_json)
+            self.lyr_waypoints.updateFeature(f)
+        self.lyr_waypoints.commitChanges()
+
+        # Export all available layers to the GPKG!
+        layers_to_export = [
+            (self.lyr_waypoints, "Wegpunkte"),
+            (self.lyr_route, "Flugweg_Mittelachse"),
+            (self.lyr_fg, "Flight_Geography_FG"),
+            (self.lyr_cv, "Contingency_Volume_CV"),
+            (self.lyr_grb, "Ground_Risk_Buffer_GRB")
+        ]
+        if self.is_layer_valid(self.lyr_aga):
+            layers_to_export.append((self.lyr_aga, "Adjacent_Area_AA"))
+        if self.is_layer_valid(self.lyr_pilot) and self.pilot_pos:
+            layers_to_export.append((self.lyr_pilot, "Pilotenposition"))
+        if self.is_layer_valid(self.lyr_vlos) and self.pilot_pos:
+            layers_to_export.append((self.lyr_vlos, "VLOS_Reichweite"))
+
+        # Setup vector file writer options
+        options = QgsVectorFileWriter.SaveVectorOptions()
+        options.driverName = "GPKG"
+        options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
+        
+        transform_context = QgsProject.instance().transformContext()
+
+        exported_layers = []
+        error_occurred = False
+        error_msg = ""
+
+        first_layer = True
+
+        for lyr, layer_name in layers_to_export:
+            if not self.is_layer_valid(lyr):
+                continue
+            
+            options.layerName = layer_name
+            if not first_layer:
+                options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
+
+            err, err_str, path, new_lyr_name = QgsVectorFileWriter.writeAsVectorFormatV3(
+                lyr,
+                file_path,
+                transform_context,
+                options
+            )
+            
+            if err == QgsVectorFileWriter.NoError:
+                first_layer = False
+                uri = f"{file_path}|layerName={layer_name}"
+                gpkg_layer = QgsVectorLayer(uri, lyr.name() + " (Persistent)", "ogr")
+                if gpkg_layer.isValid():
+                    exported_layers.append((gpkg_layer, lyr))
+            else:
+                error_occurred = True
+                error_msg = err_str
+                break
+
+        # Remove the temporary qucore_state attribute from waypoints layer
+        state_idx = self.lyr_waypoints.fields().indexOf("qucore_state")
+        if state_idx != -1:
+            self.lyr_waypoints.startEditing()
+            dp.deleteAttributes([state_idx])
+            self.lyr_waypoints.commitChanges()
+            self.lyr_waypoints.updateFields()
+
+        if error_occurred:
+            QMessageBox.critical(
+                self.gui,
+                "Speicherfehler",
+                f"Fehler beim Speichern in GeoPackage:\n{error_msg}"
+            )
+            return
+
+        # Add the persistent GPKG layers to the project
+        project = QgsProject.instance()
+        root = project.layerTreeRoot()
+        persistent_group = root.findGroup("QUCORE-Persistente_Layer")
+        if persistent_group is None:
+            persistent_group = root.insertGroup(0, "QUCORE-Persistente_Layer")
+            persistent_group.setItemVisibilityChecked(True)
+
+        for gpkg_lyr, orig_lyr in exported_layers:
+            project.addMapLayer(gpkg_lyr, False)
+            persistent_group.addLayer(gpkg_lyr)
+            gpkg_lyr.setRenderer(orig_lyr.renderer().clone())
+            gpkg_lyr.triggerRepaint()
+
+        QMessageBox.information(
+            self.gui,
+            "Speichern erfolgreich",
+            f"Die Korridorplanung wurde erfolgreich als dauerhafter GeoPackage-Layer gespeichert!\n\nDatei: {file_path}\n\nDie Layer wurden zur Gruppe 'QUCORE-Persistente_Layer' hinzugefügt."
+        )
 
     # ----------------------------------------------------
     # FILE IMPORTS / EXPORTS
