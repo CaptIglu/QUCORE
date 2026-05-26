@@ -568,7 +568,7 @@ class DroneCorridorPlanner(object):
             layout.addWidget(self.lbl_trial_warning)
             
         # Check trial status and display warning if necessary
-        from PyQt5.QtCore import QSettings, QDateTime, Qt
+        from PyQt5.QtCore import QSettings, QDateTime
         settings = QSettings()
         install_date_str = settings.value("QUCORE/install_date", "")
         if not install_date_str:
@@ -1770,7 +1770,6 @@ class DroneCorridorPlanner(object):
         and adds them permanently to the QGIS project.
         """
         from qgis.core import QgsVectorFileWriter, QgsProject, QgsField, QgsFeature, QgsGeometry, QgsVectorLayer
-        from PyQt5.QtCore import QVariant
         from PyQt5.QtWidgets import QFileDialog, QMessageBox
         
         if not self.waypoints:
