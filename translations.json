@@ -902,6 +902,34 @@
   "error_calc_failed_text": {
     "de": "Zonalstatistik-Berechnung fehlgeschlagen:\n{error}",
     "en": "Zonal statistics calculation failed:\n{error}"
+  },
+  "dialog_save_persistent_title": {
+    "de": "Planung als persistenten Layer (GeoPackage) speichern",
+    "en": "Save Planning as Persistent Layer (GeoPackage)"
+  },
+  "group_name_dialog_title": {
+    "de": "Layer-Gruppe benennen",
+    "en": "Name Layer Group"
+  },
+  "group_name_dialog_label": {
+    "de": "Geben Sie einen Namen für die Layer-Gruppe im QGIS-Projekt ein:",
+    "en": "Enter a name for the layer group in the QGIS project:"
+  },
+  "msg_save_error_title": {
+    "de": "Speicherfehler",
+    "en": "Save Error"
+  },
+  "msg_save_error_text": {
+    "de": "Fehler beim Speichern in GeoPackage:\n{error}",
+    "en": "Error saving to GeoPackage:\n{error}"
+  },
+  "msg_save_success_title": {
+    "de": "Speichern erfolgreich",
+    "en": "Save Successful"
+  },
+  "msg_save_success_text": {
+    "de": "Die Korridorplanung wurde erfolgreich als dauerhafter GeoPackage-Layer gespeichert!\n\nDatei: {file_path}\n\nDie Layer wurden zur Gruppe '{group_name}' hinzugefügt.",
+    "en": "The corridor planning was successfully saved as a persistent GeoPackage layer!\n\nFile: {file_path}\n\nThe layers have been added to the group '{group_name}'."
   }
 }
 

@@ -163,14 +163,20 @@ class PopulationDensityDialog(QDialog):
         self.on_raster_changed()
 
     def browse_raster_file(self):
+        from qgis.core import QgsSettings
+        settings = QgsSettings()
+        last_dir = settings.value("/QUCORE/last_import_dir", "")
+
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             self.tr("dialog_select_raster", "GHS-POP GeoTIFF-Datei auswählen"),
-            "",
+            last_dir,
             "GeoTIFF (*.tif *.tiff);;All Files (*.*)"
         )
         if not file_path:
             return
+
+        settings.setValue("/QUCORE/last_import_dir", os.path.dirname(file_path))
             
         base_name = os.path.basename(file_path)
         raster_layer = QgsRasterLayer(file_path, base_name)

@@ -1984,17 +1984,42 @@ class DroneCorridorPlanner(object):
             return
 
         from PyQt5.QtCore import QDate
+        from qgis.core import QgsSettings
+        settings = QgsSettings()
+        last_dir = settings.value("/QUCORE/last_export_dir", "")
+
         date_str = QDate.currentDate().toString("yyyyMMdd")
         default_filename = f"QUCORE-Route_{date_str}.gpkg"
+        default_path = os.path.join(last_dir, default_filename) if last_dir else default_filename
 
         file_path, _ = QFileDialog.getSaveFileName(
             self.gui,
-            "Planung als persistenten Layer (GeoPackage) speichern",
-            default_filename,
+            self.tr("dialog_save_persistent_title", "Planung als persistenten Layer (GeoPackage) speichern"),
+            default_path,
             "GeoPackage (*.gpkg)"
         )
         if not file_path:
             return
+
+        # Save the directory path for next time
+        settings.setValue("/QUCORE/last_export_dir", os.path.dirname(file_path))
+
+        # Ask user for the layer group name
+        from PyQt5.QtWidgets import QLineEdit
+        default_group_name = "QUCORE-Persistente_Layer"
+        group_name, ok = QInputDialog.getText(
+            self.gui,
+            self.tr("group_name_dialog_title", "Layer-Gruppe benennen"),
+            self.tr("group_name_dialog_label", "Geben Sie einen Namen für die Layer-Gruppe im QGIS-Projekt ein:"),
+            QLineEdit.Normal,
+            default_group_name
+        )
+        if not ok:
+            return
+        
+        group_name = group_name.strip()
+        if not group_name:
+            group_name = default_group_name
 
         if not file_path.lower().endswith('.gpkg'):
             file_path += '.gpkg'
@@ -2085,17 +2110,17 @@ class DroneCorridorPlanner(object):
         if error_occurred:
             QMessageBox.critical(
                 self.gui,
-                "Speicherfehler",
-                f"Fehler beim Speichern in GeoPackage:\n{error_msg}"
+                self.tr("msg_save_error_title", "Speicherfehler"),
+                self.tr("msg_save_error_text", "Fehler beim Speichern in GeoPackage:\n{error}").format(error=error_msg)
             )
             return
 
         # Add the persistent GPKG layers to the project
         project = QgsProject.instance()
         root = project.layerTreeRoot()
-        persistent_group = root.findGroup("QUCORE-Persistente_Layer")
+        persistent_group = root.findGroup(group_name)
         if persistent_group is None:
-            persistent_group = root.insertGroup(0, "QUCORE-Persistente_Layer")
+            persistent_group = root.insertGroup(0, group_name)
             persistent_group.setItemVisibilityChecked(True)
 
         for gpkg_lyr, orig_lyr in exported_layers:
@@ -2106,8 +2131,9 @@ class DroneCorridorPlanner(object):
 
         QMessageBox.information(
             self.gui,
-            "Speichern erfolgreich",
-            f"Die Korridorplanung wurde erfolgreich als dauerhafter GeoPackage-Layer gespeichert!\n\nDatei: {file_path}\n\nDie Layer wurden zur Gruppe 'QUCORE-Persistente_Layer' hinzugefügt."
+            self.tr("msg_save_success_title", "Speichern erfolgreich"),
+            self.tr("msg_save_success_text", "Die Korridorplanung wurde erfolgreich als dauerhafter GeoPackage-Layer gespeichert!\n\nDatei: {file_path}\n\nDie Layer wurden zur Gruppe '{group_name}' hinzugefügt.")
+                .format(file_path=file_path, group_name=group_name)
         )
 
     def capture_map_views(self):
@@ -2205,14 +2231,20 @@ class DroneCorridorPlanner(object):
     # FILE IMPORTS / EXPORTS
     # ----------------------------------------------------
     def import_file(self):
+        from qgis.core import QgsSettings
+        settings = QgsSettings()
+        last_dir = settings.value("/QUCORE/last_import_dir", "")
+
         file_path, _ = QFileDialog.getOpenFileName(
             self.gui, 
             self.tr("dialog_import_title", "Datei importieren"), 
-            "", 
+            last_dir, 
             "Planungsdateien (*.dipul *.kml *.flightplan *.geojson);;dipul Planungsdatei (*.dipul);;KML Geometriedatei (*.kml);;SkyDemon Flugplan (*.flightplan);;GeoJSON (*.geojson)"
         )
         if not file_path:
             return
+
+        settings.setValue("/QUCORE/last_import_dir", os.path.dirname(file_path))
             
         self.push_undo() # Save state before import
         try:
@@ -2275,17 +2307,24 @@ class DroneCorridorPlanner(object):
             return
             
         from PyQt5.QtCore import QDate
+        from qgis.core import QgsSettings
+        settings = QgsSettings()
+        last_dir = settings.value("/QUCORE/last_export_dir", "")
+
         date_str = QDate.currentDate().toString("yyyyMMdd")
         default_filename = f"QUCORE-Route_{date_str}"
+        default_path = os.path.join(last_dir, default_filename) if last_dir else default_filename
 
         file_path, selected_filter = QFileDialog.getSaveFileName(
             self.gui, 
             self.tr("dialog_export_file_title", "Datei exportieren"), 
-            default_filename, 
+            default_path, 
             "dipul Planungsdatei (*.dipul);;KML Geometriedatei (*.kml);;SkyDemon Flugplan (*.flightplan);;GeoJSON (*.geojson);;SORA Dokumentations-Export (*.docx)"
         )
         if not file_path:
             return
+
+        settings.setValue("/QUCORE/last_export_dir", os.path.dirname(file_path))
             
         # Ensure correct extension
         is_kml = file_path.lower().endswith('.kml') or "kml" in selected_filter.lower()
@@ -2436,17 +2475,24 @@ class DroneCorridorPlanner(object):
             return
             
         from PyQt5.QtCore import QDate
+        from qgis.core import QgsSettings
+        settings = QgsSettings()
+        last_dir = settings.value("/QUCORE/last_export_dir", "")
+
         date_str = QDate.currentDate().toString("yyyyMMdd")
         default_filename = f"QUCORE-Route_{date_str}.docx"
+        default_path = os.path.join(last_dir, default_filename) if last_dir else default_filename
 
         file_path, _ = QFileDialog.getSaveFileName(
             self.gui, 
             self.tr("menu_sora_export", "SORA Dokumentations-Export (.docx)..."), 
-            default_filename, 
+            default_path, 
             "SORA Dokumentations-Export (*.docx)"
         )
         if not file_path:
             return
+
+        settings.setValue("/QUCORE/last_export_dir", os.path.dirname(file_path))
             
         if not file_path.lower().endswith('.docx'):
             file_path += '.docx'
