@@ -211,6 +211,7 @@
                 <li><a href="#decoupling">12. Decoupling von Darstellung & LBA-Standardwerten</a></li>
                 <li><a href="#vlos">13. VLOS-Sichtbarkeitsanzeige (ALOS / DLOS)</a></li>
                 <li><a href="#bestpractice">14. Best Practice für den Planungs-Workflow</a></li>
+                <li><a href="#popdensity">15. Bevölkerungsdichte-Berechnung (SORA Step #8)</a></li>
             </ul>
         </div>
         
@@ -822,6 +823,38 @@
             <li><b>Reaktivierung &amp; nachträgliche Anpassung</b>: Bei Bedarf kann diese persistente Flugplanung mit dem QUCORE-Plugin jederzeit wieder angepasst werden. Öffnen Sie dazu einfach das QGIS-Projekt, wählen Sie den gespeicherten Flugweg (Mittelachse oder Wegpunkte aus dem GeoPackage-Layer) aus und lesen Sie ihn wieder ein (<b>Datei &gt; Aktivierten QGIS-Layer einlesen...</b>). Der vollständige Planungszustand (inklusive aller Wegpunkthöhen und SORA-Parameter) wird sofort wieder 1:1 hergestellt.</li>
             <li><b>Änderungen sichern</b>: Um Ihre vorgenommenen Anpassungen dauerhaft zu behalten, vergessen Sie nicht, die Planung wieder über <b>Datei &gt; Planung als persistenten Layer (GeoPackage) speichern...</b> abzuspeichern. Sie können dabei die vorherige GeoPackage-Datei einfach überschreiben.</li>
         </ol>
+
+        <!-- 15. POPULATION DENSITY CALCULATION -->
+        <h2 id="popdensity">👥 15. Bevölkerungsdichte-Berechnung (SORA Step #8)</h2>
+        <p>Der offizielle EASA SORA-Leitfaden fordert in <b>Schritt 8 (Step #8 — Determination of the containment requirements)</b> den Nachweis über die einzuhaltenden Containment-Anforderungen des Flugbetriebs. Ein wesentlicher Teil dieser Prüfung ist die Bestimmung der durchschnittlichen Bevölkerungsdichte (<i>average population density</i>) innerhalb der Adjacent Ground Area (AA).</p>
+        
+        <div class="alert alert-important">
+            <b>📊 Global Human Settlement Layer (GHSL) GHS-POP Datenbasis</b><br>
+            Das Tool arbeitet standardmäßig mit den offiziellen europäischen <b>GHS-POP</b> Rasterdaten der Europäischen Kommission (Copernicus-Programm). Diese GeoTIFF-Rasterzellen enthalten pro Pixel den absoluten Wert der dort gemeldeten Wohnbevölkerung (Residential Population). Entsprechende Daten können für Ihr jeweiliges Betriebsgebiet kostenlos im Internet heruntergeladen werden.
+        </div>
+
+        <h3>Schritt-für-Schritt-Anleitung zur Dichteberechnung:</h3>
+        <ol>
+            <li><b>Flugplanung abschließen</b>: Erstellen Sie eine vollständige Planung (Option 1 oder Option 2), sodass der Layer <b>Adjacent Area (AA)</b> gefüllt und in der Karte sichtbar ist (dieser Layer stellt das maximale Puffergebiet außerhalb Ihres Ground Risk Buffers dar).</li>
+            <li><b>Werkzeug öffnen</b>: Wählen Sie im Menüband des Plugins <b>Werkzeuge &gt; Bevölkerungsdichte im AA-Bereich berechnen...</b>.</li>
+            <li><b>Raster-Layer wählen</b>: Wählen Sie das geladene GHSL GeoTIFF-Raster aus dem Dropdown-Menü aus. Falls das Raster noch nicht in QGIS geladen ist, klicken Sie auf <b>Durchsuchen...</b>, um die <code>.tif</code>- oder <code>.tiff</code>-Datei direkt von Ihrer Festplatte zu laden.</li>
+            <li><b>Fläche kontrollieren</b>: Das Tool berechnet automatisch die exakte, ellipsoide Fläche Ihrer Adjacent Ground Area (AA) in Quadratkilometern ($\text{km}^2$) basierend auf dem hochpräzisen WGS84-Ellipsoid.</li>
+            <li><b>Berechnung starten</b>: Klicken Sie auf <b>Berechnung starten</b>. Das Plugin führt im Hintergrund eine performante Zonalstatistik aus. QGIS übernimmt dabei automatisch die eventuell notwendige On-the-fly-Reprojektion zwischen dem Koordinatensystem Ihres Rasters und der Adjacent Area.</li>
+            <li><b>Ergebnis ablesen &amp; interpretieren</b>:
+                <ul>
+                    <li><b>Gesamtbevölkerung</b>: Gibt die aufsummierte Personenanzahl im betroffenen AA-Bereich an.</li>
+                    <li><b>Durchschnittliche Bevölkerungsdichte</b>: Die resultierende Dichte (Einwohner/$\text{km}^2$).</li>
+                </ul>
+            </li>
+        </ol>
+
+        <div class="alert alert-warning">
+            <b>⚠️ Wichtige regulatorische Einschränkungen (Assemblies of People &amp; Limits)</b><br>
+            <ul>
+                <li><b>Menschenansammlungen (Assemblies of People)</b>: GHSL-Daten spiegeln ausschließlich die gemeldete Wohnbevölkerung wider. Kurzzeitige, dichte Menschenansammlungen (wie z. B. Sportveranstaltungen, Konzerte, Strände oder Demonstrationen) müssen von Ihnen als Fernpilot/Betreiber immer <b>manuell geprüft</b> und ausgeschlossen werden!</li>
+                <li><b>Grenzwertprüfung</b>: Vergleichen Sie Ihren errechneten Dichtewert mit den für Ihre Betriebskategorie geltenden Containment-Grenzwerten (z. B. der Grenze von $25\text{ Einwohnern/km}^2$ für Enhanced Containment im Specific-Szenario).</li>
+            </ul>
+        </div>
 
         <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
         <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">UAS-Sicherheitskorridor-Berechnungstool &copy; 2026. Alle Rechte vorbehalten.</p>
