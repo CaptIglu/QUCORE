@@ -672,7 +672,6 @@ class ImporterExporter:
             
         xml.append('</w:tbl>')
         return "\n".join(xml)
-
     @staticmethod
     def get_document_xml_template():
         return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -680,7 +679,7 @@ class ImporterExporter:
 <w:body>
   <w:p>
     <w:pPr>
-      <w:pStyle w:val="coverHeading1"/>
+      <w:pStyle w:val="a"/>
       <w:spacing w:before="1200"/>
       <w:jc w:val="center"/>
     </w:pPr>
@@ -688,7 +687,7 @@ class ImporterExporter:
   </w:p>
   <w:p>
     <w:pPr>
-      <w:pStyle w:val="coverHeading1"/>
+      <w:pStyle w:val="a"/>
       <w:spacing w:before="600"/>
       <w:jc w:val="center"/>
     </w:pPr>
@@ -696,7 +695,7 @@ class ImporterExporter:
   </w:p>
   <w:p>
     <w:pPr>
-      <w:pStyle w:val="coverHeading2"/>
+      <w:pStyle w:val="a0"/>
       <w:spacing w:before="800"/>
       <w:jc w:val="center"/>
     </w:pPr>
@@ -704,37 +703,31 @@ class ImporterExporter:
   </w:p>
   <w:p>
     <w:pPr>
-      <w:pStyle w:val="coverHeading2"/>
+      <w:pStyle w:val="a0"/>
       <w:spacing w:before="2000"/>
       <w:jc w:val="center"/>
     </w:pPr>
-    <w:r><w:t xml:space="preserve">Digitale Plattform Unbemannte Luftfahrt (dipul) / QGIS-Planungstool</w:t></w:r>
+    <w:r><w:t xml:space="preserve">Angelehnt an den Export des Digitale Plattform Unbemannte Luftfahrt (dipul) Volumenplaners - Exportiert mit dem QUCORE-QGIS-Plugin</w:t></w:r>
   </w:p>
   <w:p>
     <w:pPr>
-      <w:pStyle w:val="coverHeading2"/>
+      <w:pStyle w:val="a0"/>
       <w:spacing w:before="4000"/>
       <w:jc w:val="center"/>
     </w:pPr>
     <w:r><w:t xml:space="preserve">Die folgenden Seiten können in dem Betriebshandbuch in das Kapitel „Fluggebiete“ eingefügt werden.</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr>
-      <w:sectPr>
-        <w:type w:val="nextPage"/>
-        <w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/>
-        <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/>
-        <w:pgNumType/>
-        <w:docGrid w:linePitch="360"/>
-      </w:sectPr>
-    </w:pPr>
+    <w:r>
+      <w:br w:type="page"/>
+    </w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="Heading2"/></w:pPr>
+    <w:pPr><w:pStyle w:val="berschrift2"/></w:pPr>
     <w:r><w:t xml:space="preserve">Fluggebiet __NAME__</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="Heading3"/></w:pPr>
+    <w:pPr><w:pStyle w:val="berschrift3"/></w:pPr>
     <w:r><w:t xml:space="preserve">Beschreibung</w:t></w:r>
   </w:p>
   <w:p>
@@ -744,7 +737,7 @@ class ImporterExporter:
     <w:r>
       <w:drawing>
         <wp:inline distT="0" distB="0" distL="0" distR="0">
-          <wp:extent cx="5715000" cy="4000000"/>
+          <wp:extent cx="__MAIN_MAP_CX__" cy="__MAIN_MAP_CY__"/>
           <wp:effectExtent t="0" r="0" b="0" l="0"/>
           <wp:docPr id="1" name="QGIS_Map" descr="QGIS Map Screenshot"/>
           <wp:cNvGraphicFramePr>
@@ -767,7 +760,7 @@ class ImporterExporter:
                 <pic:spPr bwMode="auto">
                   <a:xfrm>
                     <a:off x="0" y="0"/>
-                    <a:ext cx="5715000" cy="4000000"/>
+                    <a:ext cx="__MAIN_MAP_CX__" cy="__MAIN_MAP_CY__"/>
                   </a:xfrm>
                   <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
                 </pic:spPr>
@@ -787,8 +780,9 @@ class ImporterExporter:
   <w:p>
     <w:r><w:t xml:space="preserve">Kommentar: __COMMENT__</w:t></w:r>
   </w:p>
+  __DETAIL_MAPS_XML__
   <w:p>
-    <w:pPr><w:pStyle w:val="Heading3"/></w:pPr>
+    <w:pPr><w:pStyle w:val="berschrift3"/></w:pPr>
     <w:r><w:t xml:space="preserve">Eingangswerte der Rechnung CV/GRB</w:t></w:r>
   </w:p>
   <w:p>
@@ -799,19 +793,19 @@ class ImporterExporter:
     <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Es wurden folgende Parameter verwendet:</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Höhe Fluggebiet H_FG: __H_FG__</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Horizontales Contingency-Volumen Manöver: __LAT_MAN_TEXT__</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Vertikales Contingency Manöver: __VERT_MAN_TEXT__</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Ground risk buffer manoeuver: __GRB_MAN_TEXT__</w:t></w:r>
   </w:p>
   <w:p>
@@ -819,23 +813,23 @@ class ImporterExporter:
     <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">UAS Eigenschaften:</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Typ: __UAS_TYPE__</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Höhenmessung: __ALTIMETRY__</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Maximale Geschwindigkeit im Betrieb (v0): __V0__ m/s</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Maximale erlaubte Windgeschwindigkeit (v_wind): __V_WIND__ m/s</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Charakteristische Dimension (CD): __CD__ m</w:t></w:r>
   </w:p>
   __SPEC_FIELDS__
@@ -844,15 +838,15 @@ class ImporterExporter:
     <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Sicherheitsmanöver und Methoden:</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Horizontales Contingency-Volumen Manöver: __LAT_MAN__</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Vertikales Contingency Manöver: __VERT_MAN__</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Ground Risk Buffer Methode: __METHOD__</w:t></w:r>
   </w:p>
   <w:p>
@@ -860,41 +854,71 @@ class ImporterExporter:
     <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Annahmen &amp; Unsicherheiten:</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">GPS-Ungenauigkeit (S_GPS): __GPS_INACC__ m</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Positionshaltefehler (S_POS): __POS_ERR__ m</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Kartenfehler (S_K): __MAP_ERR__ m</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Reaktionszeit (t_Reak): __REACTION__ s</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Höhenmessfehler (barometrisch H_Baro): __ALT_BARO__ m</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Höhenmessfehler (GPS H_GPS): __ALT_GPS__ m</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Zusatzentfernung (horizontal): __ADD_HORIZ__ m</w:t></w:r>
   </w:p>
   <w:p>
-    <w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Zusatzentfernung (vertikal): __ADD_VERT__ m</w:t></w:r>
   </w:p>
   <w:p>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:r><w:t xml:space="preserve">Schrittweite der Berechnung: __STEP_SIZE__ m</w:t></w:r>
+  </w:p>
+  <w:p>
     <w:pPr>
-      <w:pStyle w:val="Heading3"/>
+      <w:pStyle w:val="berschrift3"/>
       <w:pageBreakBefore/>
+    </w:pPr>
+    <w:r><w:t xml:space="preserve">Zusammenfassung der Sicherheitsgrenzen</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:r><w:t xml:space="preserve">Basierend auf der Flugweg-Geometrie und den gewählten Risikoparametern ergeben sich folgende zusammenfassende Schutzbereiche:</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:r><w:t xml:space="preserve">Flight Geography (Halbbreite): __FG_RANGE__</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:r><w:t xml:space="preserve">Contingency Volume (Gesamt-Halbbreite): __CV_RANGE__</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:r><w:t xml:space="preserve">Ground Risk Buffer (Gesamt-Halbbreite): __GRB_RANGE__</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:r><w:t xml:space="preserve">Maximale Contingency Deckenhöhe (h_CV): __H_CV_RANGE__</w:t></w:r>
+  </w:p>
+  __SORA_VIZ_XML__
+  <w:p>
+    <w:pPr>
+      <w:pStyle w:val="berschrift3"/>
     </w:pPr>
     <w:r><w:t xml:space="preserve">SORA-Berechnungsergebnisse pro Wegpunkt</w:t></w:r>
   </w:p>
@@ -911,12 +935,13 @@ class ImporterExporter:
     <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/>
     <w:pgNumType/>
     <w:docGrid w:linePitch="360"/>
+    __HEADER_FOOTER_XML__
   </w:sectPr>
 </w:body>
 </w:document>"""
 
     @staticmethod
-    def export_sora_docx(file_path, waypoints, pilot_pos, params, map_image_path, geometry_type="Corridor"):
+    def export_sora_docx(file_path, waypoints, pilot_pos, params, map_image_path, geometry_type="Corridor", start_image_path=None, end_image_path=None, sora_viz_image_path=None):
         """
         Exports SORA-relevant documentation as a native Word .docx file.
         Uses report_template.docx as a base and modifies its zip contents.
@@ -925,11 +950,94 @@ class ImporterExporter:
         import zipfile
         import shutil
         import tempfile
+        import uuid
         from datetime import datetime
+        
+        def get_png_size(filepath):
+            try:
+                with open(filepath, 'rb') as f:
+                    data = f.read(24)
+                    if len(data) >= 24 and data[:8] == b'\x89PNG\r\n\x1a\n':
+                        import struct
+                        w, h = struct.unpack('>II', data[16:24])
+                        return w, h
+            except Exception:
+                pass
+            return None
         
         # 1. Path to template file in the plugin directory
         plugin_dir = os.path.dirname(os.path.abspath(__file__))
         template_path = os.path.join(plugin_dir, "report_template.docx")
+        
+        # Check for optional TSFly Logo
+        logo_path = os.path.join(plugin_dir, "Logo_TSFly_2.png")
+        if not os.path.exists(logo_path):
+            logo_path = r"d:\Technik\13_Antigravity_Gemini\02_QGIS_DroneCorridor\Logo_TSFly_2.png"
+            
+        has_logo = False
+        logo_cx, logo_cy = 1500000, 1000000
+        if os.path.exists(logo_path):
+            has_logo = True
+            size = get_png_size(logo_path)
+            if size:
+                w, h = size
+                if h > 0:
+                    logo_cy = int(logo_cx * (h / w))
+                    
+        # Check for template's native headers and footers relationships to preserve them,
+        # and also dynamically parse existing relationship IDs to prevent collisions
+        header_rids = []
+        footer_rids = []
+        existing_rids = []
+        overview_rid = "rId6" # Default fallback for the overview map
+        overview_target = "media/image2.png" # Default fallback
+        
+        try:
+            with zipfile.ZipFile(template_path, 'r') as z:
+                if "word/_rels/document.xml.rels" in z.namelist():
+                    rels_xml = z.read("word/_rels/document.xml.rels").decode('utf-8')
+                    import re
+                    # Robust attribute-order-agnostic parsing of Relationship tags
+                    for rel in re.findall(r'<Relationship\s+[^>]+>', rels_xml):
+                        rid_m = re.search(r'Id="([^"]+)"', rel)
+                        type_m = re.search(r'Type="([^"]+)"', rel)
+                        target_m = re.search(r'Target="([^"]+)"', rel)
+                        if rid_m and type_m and target_m:
+                            rid = rid_m.group(1)
+                            rtype = type_m.group(1)
+                            target = target_m.group(1)
+                            
+                            if "header" in target.lower():
+                                header_rids.append(rid)
+                            elif "footer" in target.lower():
+                                footer_rids.append(rid)
+                            elif "relationships/image" in rtype:
+                                overview_rid = rid
+                                overview_target = target
+                                
+                            if rid.startswith("rId"):
+                                try:
+                                    existing_rids.append(int(rid[3:]))
+                                except ValueError:
+                                    pass
+        except Exception:
+            pass
+            
+        overview_zip_path = f"word/{overview_target}"
+            
+        # Dynamically assign new, non-colliding relationship IDs for our embedded assets
+        max_rid_val = max(existing_rids) if existing_rids else 100
+        start_rid = f"rId{max_rid_val + 1}"
+        end_rid = f"rId{max_rid_val + 2}"
+        sora_rid = f"rId{max_rid_val + 3}"
+        logo_rid = f"rId{max_rid_val + 4}"
+        
+        header_footer_xml = []
+        for rid in header_rids:
+            header_footer_xml.append(f'<w:headerReference w:type="default" r:id="{rid}"/>')
+        for rid in footer_rids:
+            header_footer_xml.append(f'<w:footerReference w:type="default" r:id="{rid}"/>')
+        header_footer_xml_str = "".join(header_footer_xml)
         
         if not os.path.exists(template_path):
             raise FileNotFoundError(f"Template DOCX file not found in plugin directory: {template_path}")
@@ -976,21 +1084,31 @@ class ImporterExporter:
             glide = params.get("glideRatioDenominator", 10.0)
             roll = params.get("maxRollAngle", 30.0)
             v_stall = params.get("stallVelocity", 10.0)
-            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Gleitzahl: {glide:.1f}</w:t></w:r></w:p>')
-            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Maximaler Rollwinkel: {roll:.1f}°</w:t></w:r></w:p>')
-            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Geschwindigkeit bei Strömungsabriss (v_stall): {v_stall:.1f} m/s</w:t></w:r></w:p>')
+            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Gleitzahl: {glide:.1f}</w:t></w:r></w:p>')
+            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Maximaler Rollwinkel: {roll:.1f}°</w:t></w:r></w:p>')
+            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Geschwindigkeit bei Strömungsabriss (v_stall): {v_stall:.1f} m/s</w:t></w:r></w:p>')
         else:
             pitch = params.get("maxPitchAngle", 45.0)
-            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Maximaler Nickwinkel: {pitch:.1f}°</w:t></w:r></w:p>')
+            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Maximaler Nickwinkel: {pitch:.1f}°</w:t></w:r></w:p>')
             
         grb_method = params.get("groundRiskBufferMethod", "Simplified")
         if grb_method == "Parachute" or "parachute" in str(grb_method).lower():
             t_para_grb = params.get("parachuteOpeningTimeGRB", 1.0)
             v_z = params.get("parachuteDescentRate", 2.0)
-            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Öffnungszeit (GRB): {t_para_grb:.1f} s</w:t></w:r></w:p>')
-            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Sinkgeschwindigkeit (vZ): {v_z:.1f} m/s</w:t></w:r></w:p>')
+            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Öffnungszeit (GRB): {t_para_grb:.1f} s</w:t></w:r></w:p>')
+            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Sinkgeschwindigkeit (vZ): {v_z:.1f} m/s</w:t></w:r></w:p>')
             
-        uas_spec_fields_str = "\\n".join(uas_spec_fields)
+        lat_man_type = params.get("lateralContingencyManoeuvreType", "Default")
+        if lat_man_type == "Parachute" or "parachute" in str(lat_man_type).lower():
+            t_para_lat = params.get("parachuteOpeningTimeLateral", 2.0)
+            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Öffnungszeit (horizontal): {t_para_lat:.1f} s</w:t></w:r></w:p>')
+            
+        vert_man_type = params.get("verticalContingencyManoeuvreType", "Default")
+        if vert_man_type == "Parachute" or "parachute" in str(vert_man_type).lower():
+            t_para_vert = params.get("parachuteOpeningTimeVertical", 2.0)
+            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Öffnungszeit (vertikal): {t_para_vert:.1f} s</w:t></w:r></w:p>')
+            
+        uas_spec_fields_str = "\n".join(uas_spec_fields)
         
         # Buffer methods
         if grb_method == "Simplified":
@@ -1017,7 +1135,7 @@ class ImporterExporter:
         add_horiz = params.get("additionalErrorLateral", 0.0)
         add_vert = params.get("additionalErrorVertical", 0.0)
         
-        # 3. Build dynamic table
+        # 3. Build dynamic table & Calculate min/max ranges
         headers = [
             "WP",
             "Position (Lat, Lon)",
@@ -1030,6 +1148,11 @@ class ImporterExporter:
         ]
         
         rows = []
+        fg_widths = []
+        cv_radii = []
+        grb_radii = []
+        h_cvs = []
+        
         for i, wp in enumerate(waypoints):
             idx_str = f"WP {i+1}"
             lat_lon_str = f"{wp[1]:.5f}, {wp[0]:.5f}"
@@ -1045,6 +1168,11 @@ class ImporterExporter:
             
             _, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params_wp)
             
+            fg_widths.append(fg_w)
+            cv_radii.append(r_cv)
+            grb_radii.append(r_grb)
+            h_cvs.append(h_cv)
+            
             rows.append([
                 idx_str,
                 lat_lon_str,
@@ -1058,9 +1186,79 @@ class ImporterExporter:
             
         table_xml = ImporterExporter.make_docx_table(headers, rows)
         
+        # Format overall results ranges
+        def get_range_str(val_list, unit="m"):
+            if not val_list:
+                return f"0,0 {unit}"
+            min_v = min(val_list)
+            max_v = max(val_list)
+            if abs(min_v - max_v) < 0.05:
+                return f"{min_v:.1f} {unit}".replace('.', ',')
+            else:
+                return f"{min_v:.1f} {unit} bis {max_v:.1f} {unit}".replace('.', ',')
+                
+        fg_range = get_range_str(fg_widths)
+        cv_range = get_range_str(cv_radii)
+        grb_range = get_range_str(grb_radii)
+        h_cv_range = get_range_str(h_cvs)
+        
         # 4. Generate dynamic document.xml using placeholder replacements
         xml_content = ImporterExporter.get_document_xml_template()
         
+        # Replace the hardcoded overview map blip relationship ID with the one discovered from the template
+        xml_content = xml_content.replace('<a:blip r:embed="rId6"', f'<a:blip r:embed="{overview_rid}"')
+        
+        # Replace logo placeholder
+        if has_logo:
+            logo_xml = """  <w:p>
+    <w:pPr>
+      <w:jc w:val="left"/>
+      <w:spacing w:after="200"/>
+    </w:pPr>
+    <w:r>
+      <w:drawing>
+        <wp:inline distT="0" distB="0" distL="0" distR="0">
+          <wp:extent cx="__LOGO_CX__" cy="__LOGO_CY__"/>
+          <wp:effectExtent t="0" r="0" b="0" l="0"/>
+          <wp:docPr id="10" name="Logo" descr="TSFly Logo"/>
+          <wp:cNvGraphicFramePr>
+            <a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
+          </wp:cNvGraphicFramePr>
+          <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+            <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+              <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                <pic:nvPicPr>
+                  <pic:cNvPr id="0" name="" descr=""/>
+                  <pic:cNvPicPr>
+                    <a:picLocks noChangeAspect="1" noChangeArrowheads="1"/>
+                  </pic:cNvPicPr>
+                </pic:nvPicPr>
+                <pic:blipFill>
+                  <a:blip r:embed="__LOGO_RID__" cstate="none"/>
+                  <a:srcRect/>
+                  <a:stretch><a:fillRect/></a:stretch>
+                </pic:blipFill>
+                <pic:spPr bwMode="auto">
+                  <a:xfrm>
+                    <a:off x="0" y="0"/>
+                    <a:ext cx="__LOGO_CX__" cy="__LOGO_CY__"/>
+                  </a:xfrm>
+                  <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+                </pic:spPr>
+              </pic:pic>
+            </a:graphicData>
+          </a:graphic>
+        </wp:inline>
+      </w:drawing>
+    </w:r>
+  </w:p>"""
+            logo_xml = logo_xml.replace("__LOGO_CX__", str(logo_cx))
+            logo_xml = logo_xml.replace("__LOGO_CY__", str(logo_cy))
+            logo_xml = logo_xml.replace("__LOGO_RID__", logo_rid)
+            xml_content = xml_content.replace("__LOGO_XML__", logo_xml)
+        else:
+            xml_content = xml_content.replace("__LOGO_XML__", "")
+            
         # Format custom parameter block values
         h_fg_val = params.get("maxFlightHeight", 100.0)
         h_fg_str = f"{float(h_fg_val):.1f}".replace('.', ',') + " m"
@@ -1086,6 +1284,17 @@ class ImporterExporter:
         else:
             grb_man_text = str(grb_method)
             
+        # Get aspect ratios and replace main map placeholders
+        main_cx, main_cy = 5715000, 4000000
+        if map_image_path and os.path.exists(map_image_path):
+            size = get_png_size(map_image_path)
+            if size:
+                w, h = size
+                if h > 0:
+                    main_cy = int(main_cx * (h / w))
+        xml_content = xml_content.replace("__MAIN_MAP_CX__", str(main_cx))
+        xml_content = xml_content.replace("__MAIN_MAP_CY__", str(main_cy))
+        
         xml_content = xml_content.replace("__H_FG__", h_fg_str)
         xml_content = xml_content.replace("__LAT_MAN_TEXT__", lat_man_text)
         xml_content = xml_content.replace("__VERT_MAN_TEXT__", vert_man_text)
@@ -1113,7 +1322,196 @@ class ImporterExporter:
         xml_content = xml_content.replace("__ALT_GPS__", f"{alt_gps:.1f}")
         xml_content = xml_content.replace("__ADD_HORIZ__", f"{add_horiz:.1f}")
         xml_content = xml_content.replace("__ADD_VERT__", f"{add_vert:.1f}")
+        step_size = params.get("stepSize", 50.0)
+        xml_content = xml_content.replace("__STEP_SIZE__", f"{step_size:.1f}")
+        
+        xml_content = xml_content.replace("__FG_RANGE__", fg_range)
+        xml_content = xml_content.replace("__CV_RANGE__", cv_range)
+        xml_content = xml_content.replace("__GRB_RANGE__", grb_range)
+        xml_content = xml_content.replace("__H_CV_RANGE__", h_cv_range)
         xml_content = xml_content.replace("__TABLE_XML__", table_xml)
+        xml_content = xml_content.replace("__HEADER_FOOTER_XML__", header_footer_xml_str)
+        
+        # Build Detail Maps XML
+        if start_image_path and end_image_path and len(waypoints) >= 2:
+            detail_xml = """  <w:p>
+    <w:pPr><w:pStyle w:val="berschrift3"/><w:spacing w:before="300" w:after="100"/></w:pPr>
+    <w:r><w:t xml:space="preserve">Detailausschnitte Start- und Landebereich (ca. 500x500m)</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:r><w:t xml:space="preserve">Zur detaillierten Sicherheitsbewertung sind nachfolgend die hochauflösenden Ausschnitte des Start- und Landebereichs (jeweils ca. 500 x 500 m) dargestellt:</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:jc w:val="center"/></w:pPr>
+    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Ausschnitt Startbereich (Takeoff / WP 1):</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:jc w:val="center"/></w:pPr>
+    <w:r>
+      <w:drawing>
+        <wp:inline distT="0" distB="0" distL="0" distR="0">
+          <wp:extent cx="__START_MAP_CX__" cy="__START_MAP_CY__"/>
+          <wp:effectExtent t="0" r="0" b="0" l="0"/>
+          <wp:docPr id="2" name="Start_Map" descr="QGIS Map Start Area"/>
+          <wp:cNvGraphicFramePr>
+            <a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
+          </wp:cNvGraphicFramePr>
+          <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+            <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+              <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                <pic:nvPicPr>
+                  <pic:cNvPr id="0" name="" descr=""/>
+                  <pic:cNvPicPr>
+                    <a:picLocks noChangeAspect="1" noChangeArrowheads="1"/>
+                  </pic:cNvPicPr>
+                </pic:nvPicPr>
+                <pic:blipFill>
+                  <a:blip r:embed="__START_RID__" cstate="none"/>
+                  <a:srcRect/>
+                  <a:stretch><a:fillRect/></a:stretch>
+                </pic:blipFill>
+                <pic:spPr bwMode="auto">
+                  <a:xfrm>
+                    <a:off x="0" y="0"/>
+                    <a:ext cx="__START_MAP_CX__" cy="__START_MAP_CY__"/>
+                  </a:xfrm>
+                  <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+                </pic:spPr>
+              </pic:pic>
+            </a:graphicData>
+          </a:graphic>
+        </wp:inline>
+      </w:drawing>
+    </w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:jc w:val="center"/><w:spacing w:before="200"/></w:pPr>
+    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Ausschnitt Landebereich (Landing / WP __LAST_WP_NUM__):</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:jc w:val="center"/></w:pPr>
+    <w:r>
+      <w:drawing>
+        <wp:inline distT="0" distB="0" distL="0" distR="0">
+          <wp:extent cx="__END_MAP_CX__" cy="__END_MAP_CY__"/>
+          <wp:effectExtent t="0" r="0" b="0" l="0"/>
+          <wp:docPr id="3" name="End_Map" descr="QGIS Map Landing Area"/>
+          <wp:cNvGraphicFramePr>
+            <a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
+          </wp:cNvGraphicFramePr>
+          <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+            <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+              <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                <pic:nvPicPr>
+                  <pic:cNvPr id="0" name="" descr=""/>
+                  <pic:cNvPicPr>
+                    <a:picLocks noChangeAspect="1" noChangeArrowheads="1"/>
+                  </pic:cNvPicPr>
+                </pic:nvPicPr>
+                <pic:blipFill>
+                  <a:blip r:embed="__END_RID__" cstate="none"/>
+                  <a:srcRect/>
+                  <a:stretch><a:fillRect/></a:stretch>
+                </pic:blipFill>
+                <pic:spPr bwMode="auto">
+                  <a:xfrm>
+                    <a:off x="0" y="0"/>
+                    <a:ext cx="__END_MAP_CX__" cy="__END_MAP_CY__"/>
+                  </a:xfrm>
+                  <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+                </pic:spPr>
+              </pic:pic>
+            </a:graphicData>
+          </a:graphic>
+        </wp:inline>
+      </w:drawing>
+    </w:r>
+  </w:p>"""
+            start_cx, start_cy = 4500000, 3150000
+            if start_image_path and os.path.exists(start_image_path):
+                size = get_png_size(start_image_path)
+                if size:
+                    w, h = size
+                    if h > 0:
+                        start_cy = int(start_cx * (h / w))
+            end_cx, end_cy = 4500000, 3150000
+            if end_image_path and os.path.exists(end_image_path):
+                size = get_png_size(end_image_path)
+                if size:
+                    w, h = size
+                    if h > 0:
+                        end_cy = int(end_cx * (h / w))
+            detail_xml = detail_xml.replace("__START_MAP_CX__", str(start_cx))
+            detail_xml = detail_xml.replace("__START_MAP_CY__", str(start_cy))
+            detail_xml = detail_xml.replace("__END_MAP_CX__", str(end_cx))
+            detail_xml = detail_xml.replace("__END_MAP_CY__", str(end_cy))
+            detail_xml = detail_xml.replace("__LAST_WP_NUM__", str(len(waypoints)))
+            detail_xml = detail_xml.replace("__START_RID__", start_rid)
+            detail_xml = detail_xml.replace("__END_RID__", end_rid)
+            xml_content = xml_content.replace("__DETAIL_MAPS_XML__", detail_xml)
+        else:
+            xml_content = xml_content.replace("__DETAIL_MAPS_XML__", "")
+            
+        # Build Sora visual widget XML
+        if sora_viz_image_path and os.path.exists(sora_viz_image_path):
+            sora_xml = """  <w:p>
+    <w:pPr><w:pStyle w:val="berschrift3"/><w:spacing w:before="300" w:after="100"/></w:pPr>
+    <w:r><w:t xml:space="preserve">Grafisches Profil der Sicherheitsvolumina</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:r><w:t xml:space="preserve">Die folgende Grafik veranschaulicht schematisch die geometrische Schachtelung und die Höhenrelationen der berechneten Sicherheitsvolumina (Flight Geography, Contingency Volume und Ground Risk Buffer) in der Draufsicht sowie im Vertikalprofil:</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:jc w:val="center"/></w:pPr>
+    <w:r>
+      <w:drawing>
+        <wp:inline distT="0" distB="0" distL="0" distR="0">
+          <wp:extent cx="__SORA_VIZ_CX__" cy="__SORA_VIZ_CY__"/>
+          <wp:effectExtent t="0" r="0" b="0" l="0"/>
+          <wp:docPr id="4" name="Sora_Viz" descr="SORA Volume Profile Visualization"/>
+          <wp:cNvGraphicFramePr>
+            <a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
+          </wp:cNvGraphicFramePr>
+          <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+            <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+              <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                <pic:nvPicPr>
+                  <pic:cNvPr id="0" name="" descr=""/>
+                  <pic:cNvPicPr>
+                    <a:picLocks noChangeAspect="1" noChangeArrowheads="1"/>
+                  </pic:cNvPicPr>
+                </pic:nvPicPr>
+                <pic:blipFill>
+                  <a:blip r:embed="__SORA_RID__" cstate="none"/>
+                  <a:srcRect/>
+                  <a:stretch><a:fillRect/></a:stretch>
+                </pic:blipFill>
+                <pic:spPr bwMode="auto">
+                  <a:xfrm>
+                    <a:off x="0" y="0"/>
+                    <a:ext cx="__SORA_VIZ_CX__" cy="__SORA_VIZ_CY__"/>
+                  </a:xfrm>
+                  <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+                </pic:spPr>
+              </pic:pic>
+            </a:graphicData>
+          </a:graphic>
+        </wp:inline>
+      </w:drawing>
+    </w:r>
+  </w:p>"""
+            sora_cx, sora_cy = 5715000, 3800000
+            size = get_png_size(sora_viz_image_path)
+            if size:
+                w, h = size
+                if h > 0:
+                    sora_cy = int(sora_cx * (h / w))
+            sora_xml = sora_xml.replace("__SORA_VIZ_CX__", str(sora_cx))
+            sora_xml = sora_xml.replace("__SORA_VIZ_CY__", str(sora_cy))
+            sora_xml = sora_xml.replace("__SORA_RID__", sora_rid)
+            xml_content = xml_content.replace("__SORA_VIZ_XML__", sora_xml)
+        else:
+            xml_content = xml_content.replace("__SORA_VIZ_XML__", "")
         
         # 5. Modify Zip archive
         temp_zip_path = os.path.join(tempfile.gettempdir(), f"temp_{uuid.uuid4().hex}.docx")
@@ -1123,11 +1521,39 @@ class ImporterExporter:
                 for item in z_in.infolist():
                     if item.filename == "word/document.xml":
                         z_out.writestr(item.filename, xml_content.encode('utf-8'))
-                    elif item.filename == "word/media/a70facf9afb3b4025e7009d7f20f7cc8f1fc1227.png" and map_image_path and os.path.exists(map_image_path):
+                    elif item.filename == "word/_rels/document.xml.rels":
+                        rels_content = z_in.read(item.filename).decode('utf-8')
+                        new_rels = []
+                        if start_image_path and end_image_path:
+                            new_rels.append(f'<Relationship Id="{start_rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image_start.png"/>')
+                            new_rels.append(f'<Relationship Id="{end_rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image_end.png"/>')
+                        if sora_viz_image_path:
+                            new_rels.append(f'<Relationship Id="{sora_rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/sora_viz.png"/>')
+                        if has_logo:
+                            new_rels.append(f'<Relationship Id="{logo_rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/>')
+                        
+                        if new_rels:
+                            rels_content = rels_content.replace('</Relationships>', "".join(new_rels) + '</Relationships>')
+                        z_out.writestr(item.filename, rels_content.encode('utf-8'))
+                    elif item.filename == overview_zip_path and map_image_path and os.path.exists(map_image_path):
                         with open(map_image_path, "rb") as f:
                             z_out.writestr(item.filename, f.read())
                     else:
                         z_out.writestr(item.filename, z_in.read(item.filename))
+                        
+                # Append the new physical image files to the ZIP package
+                if start_image_path and os.path.exists(start_image_path):
+                    with open(start_image_path, "rb") as f:
+                        z_out.writestr("word/media/image_start.png", f.read())
+                if end_image_path and os.path.exists(end_image_path):
+                    with open(end_image_path, "rb") as f:
+                        z_out.writestr("word/media/image_end.png", f.read())
+                if sora_viz_image_path and os.path.exists(sora_viz_image_path):
+                    with open(sora_viz_image_path, "rb") as f:
+                        z_out.writestr("word/media/sora_viz.png", f.read())
+                if has_logo and os.path.exists(logo_path):
+                    with open(logo_path, "rb") as f:
+                        z_out.writestr("word/media/logo.png", f.read())
                         
         if os.path.exists(file_path):
             os.remove(file_path)

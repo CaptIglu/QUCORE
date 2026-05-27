@@ -2110,6 +2110,97 @@ class DroneCorridorPlanner(object):
             f"Die Korridorplanung wurde erfolgreich als dauerhafter GeoPackage-Layer gespeichert!\n\nDatei: {file_path}\n\nDie Layer wurden zur Gruppe 'QUCORE-Persistente_Layer' hinzugefügt."
         )
 
+    def capture_map_views(self):
+        """
+        Captures three map screenshots:
+        1. Overview (zoomed to safety corridors with a 15% margin)
+        2. Start takeoff area (500x500m zoom around waypoint 0)
+        3. Landing area (500x500m zoom around last waypoint)
+        Restores the user's original map extent afterward.
+        """
+        import uuid
+        import tempfile
+        from PyQt5.QtCore import QSize
+        from qgis.core import (
+            QgsRectangle, 
+            QgsCoordinateTransform, 
+            QgsCoordinateReferenceSystem, 
+            QgsProject,
+            QgsMapSettings,
+            QgsMapRendererSequentialJob
+        )
+        
+        canvas = self.iface.mapCanvas()
+        
+        overview_path = os.path.join(tempfile.gettempdir(), f"map_overview_{uuid.uuid4().hex[:8]}.png")
+        start_path = None
+        end_path = None
+        
+        def render_extent_to_image(extent, filepath, width=1000, height=700):
+            # Create offline map settings using active canvas layers and configurations
+            settings = QgsMapSettings(canvas.mapSettings())
+            settings.setExtent(extent)
+            settings.setOutputSize(QSize(width, height))
+            
+            # Execute sequential render job synchronously
+            job = QgsMapRendererSequentialJob(settings)
+            job.start()
+            job.waitForFinished()
+            
+            # Save final rendered image
+            image = job.renderedImage()
+            image.save(filepath, "PNG")
+            
+        try:
+            # 1. Overview Map Extent: zoom to ground risk buffer (GRB) or Flight Geography (FG)
+            overview_extent = canvas.extent()
+            extent_layer = self.lyr_grb if self.is_layer_valid(self.lyr_grb) else self.lyr_fg
+            if self.is_layer_valid(extent_layer) and not extent_layer.extent().isEmpty():
+                extent = extent_layer.extent()
+                canvas_crs = canvas.mapSettings().destinationCrs()
+                wgs_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+                transform = QgsCoordinateTransform(wgs_crs, canvas_crs, QgsProject.instance())
+                overview_extent = transform.transformBoundingBox(extent)
+                # Grow by 15% margin
+                overview_extent.grow(overview_extent.width() * 0.15)
+                
+            render_extent_to_image(overview_extent, overview_path, width=1000, height=700)
+            
+            # Detailed views: only if Corridor/Polygon and we have >= 2 waypoints
+            if self.geometry_type != "Circle" and len(self.waypoints) >= 2:
+                # Helper to get 500x500m bounding box in canvas CRS
+                def get_500m_extent(wp):
+                    lon, lat = wp[0], wp[1]
+                    import math
+                    cos_lat = math.cos(math.radians(lat))
+                    delta_lat = 250.0 / 111111.0
+                    delta_lon = 250.0 / (111111.0 * cos_lat) if cos_lat > 0.01 else delta_lat
+                    
+                    rect_wgs = QgsRectangle(lon - delta_lon, lat - delta_lat, lon + delta_lon, lat + delta_lat)
+                    canvas_crs = canvas.mapSettings().destinationCrs()
+                    wgs_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+                    transform = QgsCoordinateTransform(wgs_crs, canvas_crs, QgsProject.instance())
+                    return transform.transformBoundingBox(rect_wgs)
+                
+                # 2. Start Map (waypoint 0)
+                start_extent = get_500m_extent(self.waypoints[0])
+                start_path = os.path.join(tempfile.gettempdir(), f"map_start_{uuid.uuid4().hex[:8]}.png")
+                render_extent_to_image(start_extent, start_path, width=800, height=560)
+                
+                # 3. End Map (last waypoint)
+                end_extent = get_500m_extent(self.waypoints[-1])
+                end_path = os.path.join(tempfile.gettempdir(), f"map_end_{uuid.uuid4().hex[:8]}.png")
+                render_extent_to_image(end_extent, end_path, width=800, height=560)
+                
+        except Exception:
+            try:
+                # Fallback to current canvas view
+                render_extent_to_image(canvas.extent(), overview_path, width=1000, height=700)
+            except Exception:
+                pass
+                
+        return overview_path, start_path, end_path
+
     # ----------------------------------------------------
     # FILE IMPORTS / EXPORTS
     # ----------------------------------------------------
@@ -2247,16 +2338,38 @@ class DroneCorridorPlanner(object):
             
         if is_docx:
             try:
-                temp_map_path = os.path.join(tempfile.gettempdir(), f"qgis_map_export_{uuid.uuid4().hex[:8]}.png")
-                self.iface.mapCanvas().saveAsImage(temp_map_path)
+                # Capture three map screenshots dynamically
+                overview_path, start_path, end_path = self.capture_map_views()
                 
-                ImporterExporter.export_sora_docx(file_path, self.waypoints, self.pilot_pos, self.params, temp_map_path, self.geometry_type)
-                
-                if os.path.exists(temp_map_path):
+                # Grab live Sora visual widget screenshot
+                temp_sora_path = None
+                if hasattr(self, 'sora_viz') and self.sora_viz is not None:
                     try:
-                        os.remove(temp_map_path)
+                        sora_pixmap = self.sora_viz.grab()
+                        temp_sora_path = os.path.join(tempfile.gettempdir(), f"sora_viz_{uuid.uuid4().hex[:8]}.png")
+                        sora_pixmap.save(temp_sora_path, "PNG")
                     except Exception:
                         pass
+                
+                ImporterExporter.export_sora_docx(
+                    file_path, 
+                    self.waypoints, 
+                    self.pilot_pos, 
+                    self.params, 
+                    overview_path, 
+                    self.geometry_type,
+                    start_image_path=start_path,
+                    end_image_path=end_path,
+                    sora_viz_image_path=temp_sora_path
+                )
+                
+                # Clean up temporary PNGs
+                for p in [overview_path, start_path, end_path, temp_sora_path]:
+                    if p and os.path.exists(p):
+                        try:
+                            os.remove(p)
+                        except Exception:
+                            pass
                         
                 QMessageBox.information(
                     self.gui, 
@@ -2339,19 +2452,39 @@ class DroneCorridorPlanner(object):
             file_path += '.docx'
             
         try:
-            # Synchronously save the QGIS map canvas as a PNG
-            temp_map_path = os.path.join(tempfile.gettempdir(), f"qgis_map_export_{uuid.uuid4().hex[:8]}.png")
-            self.iface.mapCanvas().saveAsImage(temp_map_path)
+            # Capture three map screenshots dynamically
+            overview_path, start_path, end_path = self.capture_map_views()
             
-            # Run SORA DOCX Export
-            ImporterExporter.export_sora_docx(file_path, self.waypoints, self.pilot_pos, self.params, temp_map_path, self.geometry_type)
-            
-            # Clean up temporary PNG
-            if os.path.exists(temp_map_path):
+            # Grab live Sora visual widget screenshot
+            temp_sora_path = None
+            if hasattr(self, 'sora_viz') and self.sora_viz is not None:
                 try:
-                    os.remove(temp_map_path)
+                    sora_pixmap = self.sora_viz.grab()
+                    temp_sora_path = os.path.join(tempfile.gettempdir(), f"sora_viz_{uuid.uuid4().hex[:8]}.png")
+                    sora_pixmap.save(temp_sora_path, "PNG")
                 except Exception:
                     pass
+            
+            # Run SORA DOCX Export
+            ImporterExporter.export_sora_docx(
+                file_path, 
+                self.waypoints, 
+                self.pilot_pos, 
+                self.params, 
+                overview_path, 
+                self.geometry_type,
+                start_image_path=start_path,
+                end_image_path=end_path,
+                sora_viz_image_path=temp_sora_path
+            )
+            
+            # Clean up temporary PNGs
+            for p in [overview_path, start_path, end_path, temp_sora_path]:
+                if p and os.path.exists(p):
+                    try:
+                        os.remove(p)
+                    except Exception:
+                        pass
                     
             QMessageBox.information(
                 self.gui, 
