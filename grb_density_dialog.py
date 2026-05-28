@@ -381,8 +381,7 @@ class GrbDensityDialog(QDialog):
                 max_density = max_pixel_val / cell_area_km2
             else:
                 max_density = 0.0
-                
-            self.lbl_max_density.setText(f"{max_density:.2f} {self.tr('people_per_km2', 'Einwohner / km²')}")
+            self.lbl_max_density.setText(f"{max_density:.2f} {self.tr('people_per_km2', 'Einwohner / km²')} ({self.tr('raw_value', 'Rohwert')}: {max_pixel_val:.6f} {self.tr('people_per_cell', 'Personen/Zelle')})")
             
         except Exception as e:
             QMessageBox.critical(
