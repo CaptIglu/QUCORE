@@ -2,6 +2,20 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <title>Benutzerhandbuch: QUCORE – UAS-Korridorplanung für QGIS</title>
     <style>
         /* Modern Premium CSS Reset & Styles */
