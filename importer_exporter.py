@@ -969,20 +969,7 @@ class ImporterExporter:
         plugin_dir = os.path.dirname(os.path.abspath(__file__))
         template_path = os.path.join(plugin_dir, "report_template.docx")
         
-        # Check for optional TSFly Logo
-        logo_path = os.path.join(plugin_dir, "Logo_TSFly_2.png")
-        if not os.path.exists(logo_path):
-            logo_path = r"d:\Technik\13_Antigravity_Gemini\02_QGIS_DroneCorridor\Logo_TSFly_2.png"
-            
         has_logo = False
-        logo_cx, logo_cy = 1500000, 1000000
-        if os.path.exists(logo_path):
-            has_logo = True
-            size = get_png_size(logo_path)
-            if size:
-                w, h = size
-                if h > 0:
-                    logo_cy = int(logo_cx * (h / w))
                     
         # Check for template's native headers and footers relationships to preserve them,
         # and also dynamically parse existing relationship IDs to prevent collisions
@@ -1030,7 +1017,6 @@ class ImporterExporter:
         start_rid = f"rId{max_rid_val + 1}"
         end_rid = f"rId{max_rid_val + 2}"
         sora_rid = f"rId{max_rid_val + 3}"
-        logo_rid = f"rId{max_rid_val + 4}"
         
         header_footer_xml = []
         for rid in header_rids:
@@ -1208,56 +1194,7 @@ class ImporterExporter:
         # Replace the hardcoded overview map blip relationship ID with the one discovered from the template
         xml_content = xml_content.replace('<a:blip r:embed="rId6"', f'<a:blip r:embed="{overview_rid}"')
         
-        # Replace logo placeholder
-        if has_logo:
-            logo_xml = """  <w:p>
-    <w:pPr>
-      <w:jc w:val="left"/>
-      <w:spacing w:after="200"/>
-    </w:pPr>
-    <w:r>
-      <w:drawing>
-        <wp:inline distT="0" distB="0" distL="0" distR="0">
-          <wp:extent cx="__LOGO_CX__" cy="__LOGO_CY__"/>
-          <wp:effectExtent t="0" r="0" b="0" l="0"/>
-          <wp:docPr id="10" name="Logo" descr="TSFly Logo"/>
-          <wp:cNvGraphicFramePr>
-            <a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
-          </wp:cNvGraphicFramePr>
-          <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-            <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
-              <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
-                <pic:nvPicPr>
-                  <pic:cNvPr id="0" name="" descr=""/>
-                  <pic:cNvPicPr>
-                    <a:picLocks noChangeAspect="1" noChangeArrowheads="1"/>
-                  </pic:cNvPicPr>
-                </pic:nvPicPr>
-                <pic:blipFill>
-                  <a:blip r:embed="__LOGO_RID__" cstate="none"/>
-                  <a:srcRect/>
-                  <a:stretch><a:fillRect/></a:stretch>
-                </pic:blipFill>
-                <pic:spPr bwMode="auto">
-                  <a:xfrm>
-                    <a:off x="0" y="0"/>
-                    <a:ext cx="__LOGO_CX__" cy="__LOGO_CY__"/>
-                  </a:xfrm>
-                  <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-                </pic:spPr>
-              </pic:pic>
-            </a:graphicData>
-          </a:graphic>
-        </wp:inline>
-      </w:drawing>
-    </w:r>
-  </w:p>"""
-            logo_xml = logo_xml.replace("__LOGO_CX__", str(logo_cx))
-            logo_xml = logo_xml.replace("__LOGO_CY__", str(logo_cy))
-            logo_xml = logo_xml.replace("__LOGO_RID__", logo_rid)
-            xml_content = xml_content.replace("__LOGO_XML__", logo_xml)
-        else:
-            xml_content = xml_content.replace("__LOGO_XML__", "")
+
             
         # Format custom parameter block values
         h_fg_val = params.get("maxFlightHeight", 100.0)
@@ -1529,8 +1466,6 @@ class ImporterExporter:
                             new_rels.append(f'<Relationship Id="{end_rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image_end.png"/>')
                         if sora_viz_image_path:
                             new_rels.append(f'<Relationship Id="{sora_rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/sora_viz.png"/>')
-                        if has_logo:
-                            new_rels.append(f'<Relationship Id="{logo_rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/>')
                         
                         if new_rels:
                             rels_content = rels_content.replace('</Relationships>', "".join(new_rels) + '</Relationships>')
@@ -1551,9 +1486,6 @@ class ImporterExporter:
                 if sora_viz_image_path and os.path.exists(sora_viz_image_path):
                     with open(sora_viz_image_path, "rb") as f:
                         z_out.writestr("word/media/sora_viz.png", f.read())
-                if has_logo and os.path.exists(logo_path):
-                    with open(logo_path, "rb") as f:
-                        z_out.writestr("word/media/logo.png", f.read())
                         
         if os.path.exists(file_path):
             os.remove(file_path)
