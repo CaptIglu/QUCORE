@@ -930,6 +930,50 @@
   "msg_save_success_text": {
     "de": "Die Korridorplanung wurde erfolgreich als dauerhafter GeoPackage-Layer gespeichert!\n\nDatei: {file_path}\n\nDie Layer wurden zur Gruppe '{group_name}' hinzugefügt.",
     "en": "The corridor planning was successfully saved as a persistent GeoPackage layer!\n\nFile: {file_path}\n\nThe layers have been added to the group '{group_name}'."
+  },
+  "menu_grb_density": {
+    "de": "Bodenrisiko-Analyse (GRB-Bevölkerungsdichte)...",
+    "en": "Ground Risk Analysis (GRB Population Density)..."
+  },
+  "dialog_grb_pop_title": {
+    "de": "Bodenrisiko-Analyse (GRB-Bevölkerungsdichte)",
+    "en": "Ground Risk Analysis (GRB Population Density)"
+  },
+  "grb_pop_desc": {
+    "de": "Berechnung der durchschnittlichen und maximalen Bevölkerungsdichte innerhalb des Ground Risk Buffers (GRB) basierend auf dem GHS-POP GeoTIFF gemäß EASA SORA-Vorgaben.",
+    "en": "Calculation of the average and maximum population density within the Ground Risk Buffer (GRB) based on the GHS-POP GeoTIFF according to EASA SORA requirements."
+  },
+  "grp_grb_details": {
+    "de": "Ground Risk Buffer (GRB) Eigenschaften",
+    "en": "Ground Risk Buffer (GRB) Properties"
+  },
+  "label_grb_area": {
+    "de": "GRB-Gesamtfläche:",
+    "en": "GRB Total Area:"
+  },
+  "label_total_pop_grb": {
+    "de": "Gesamtbevölkerung im GRB:",
+    "en": "Total Population in GRB:"
+  },
+  "label_avg_density_grb": {
+    "de": "Durchschnittliche Bevölkerungsdichte:",
+    "en": "Average Population Density:"
+  },
+  "label_max_density_grb": {
+    "de": "Maximale Bevölkerungsdichte (konservativ):",
+    "en": "Maximum Population Density (conservative):"
+  },
+  "easa_grb_info": {
+    "de": "<b>EASA SORA Hinweis (Konservativer Ansatz):</b> Für den Maximalwert der Bevölkerungsdichte im GRB wird ein konservativer Ansatz gewählt. Jede Rasterzelle, die das GRB-Polygon auch nur berührt, wird voll berücksichtigt, um das maximale Bodenrisiko sicherzustellen.",
+    "en": "<b>EASA SORA Note (Conservative Approach):</b> For the maximum value of population density in the GRB, a conservative approach is chosen. Any raster cell that even slightly touches the GRB polygon is fully considered to ensure maximum ground risk coverage."
+  },
+  "error_empty_grb_title": {
+    "de": "Kein Ground Risk Buffer",
+    "en": "No Ground Risk Buffer"
+  },
+  "error_empty_grb_text": {
+    "de": "Es existiert kein gültiger 'Ground Risk Buffer (GRB)'-Layer oder dieser enthält keine Geometrie. Bitte erstellen Sie zuerst eine Flugplanung.",
+    "en": "There is no valid 'Ground Risk Buffer (GRB)' layer, or it contains no geometry. Please create a flight planning first."
   }
 }
 
