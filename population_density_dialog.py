@@ -349,6 +349,12 @@ class PopulationDensityDialog(QDialog):
             density = total_population / total_area_km2
             self.lbl_avg_density.setText(f"{density:.2f} {self.tr('people_per_km2', 'Einwohner / km²')}")
             
+            # Store results in params for Word Export
+            if self.params is not None:
+                self.params["aa_area_km2"] = total_area_km2
+                self.params["aa_population"] = total_population
+                self.params["aa_density"] = density
+            
         except Exception as e:
             QMessageBox.critical(
                 self,

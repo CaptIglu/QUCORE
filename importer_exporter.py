@@ -930,6 +930,7 @@ class ImporterExporter:
   <w:p>
     <w:r><w:t xml:space="preserve">Bemerkungen: Der Ground Risk Buffer (GRB) schliesst an das Contingency Volume (CV) an und berücksichtigt die ballistische Drift, Gleitflugfähigkeit oder das Absinken per Fallschirm im Falle eines Kontrollverlusts gemäss gewählter Methode.</w:t></w:r>
   </w:p>
+  __POPULATION_ANALYSIS_XML__
   <w:sectPr>
     <w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/>
     <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/>
@@ -1267,6 +1268,78 @@ class ImporterExporter:
         xml_content = xml_content.replace("__GRB_RANGE__", grb_range)
         xml_content = xml_content.replace("__H_CV_RANGE__", h_cv_range)
         xml_content = xml_content.replace("__TABLE_XML__", table_xml)
+        
+        # Build and replace __POPULATION_ANALYSIS_XML__
+        pop_xml = []
+        pop_xml.append('  <w:p>')
+        pop_xml.append('    <w:pPr>')
+        pop_xml.append('      <w:pStyle w:val="berschrift3"/>')
+        pop_xml.append('      <w:spacing w:before="400" w:after="100"/>')
+        pop_xml.append('    </w:pPr>')
+        pop_xml.append('    <w:r><w:t xml:space="preserve">Bevölkerungsdichte- und Bodenrisikobewertung</w:t></w:r>')
+        pop_xml.append('  </w:p>')
+        pop_xml.append('  <w:p>')
+        pop_xml.append('    <w:r><w:t xml:space="preserve">Die Analyse der Bevölkerungsdichte in den Sicherheitszonen (Adjacent Area und Ground Risk Buffer) wurde auf Basis der geladenen GHS-POP Rasterdaten durchgeführt. Dies dient zur Bewertung der Betriebsrisiken und zur GRC-Verifizierung gemäss den SORA-Richtlinien:</w:t></w:r>')
+        pop_xml.append('  </w:p>')
+        
+        # Check if Adjacent Area population analysis was run
+        aa_area = params.get("aa_area_km2")
+        aa_pop = params.get("aa_population")
+        aa_dens = params.get("aa_density")
+        
+        # Check if GRB population analysis was run
+        grb_area = params.get("grb_area_km2")
+        grb_pop = params.get("grb_population")
+        grb_avg_dens = params.get("grb_avg_density")
+        grb_max_dens = params.get("grb_max_density")
+        grb_max_raw = params.get("grb_max_raw_value")
+        
+        has_any_pop = False
+        
+        if aa_area is not None or grb_area is not None:
+            if aa_area is not None:
+                has_any_pop = True
+                pop_xml.append('  <w:p>')
+                pop_xml.append('    <w:pPr><w:jc w:val="left"/></w:pPr>')
+                pop_xml.append('    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">1. Bevölkerungsdichte in der Adjacent Area (AA):</w:t></w:r>')
+                pop_xml.append('  </w:p>')
+                
+                headers_aa = ["Parameter in der Adjacent Area (AA)", "Wert"]
+                rows_aa = [
+                    ["AA - Gesamtfläche", f"{float(aa_area):.3f} km²".replace('.', ',')],
+                    ["AA - Anzahl Personen (Summe)", f"{int(round(float(aa_pop))):,}".replace(',', '.') + " Personen"],
+                    ["AA - Durchschnittliche Bevölkerungsdichte", f"{float(aa_dens):.2f}".replace('.', ',') + " Einwohner / km²"]
+                ]
+                pop_xml.append(ImporterExporter.make_docx_table(headers_aa, rows_aa))
+                pop_xml.append('  <w:p><w:spacing w:before="200"/></w:p>')
+                
+            if grb_area is not None:
+                has_any_pop = True
+                pop_xml.append('  <w:p>')
+                pop_xml.append('    <w:pPr><w:jc w:val="left"/></w:pPr>')
+                pop_xml.append('    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">2. Bevölkerungsdichte im Ground Risk Buffer (GRB):</w:t></w:r>')
+                pop_xml.append('  </w:p>')
+                
+                headers_grb = ["Parameter im Ground Risk Buffer (GRB)", "Wert"]
+                raw_str = f"{float(grb_max_raw):.6f}".replace('.', ',') if grb_max_raw is not None else "0"
+                rows_grb = [
+                    ["GRB - Gesamtfläche", f"{float(grb_area):.3f} km²".replace('.', ',')],
+                    ["GRB - Anzahl Personen (Summe)", f"{int(round(float(grb_pop))):,}".replace(',', '.') + " Personen"],
+                    ["GRB - Durchschnittliche Bevölkerungsdichte", f"{float(grb_avg_dens):.2f}".replace('.', ',') + " Einwohner / km²"],
+                    ["GRB - Maximalwert der Bevölkerungsdichte (Konservativer EASA-Ansatz)", f"{float(grb_max_dens):.2f}".replace('.', ',') + " Einwohner / km²"],
+                    ["GRB - Rohwert der maximalen Bevölkerungsdichte", f"{raw_str} Personen/Zelle"]
+                ]
+                pop_xml.append(ImporterExporter.make_docx_table(headers_grb, rows_grb))
+                pop_xml.append('  <w:p><w:spacing w:before="200"/></w:p>')
+        
+        if not has_any_pop:
+            pop_xml.append('  <w:p>')
+            pop_xml.append('    <w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">Hinweis: Für diese Planung wurde vor dem Export keine Bevölkerungsdichte-Analyse für die Adjacent Area (AA) oder den Ground Risk Buffer (GRB) berechnet.</w:t></w:r>')
+            pop_xml.append('  </w:p>')
+            
+        pop_analysis_xml_str = "\n".join(pop_xml)
+        xml_content = xml_content.replace("__POPULATION_ANALYSIS_XML__", pop_analysis_xml_str)
+        
         xml_content = xml_content.replace("__HEADER_FOOTER_XML__", header_footer_xml_str)
         
         # Build Detail Maps XML
