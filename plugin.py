@@ -322,6 +322,145 @@ class WaypointMapTool(QgsMapTool):
                 self.plugin.waypoints.pop(closest_idx)
                 self.plugin.rebuild_and_calculate()
 
+
+class AboutDialog(QDialog):
+    def __init__(self, parent, metadata, plugin_dir, tr_func):
+        super(AboutDialog, self).__init__(parent)
+        self.metadata = metadata
+        self.plugin_dir = plugin_dir
+        self.tr = tr_func
+        
+        self.setWindowTitle(self.tr("dialog_about_title", "Über QUCORE"))
+        self.resize(550, 480)
+        self.setModal(True)
+        self.init_ui()
+        
+    def init_ui(self):
+        from PyQt5.QtGui import QPixmap
+        from PyQt5.QtWidgets import QDialogButtonBox
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+        
+        # Header Layout (Icon + Title & Version)
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(15)
+        
+        # Icon
+        lbl_icon = QLabel()
+        icon_path = os.path.join(self.plugin_dir, "icon.png")
+        if os.path.exists(icon_path):
+            pixmap = QPixmap(icon_path)
+            lbl_icon.setPixmap(pixmap.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        header_layout.addWidget(lbl_icon)
+        
+        # Title and Version Info
+        title_layout = QVBoxLayout()
+        title_layout.setSpacing(4)
+        
+        name = self.metadata.get('name', 'QUCORE (Variable UAS Corridor Planning)')
+        version = self.metadata.get('version', '0.5.0')
+        
+        lbl_name = QLabel(f'<span style="font-size: 16px; font-weight: bold; color: #2c3e50;">{name}</span>')
+        lbl_version = QLabel(f'<span style="font-size: 12px; color: #7f8c8d; font-weight: 500;">Version {version}</span>')
+        
+        title_layout.addWidget(lbl_name)
+        title_layout.addWidget(lbl_version)
+        title_layout.addStretch()
+        
+        header_layout.addLayout(title_layout)
+        header_layout.addStretch()
+        
+        layout.addLayout(header_layout)
+        
+        # Description / About text
+        description = self.metadata.get('description', '')
+        about = self.metadata.get('about', '')
+        
+        desc_html = f"""
+        <div style="font-size: 11.5px; line-height: 1.5; color: #2c3e50;">
+            <p style="margin-bottom: 8px;">{description}</p>
+            <p style="margin-top: 0px; margin-bottom: 0px;">{about}</p>
+        </div>
+        """
+        lbl_desc = QLabel(desc_html)
+        lbl_desc.setWordWrap(True)
+        lbl_desc.setTextFormat(Qt.RichText)
+        layout.addWidget(lbl_desc)
+        
+        # Metadata Table
+        category = self.metadata.get('category', 'Vector')
+        tags = self.metadata.get('tags', '')
+        if tags:
+            tags = ", ".join([t.strip() for t in tags.split(",")])
+        author = self.metadata.get('author', 'Tim Strohbach')
+        tracker = self.metadata.get('tracker', 'https://github.com/CaptIglu/QUCORE/issues')
+        repository = self.metadata.get('repository', 'https://github.com/CaptIglu/QUCORE')
+        
+        tr_category = self.tr('about_category', 'Kategorie')
+        tr_tags = self.tr('about_tags', 'Tags')
+        tr_more_info = self.tr('about_more_info', 'Weitere Informationen')
+        tr_tracker = self.tr('about_tracker', 'Fehlerverfolgung')
+        tr_repo = self.tr('about_repo', 'Coderepositorium')
+        tr_author = self.tr('about_author', 'Autor')
+        tr_version = self.tr('about_version', 'Installierte Version')
+        
+        table_html = f"""
+        <table style="border-collapse: collapse; width: 100%; font-size: 11.5px; margin-top: 5px;">
+            <tr style="background-color: #fcfcfc;">
+                <td style="padding: 6px 8px; font-weight: bold; color: #555555; width: 130px; border-bottom: 1px solid #eaeaea;">{tr_category}</td>
+                <td style="padding: 6px 8px; color: #2c3e50; border-bottom: 1px solid #eaeaea;">{category}</td>
+            </tr>
+            <tr>
+                <td style="padding: 6px 8px; font-weight: bold; color: #555555; border-bottom: 1px solid #eaeaea;">{tr_tags}</td>
+                <td style="padding: 6px 8px; color: #2980b9; border-bottom: 1px solid #eaeaea;">{tags}</td>
+            </tr>
+            <tr style="background-color: #fcfcfc;">
+                <td style="padding: 6px 8px; font-weight: bold; color: #555555; border-bottom: 1px solid #eaeaea;">{tr_more_info}</td>
+                <td style="padding: 6px 8px; border-bottom: 1px solid #eaeaea;">
+                    <a href="{tracker}" style="color: #3498db; text-decoration: underline;">{tr_tracker}</a>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <a href="{repository}" style="color: #3498db; text-decoration: underline;">{tr_repo}</a>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 6px 8px; font-weight: bold; color: #555555; border-bottom: 1px solid #eaeaea;">{tr_author}</td>
+                <td style="padding: 6px 8px; color: #2c3e50; border-bottom: 1px solid #eaeaea;">{author}</td>
+            </tr>
+            <tr style="background-color: #fcfcfc;">
+                <td style="padding: 6px 8px; font-weight: bold; color: #555555; border-bottom: 1px solid #eaeaea;">{tr_version}</td>
+                <td style="padding: 6px 8px; color: #2c3e50; border-bottom: 1px solid #eaeaea; font-weight: bold;">{version}</td>
+            </tr>
+        </table>
+        """
+        
+        lbl_table = QLabel(table_html)
+        lbl_table.setWordWrap(True)
+        lbl_table.setTextFormat(Qt.RichText)
+        lbl_table.setOpenExternalLinks(True)
+        layout.addWidget(lbl_table)
+        
+        # Compatibility Note
+        tr_qgis_compatibility = self.tr('about_qgis_compatibility', 'Entwickelt für QGIS 3.44.10-Solothurn LTR. Nur hier wird die beste Kompatibilität erwartet.')
+        tr_note = self.tr('about_note', 'Hinweis')
+        
+        note_html = f"""
+        <div style="padding: 10px 12px; background-color: #fef9e7; border-left: 4px solid #f39c12; border-radius: 4px; color: #7f8c8d; font-size: 11px; line-height: 1.4;">
+            <strong style="color: #d35400;">{tr_note}:</strong> {tr_qgis_compatibility}
+        </div>
+        """
+        lbl_note = QLabel(note_html)
+        lbl_note.setWordWrap(True)
+        lbl_note.setTextFormat(Qt.RichText)
+        layout.addWidget(lbl_note)
+        
+        # Button Box
+        btn_box = QDialogButtonBox(QDialogButtonBox.Ok)
+        btn_box.accepted.connect(self.accept)
+        layout.addWidget(btn_box)
+
+
 class DroneCorridorPlanner(object):
     def __init__(self, iface):
         self.iface = iface
@@ -588,6 +727,9 @@ class DroneCorridorPlanner(object):
             self.help_action_menu = self.help_menu.addAction("Anleitung / Hilfe...")
             self.help_action_menu.triggered.connect(self.open_help)
             
+            self.about_action = self.help_menu.addAction("Über QUCORE...")
+            self.about_action.triggered.connect(self.open_about_dialog)
+            
             # Header
             self.header_label = QLabel("<b>Drohnen-Sicherheitskorridore</b><br>Kartenbasierte interaktive Planung")
             self.header_label.setAlignment(Qt.AlignCenter)
@@ -716,12 +858,6 @@ class DroneCorridorPlanner(object):
             self.lbl_trial_warning.setWordWrap(True)
             layout.addWidget(self.lbl_trial_warning)
             
-            # Compatibility Note Label
-            self.lbl_compatibility = QLabel()
-            self.lbl_compatibility.setAlignment(Qt.AlignCenter)
-            self.lbl_compatibility.setWordWrap(True)
-            layout.addWidget(self.lbl_compatibility)
-            
         # Check trial status and display warning if necessary
         from PyQt5.QtCore import QSettings, QDateTime
         settings = QSettings()
@@ -822,13 +958,8 @@ class DroneCorridorPlanner(object):
             
             self.help_menu.setTitle(self.tr("menu_help", "Hilfe"))
             self.help_action_menu.setText(self.tr("menu_instructions", "Anleitung / Hilfe..."))
-            
-        if hasattr(self, 'lbl_compatibility') and self.lbl_compatibility is not None:
-            self.lbl_compatibility.setText(
-                "<div style='color: #7f8c8d; font-size: 8px; text-align: center; margin-top: 2px; font-style: italic;'>"
-                + self.tr("compatibility_note", "Entwickelt für QGIS 3.44.10-Solothurn LTR. Nur hier wird die beste Kompatibilität erwartet.")
-                + "</div>"
-            )
+            if hasattr(self, 'about_action'):
+                self.about_action.setText(self.tr("menu_about", "Über QUCORE..."))
 
         # Update Widget Texts in Planning Panel
         if hasattr(self, 'header_label'):
@@ -889,6 +1020,36 @@ class DroneCorridorPlanner(object):
                 "Hilfe nicht gefunden",
                 "Die Hilfedatei 'instructions.html' konnte im Plugin-Ordner nicht gefunden werden."
             )
+
+    def open_about_dialog(self):
+        """
+        Parses metadata.txt at runtime and displays the 'Über QUCORE...' dialog.
+        """
+        import configparser
+        metadata_path = os.path.join(self.plugin_dir, "metadata.txt")
+        metadata = {}
+        if os.path.exists(metadata_path):
+            try:
+                parser = configparser.ConfigParser(interpolation=None)
+                parser.read(metadata_path, encoding='utf-8')
+                if parser.has_section('general'):
+                    metadata = dict(parser.items('general'))
+            except Exception:
+                metadata = {}
+                
+        # Robust fallback line-by-line parsing if configparser was not populated
+        if not metadata and os.path.exists(metadata_path):
+            try:
+                with open(metadata_path, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        if '=' in line:
+                            k, v = line.strip().split('=', 1)
+                            metadata[k.strip()] = v.strip()
+            except Exception:
+                pass
+                
+        dlg = AboutDialog(self.gui if self.gui else self.iface.mainWindow(), metadata, self.plugin_dir, self.tr)
+        dlg.exec_()
 
     def on_geometry_type_changed(self, index):
         types = ["Corridor", "Circle", "Polygon"]

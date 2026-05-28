@@ -139,6 +139,50 @@
     "de": "Anleitung / Hilfe...",
     "en": "User Manual / Help..."
   },
+  "menu_about": {
+    "de": "Über QUCORE...",
+    "en": "About QUCORE..."
+  },
+  "dialog_about_title": {
+    "de": "Über QUCORE",
+    "en": "About QUCORE"
+  },
+  "about_category": {
+    "de": "Kategorie",
+    "en": "Category"
+  },
+  "about_tags": {
+    "de": "Tags",
+    "en": "Tags"
+  },
+  "about_more_info": {
+    "de": "Weitere Informationen",
+    "en": "More Information"
+  },
+  "about_tracker": {
+    "de": "Fehlerverfolgung",
+    "en": "Bug Tracker"
+  },
+  "about_repo": {
+    "de": "Coderepositorium",
+    "en": "Code Repository"
+  },
+  "about_author": {
+    "de": "Autor",
+    "en": "Author"
+  },
+  "about_version": {
+    "de": "Installierte Version",
+    "en": "Installed Version"
+  },
+  "about_qgis_compatibility": {
+    "de": "Entwickelt für QGIS 3.44.10-Solothurn LTR. Nur hier wird die beste Kompatibilität erwartet.",
+    "en": "Developed for QGIS 3.44.10-Solothurn LTR. Best compatibility is only expected here."
+  },
+  "about_note": {
+    "de": "Hinweis",
+    "en": "Note"
+  },
   "msg_reset_title": {
     "de": "Planung zurücksetzen",
     "en": "Reset Planning"
