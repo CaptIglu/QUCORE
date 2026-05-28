@@ -974,6 +974,10 @@
   "error_empty_grb_text": {
     "de": "Es existiert kein gültiger 'Ground Risk Buffer (GRB)'-Layer oder dieser enthält keine Geometrie. Bitte erstellen Sie zuerst eine Flugplanung.",
     "en": "There is no valid 'Ground Risk Buffer (GRB)' layer, or it contains no geometry. Please create a flight planning first."
+  },
+  "compatibility_note": {
+    "de": "Entwickelt für QGIS 3.44.10-Solothurn LTR. Nur hier wird die beste Kompatibilität erwartet.",
+    "en": "Developed for QGIS 3.44.10-Solothurn LTR. Best compatibility is only expected here."
   }
 }
 

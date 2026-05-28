@@ -716,6 +716,12 @@ class DroneCorridorPlanner(object):
             self.lbl_trial_warning.setWordWrap(True)
             layout.addWidget(self.lbl_trial_warning)
             
+            # Compatibility Note Label
+            self.lbl_compatibility = QLabel()
+            self.lbl_compatibility.setAlignment(Qt.AlignCenter)
+            self.lbl_compatibility.setWordWrap(True)
+            layout.addWidget(self.lbl_compatibility)
+            
         # Check trial status and display warning if necessary
         from PyQt5.QtCore import QSettings, QDateTime
         settings = QSettings()
@@ -816,6 +822,13 @@ class DroneCorridorPlanner(object):
             
             self.help_menu.setTitle(self.tr("menu_help", "Hilfe"))
             self.help_action_menu.setText(self.tr("menu_instructions", "Anleitung / Hilfe..."))
+            
+        if hasattr(self, 'lbl_compatibility') and self.lbl_compatibility is not None:
+            self.lbl_compatibility.setText(
+                "<div style='color: #7f8c8d; font-size: 8px; text-align: center; margin-top: 2px; font-style: italic;'>"
+                + self.tr("compatibility_note", "Entwickelt für QGIS 3.44.10-Solothurn LTR. Nur hier wird die beste Kompatibilität erwartet.")
+                + "</div>"
+            )
 
         # Update Widget Texts in Planning Panel
         if hasattr(self, 'header_label'):
