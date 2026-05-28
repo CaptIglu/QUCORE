@@ -1966,13 +1966,111 @@ class DroneCorridorPlanner(object):
                 self.tr("msg_import_error_text", "Fehler beim Importieren der Datei:\n{error}").format(error=str(e))
             )
 
+    def write_to_gpkg(self, file_path):
+        """
+        Saves all current planning layers into a single GeoPackage file,
+        adding a hidden 'qucore_state' field to the Wegpunkte layer.
+        Returns a tuple: (success_boolean, error_msg_string)
+        """
+        from qgis.core import QgsVectorFileWriter, QgsProject, QgsField, QgsFeature, QgsGeometry, QgsVectorLayer
+        from PyQt5.QtCore import QVariant
+        import os
+
+        if not self.waypoints:
+            return False, "Es gibt keine Wegpunkte zum Exportieren."
+
+        if not file_path.lower().endswith('.gpkg'):
+            file_path += '.gpkg'
+
+        # 1. Prepare serialize state string
+        state_json = self.serialize_state()
+
+        # 2. Add the field "qucore_state" temporarily to waypoints memory layer
+        dp = self.lyr_waypoints.dataProvider()
+        fields = self.lyr_waypoints.fields()
+        state_idx = fields.indexOf("qucore_state")
+        
+        if state_idx == -1:
+            dp.addAttributes([QgsField("qucore_state", QVariant.String, len=100000)])
+            self.lyr_waypoints.updateFields()
+            fields = self.lyr_waypoints.fields()
+            state_idx = fields.indexOf("qucore_state")
+
+        # Set the state JSON attribute on the first feature of Wegpunkte
+        self.lyr_waypoints.startEditing()
+        for f in self.lyr_waypoints.getFeatures():
+            f.setAttribute(state_idx, state_json)
+            self.lyr_waypoints.updateFeature(f)
+        self.lyr_waypoints.commitChanges()
+
+        # Export all available layers to the GPKG!
+        layers_to_export = [
+            (self.lyr_waypoints, "Wegpunkte"),
+            (self.lyr_route, "Flugweg_Mittelachse"),
+            (self.lyr_fg, "Flight_Geography_FG"),
+            (self.lyr_cv, "Contingency_Volume_CV"),
+            (self.lyr_grb, "Ground_Risk_Buffer_GRB")
+        ]
+        if self.is_layer_valid(self.lyr_aga):
+            layers_to_export.append((self.lyr_aga, "Adjacent_Area_AA"))
+        if self.is_layer_valid(self.lyr_pilot) and self.pilot_pos:
+            layers_to_export.append((self.lyr_pilot, "Pilotenposition"))
+        if self.is_layer_valid(self.lyr_vlos) and self.pilot_pos:
+            layers_to_export.append((self.lyr_vlos, "VLOS_Reichweite"))
+
+        # Setup vector file writer options
+        options = QgsVectorFileWriter.SaveVectorOptions()
+        options.driverName = "GPKG"
+        options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
+        
+        transform_context = QgsProject.instance().transformContext()
+
+        error_occurred = False
+        error_msg = ""
+        first_layer = True
+
+        for lyr, layer_name in layers_to_export:
+            if not self.is_layer_valid(lyr):
+                continue
+            
+            options.layerName = layer_name
+            if not first_layer:
+                options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
+
+            err, err_str, path, new_lyr_name = QgsVectorFileWriter.writeAsVectorFormatV3(
+                lyr,
+                file_path,
+                transform_context,
+                options
+            )
+            
+            if err == QgsVectorFileWriter.NoError:
+                first_layer = False
+            else:
+                error_occurred = True
+                error_msg = err_str
+                break
+
+        # Remove the temporary qucore_state attribute from waypoints layer
+        state_idx = self.lyr_waypoints.fields().indexOf("qucore_state")
+        if state_idx != -1:
+            self.lyr_waypoints.startEditing()
+            dp.deleteAttributes([state_idx])
+            self.lyr_waypoints.commitChanges()
+            self.lyr_waypoints.updateFields()
+
+        if error_occurred:
+            return False, error_msg
+
+        return True, None
+
     def save_as_persistent_layer(self):
         """
         Saves all current planning layers into a single GeoPackage file,
         adding a hidden 'qucore_state' field to the Wegpunkte layer,
         and adds them permanently to the QGIS project.
         """
-        from qgis.core import QgsVectorFileWriter, QgsProject, QgsField, QgsFeature, QgsGeometry, QgsVectorLayer
+        from qgis.core import QgsProject, QgsVectorLayer
         from PyQt5.QtWidgets import QFileDialog, QMessageBox
         
         if not self.waypoints:
@@ -2024,90 +2122,9 @@ class DroneCorridorPlanner(object):
         if not file_path.lower().endswith('.gpkg'):
             file_path += '.gpkg'
 
-        # 1. Prepare serialize state string
-        state_json = self.serialize_state()
+        success, error_msg = self.write_to_gpkg(file_path)
 
-        # 2. Add the field "qucore_state" temporarily to waypoints memory layer
-        dp = self.lyr_waypoints.dataProvider()
-        fields = self.lyr_waypoints.fields()
-        state_idx = fields.indexOf("qucore_state")
-        
-        if state_idx == -1:
-            dp.addAttributes([QgsField("qucore_state", QVariant.String, len=100000)])
-            self.lyr_waypoints.updateFields()
-            fields = self.lyr_waypoints.fields()
-            state_idx = fields.indexOf("qucore_state")
-
-        # Set the state JSON attribute on the first feature of Wegpunkte
-        self.lyr_waypoints.startEditing()
-        for f in self.lyr_waypoints.getFeatures():
-            f.setAttribute(state_idx, state_json)
-            self.lyr_waypoints.updateFeature(f)
-        self.lyr_waypoints.commitChanges()
-
-        # Export all available layers to the GPKG!
-        layers_to_export = [
-            (self.lyr_waypoints, "Wegpunkte"),
-            (self.lyr_route, "Flugweg_Mittelachse"),
-            (self.lyr_fg, "Flight_Geography_FG"),
-            (self.lyr_cv, "Contingency_Volume_CV"),
-            (self.lyr_grb, "Ground_Risk_Buffer_GRB")
-        ]
-        if self.is_layer_valid(self.lyr_aga):
-            layers_to_export.append((self.lyr_aga, "Adjacent_Area_AA"))
-        if self.is_layer_valid(self.lyr_pilot) and self.pilot_pos:
-            layers_to_export.append((self.lyr_pilot, "Pilotenposition"))
-        if self.is_layer_valid(self.lyr_vlos) and self.pilot_pos:
-            layers_to_export.append((self.lyr_vlos, "VLOS_Reichweite"))
-
-        # Setup vector file writer options
-        options = QgsVectorFileWriter.SaveVectorOptions()
-        options.driverName = "GPKG"
-        options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
-        
-        transform_context = QgsProject.instance().transformContext()
-
-        exported_layers = []
-        error_occurred = False
-        error_msg = ""
-
-        first_layer = True
-
-        for lyr, layer_name in layers_to_export:
-            if not self.is_layer_valid(lyr):
-                continue
-            
-            options.layerName = layer_name
-            if not first_layer:
-                options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
-
-            err, err_str, path, new_lyr_name = QgsVectorFileWriter.writeAsVectorFormatV3(
-                lyr,
-                file_path,
-                transform_context,
-                options
-            )
-            
-            if err == QgsVectorFileWriter.NoError:
-                first_layer = False
-                uri = f"{file_path}|layerName={layer_name}"
-                gpkg_layer = QgsVectorLayer(uri, lyr.name() + " (Persistent)", "ogr")
-                if gpkg_layer.isValid():
-                    exported_layers.append((gpkg_layer, lyr))
-            else:
-                error_occurred = True
-                error_msg = err_str
-                break
-
-        # Remove the temporary qucore_state attribute from waypoints layer
-        state_idx = self.lyr_waypoints.fields().indexOf("qucore_state")
-        if state_idx != -1:
-            self.lyr_waypoints.startEditing()
-            dp.deleteAttributes([state_idx])
-            self.lyr_waypoints.commitChanges()
-            self.lyr_waypoints.updateFields()
-
-        if error_occurred:
+        if not success:
             QMessageBox.critical(
                 self.gui,
                 self.tr("msg_save_error_title", "Speicherfehler"),
@@ -2115,7 +2132,28 @@ class DroneCorridorPlanner(object):
             )
             return
 
-        # Add the persistent GPKG layers to the project
+        # Load the persistent GPKG layers to the project
+        exported_layers = []
+        layers_to_add = [
+            ("Wegpunkte", self.lyr_waypoints),
+            ("Flugweg_Mittelachse", self.lyr_route),
+            ("Flight_Geography_FG", self.lyr_fg),
+            ("Contingency_Volume_CV", self.lyr_cv),
+            ("Ground_Risk_Buffer_GRB", self.lyr_grb)
+        ]
+        if self.is_layer_valid(self.lyr_aga):
+            layers_to_add.append(("Adjacent_Area_AA", self.lyr_aga))
+        if self.is_layer_valid(self.lyr_pilot) and self.pilot_pos:
+            layers_to_add.append(("Pilotenposition", self.lyr_pilot))
+        if self.is_layer_valid(self.lyr_vlos) and self.pilot_pos:
+            layers_to_add.append(("VLOS_Reichweite", self.lyr_vlos))
+
+        for layer_name, orig_lyr in layers_to_add:
+            uri = f"{file_path}|layerName={layer_name}"
+            gpkg_layer = QgsVectorLayer(uri, orig_lyr.name() + " (Persistent)", "ogr")
+            if gpkg_layer.isValid():
+                exported_layers.append((gpkg_layer, orig_lyr))
+
         project = QgsProject.instance()
         root = project.layerTreeRoot()
         persistent_group = root.findGroup(group_name)
@@ -2239,7 +2277,7 @@ class DroneCorridorPlanner(object):
             self.gui, 
             self.tr("dialog_import_title", "Datei importieren"), 
             last_dir, 
-            "Planungsdateien (*.dipul *.kml *.flightplan *.geojson);;dipul Planungsdatei (*.dipul);;KML Geometriedatei (*.kml);;SkyDemon Flugplan (*.flightplan);;GeoJSON (*.geojson)"
+            "Planungsdateien (*.dipul *.kml *.flightplan *.geojson *.gpkg);;dipul Planungsdatei (*.dipul);;KML Geometriedatei (*.kml);;SkyDemon Flugplan (*.flightplan);;GeoJSON (*.geojson);;GeoPackage (*.gpkg)"
         )
         if not file_path:
             return
@@ -2267,6 +2305,27 @@ class DroneCorridorPlanner(object):
                 self.pilot_pos = pilot_pos
                 self.params.update(params)
                 imported_geom_type = geom_type
+            elif file_path.lower().endswith('.gpkg'):
+                uri = f"{file_path}|layerName=Wegpunkte"
+                gpkg_layer = QgsVectorLayer(uri, "temp_wegpunkte", "ogr")
+                if gpkg_layer.isValid():
+                    fields = gpkg_layer.fields()
+                    state_idx = fields.indexOf("qucore_state")
+                    if state_idx != -1:
+                        features = list(gpkg_layer.getFeatures())
+                        if features:
+                            state_json = features[0].attribute(state_idx)
+                            if state_json and str(state_json) != 'NULL' and str(state_json) != '':
+                                self.deserialize_state(str(state_json))
+                                imported_geom_type = self.geometry_type
+                            else:
+                                raise ValueError("Die GPKG-Datei enthält keine gespeicherte Planung (qucore_state fehlt oder leer).")
+                        else:
+                            raise ValueError("Die GPKG-Datei enthält keine Features im Wegpunkte-Layer.")
+                    else:
+                        raise ValueError("Der Wegpunkte-Layer in der GPKG-Datei enthält kein qucore_state-Feld.")
+                else:
+                    raise ValueError("Der Wegpunkte-Layer konnte nicht aus der GeoPackage-Datei geladen werden.")
             else:
                 # KML
                 waypoints, pilot_pos, geom_type = ImporterExporter.import_kml(file_path)
@@ -2319,7 +2378,7 @@ class DroneCorridorPlanner(object):
             self.gui, 
             self.tr("dialog_export_file_title", "Datei exportieren"), 
             default_path, 
-            "dipul Planungsdatei (*.dipul);;KML Geometriedatei (*.kml);;SkyDemon Flugplan (*.flightplan);;GeoJSON (*.geojson);;SORA Dokumentations-Export (*.docx)"
+            "dipul Planungsdatei (*.dipul);;KML Geometriedatei (*.kml);;SkyDemon Flugplan (*.flightplan);;GeoJSON (*.geojson);;GeoPackage (*.gpkg);;SORA Dokumentations-Export (*.docx)"
         )
         if not file_path:
             return
@@ -2330,6 +2389,7 @@ class DroneCorridorPlanner(object):
         is_kml = file_path.lower().endswith('.kml') or "kml" in selected_filter.lower()
         is_flightplan = file_path.lower().endswith('.flightplan') or "flightplan" in selected_filter.lower()
         is_geojson = file_path.lower().endswith('.geojson') or "geojson" in selected_filter.lower()
+        is_gpkg = file_path.lower().endswith('.gpkg') or "gpkg" in selected_filter.lower()
         is_docx = file_path.lower().endswith('.docx') or "docx" in selected_filter.lower()
         
         if is_kml and not file_path.lower().endswith('.kml'):
@@ -2338,11 +2398,32 @@ class DroneCorridorPlanner(object):
             file_path += '.flightplan'
         elif is_geojson and not file_path.lower().endswith('.geojson'):
             file_path += '.geojson'
+        elif is_gpkg and not file_path.lower().endswith('.gpkg'):
+            file_path += '.gpkg'
         elif is_docx and not file_path.lower().endswith('.docx'):
             file_path += '.docx'
-        elif not is_kml and not is_flightplan and not is_docx and not is_geojson and not file_path.lower().endswith('.dipul'):
+        elif not is_kml and not is_flightplan and not is_docx and not is_geojson and not is_gpkg and not file_path.lower().endswith('.dipul'):
             file_path += '.dipul'
             
+        if is_gpkg:
+            try:
+                success, error_msg = self.write_to_gpkg(file_path)
+                if success:
+                    QMessageBox.information(
+                        self.gui, 
+                        self.tr("msg_export_success_title", "Export erfolgreich"), 
+                        self.tr("msg_export_success_text", "Die Datei wurde erfolgreich exportiert unter:\n{path}").format(path=file_path)
+                    )
+                else:
+                    raise Exception(error_msg)
+            except Exception as e:
+                QMessageBox.critical(
+                    self.gui, 
+                    self.tr("msg_export_error_title", "Export Fehler"), 
+                    self.tr("msg_export_error_text", "Fehler beim Exportieren der Datei:\n{error}").format(error=str(e))
+                )
+            return
+
         if is_kml:
             try:
                 ImporterExporter.export_kml(file_path, self.waypoints, self.pilot_pos, self.params, self.geometry_type)
