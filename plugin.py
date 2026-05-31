@@ -837,9 +837,6 @@ class DroneCorridorPlanner(object):
         except Exception:
             pass
 
-        # Remove memory layers and the group from the active project
-        self.remove_layers_and_group()
-
         # 6. Nullify references to trigger Python Garbage Collection
         self.wp_tool = None
         self.pilot_tool = None
@@ -1165,12 +1162,67 @@ class DroneCorridorPlanner(object):
         except Exception:
             pass
 
-        # If starting clean (no waypoints), sweep away any leftover memory layers/groups from a previous project save
-        if not self.waypoints:
-            self.remove_layers_and_group()
-        
-        # Initialize/re-bind the layers fresh
+        # Smart re-bind layers first
         self.initialize_layers()
+
+        # Fallback: Restore waypoints and pilot from layers if python state is still empty (e.g. on reload without project entry)
+        if self.is_layer_valid(self.lyr_waypoints) and not self.waypoints:
+            try:
+                features = list(self.lyr_waypoints.getFeatures())
+                if features:
+                    def get_index_safe(feat):
+                        try:
+                            val = feat.attribute("index")
+                            from qgis.core import NULL
+                            if val is not None and val != NULL:
+                                return int(val)
+                        except Exception:
+                            pass
+                        return 999999
+                    
+                    features.sort(key=get_index_safe)
+                    
+                    def get_attr_safe(feat, field_name, default_val):
+                        try:
+                            val = feat.attribute(field_name)
+                            from qgis.core import NULL
+                            if val is not None and val != NULL:
+                                return float(val)
+                        except Exception:
+                            pass
+                        return default_val
+                    
+                    loaded_wps = []
+                    for f in features:
+                        geom = f.geometry()
+                        if geom and not geom.isEmpty():
+                            pt = geom.asPoint()
+                            alt_val = get_attr_safe(f, "altitude", float(self.params.get("maxFlightHeight", 100.0)))
+                            spd_val = get_attr_safe(f, "speed", float(self.params.get("maxVelocity", 30.0)))
+                            fg_val = get_attr_safe(f, "fg_width", float(self.params.get("corridorWidth", 50.0)))
+                            loaded_wps.append((pt.x(), pt.y(), alt_val, spd_val, fg_val))
+                    if loaded_wps:
+                        self.waypoints = loaded_wps
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Fehler beim Laden der Wegpunkte aus dem existierenden Layer beim Start: {e}",
+                    "QUCORE", Qgis.Warning
+                )
+
+        if self.is_layer_valid(self.lyr_pilot) and self.pilot_pos is None:
+            try:
+                features = list(self.lyr_pilot.getFeatures())
+                if features:
+                    geom = features[0].geometry()
+                    if geom and not geom.isEmpty():
+                        self.pilot_pos = geom.asPoint()
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Fehler beim Laden der Pilotenposition aus dem existierenden Layer beim Start: {e}",
+                    "QUCORE", Qgis.Warning
+                )
 
         self.gui.show()
         self.rebuild_and_calculate()
@@ -1456,7 +1508,6 @@ class DroneCorridorPlanner(object):
         exists = self.is_layer_valid(self.lyr_waypoints)
         if not exists:
             self.lyr_waypoints = QgsVectorLayer("Point?crs=EPSG:4326", "Wegpunkte", "memory")
-            self.lyr_waypoints.setCustomProperty("skipMemoryLayersCheck", 1) # Suppress warning on close
             # Fields
             self.lyr_waypoints.dataProvider().addAttributes([
                 QgsField("index", QVariant.Int),
@@ -1527,7 +1578,6 @@ class DroneCorridorPlanner(object):
         exists = self.is_layer_valid(layer_var)
         if not exists:
             layer_var = QgsVectorLayer(layer_type, layer_name, "memory")
-            layer_var.setCustomProperty("skipMemoryLayersCheck", 1) # Suppress warning on close
             QgsProject.instance().addMapLayer(layer_var, False)
             style_fn(layer_var, *style_args)
         elif getattr(self, '_force_restyle', False):
