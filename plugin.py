@@ -324,20 +324,21 @@ class WaypointMapTool(QgsMapTool):
 
 
 class AboutDialog(QDialog):
-    def __init__(self, parent, metadata, plugin_dir, tr_func):
+    def __init__(self, parent, metadata, plugin):
         super(AboutDialog, self).__init__(parent)
         self.metadata = metadata
-        self.plugin_dir = plugin_dir
-        self.tr = tr_func
+        self.plugin = plugin
+        self.plugin_dir = plugin.plugin_dir
+        self.tr = plugin.tr
         
         self.setWindowTitle(self.tr("dialog_about_title", "Über QUCORE"))
-        self.resize(550, 480)
+        self.resize(550, 530)
         self.setModal(True)
         self.init_ui()
         
     def init_ui(self):
         from PyQt5.QtGui import QPixmap
-        from PyQt5.QtWidgets import QDialogButtonBox
+        from PyQt5.QtWidgets import QDialogButtonBox, QHBoxLayout
         
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -441,6 +442,27 @@ class AboutDialog(QDialog):
         lbl_table.setOpenExternalLinks(True)
         layout.addWidget(lbl_table)
         
+        # License Group Box (Dynamic Status & Activation Button)
+        self.grp_license = QGroupBox(self.tr("license_status_title", "Lizenzierung und Testzeitraum"))
+        lay_lic = QHBoxLayout(self.grp_license)
+        lay_lic.setContentsMargins(10, 10, 10, 10)
+        lay_lic.setSpacing(10)
+        
+        self.lbl_license_status = QLabel()
+        self.lbl_license_status.setTextFormat(Qt.RichText)
+        self.lbl_license_status.setWordWrap(True)
+        lay_lic.addWidget(self.lbl_license_status, 1)
+        
+        self.btn_license = QPushButton()
+        self.btn_license.setFixedWidth(180)
+        self.btn_license.clicked.connect(self.on_license_button_clicked)
+        lay_lic.addWidget(self.btn_license, 0, Qt.AlignVCenter)
+        
+        layout.addWidget(self.grp_license)
+        
+        # Initialize/update the license UI details
+        self.update_license_ui()
+        
         # Compatibility Note
         tr_qgis_compatibility = self.tr('about_qgis_compatibility', 'Entwickelt für QGIS 3.44.10-Solothurn LTR. Nur hier wird die beste Kompatibilität erwartet.')
         tr_note = self.tr('about_note', 'Hinweis')
@@ -459,6 +481,99 @@ class AboutDialog(QDialog):
         btn_box = QDialogButtonBox(QDialogButtonBox.Ok)
         btn_box.accepted.connect(self.accept)
         layout.addWidget(btn_box)
+
+    def update_license_ui(self):
+        from PyQt5.QtCore import QSettings, QDateTime
+        settings = QSettings()
+        
+        # Check license activation
+        is_commercial_unlocked = self.plugin.params.get("commercial_unlocked", False)
+        saved_key = settings.value("QUCORE/license_key", "")
+        if saved_key == "QUCORE-COMM-2026":
+            is_commercial_unlocked = True
+            
+        # Get trial details
+        install_date_str = settings.value("QUCORE/install_date", "")
+        if not install_date_str:
+            install_date_str = QDateTime.currentDateTime().toString(Qt.ISODate)
+            settings.setValue("QUCORE/install_date", install_date_str)
+            
+        install_date = QDateTime.fromString(install_date_str, Qt.ISODate)
+        days_since_install = install_date.daysTo(QDateTime.currentDateTime())
+        remaining_days = 30 - days_since_install
+        
+        if is_commercial_unlocked:
+            bg_color = "#e8f8f5"
+            border_color = "#2ecc71"
+            title_text = self.tr("license_activated", "Aktiviert (Kommerzielle Lizenz)")
+            sub_text = f"Lizenzschlüssel: {saved_key if saved_key else 'In Konfigurationsdatei freigeschaltet'}"
+            btn_text = self.tr("btn_change_license_key", "Lizenzschlüssel ändern...")
+            status_style = "color: #27ae60; font-weight: bold; font-size: 11px;"
+        elif remaining_days < 0:
+            bg_color = "#fdf2f2"
+            border_color = "#ec7063"
+            title_text = self.tr("license_expired", "Abgelaufen (Kommerzielle Lizenz erforderlich)")
+            sub_text = self.tr("license_expired_desc", "Die 30-tägige Testphase für die kommerzielle Nutzung ist abgelaufen (kommerzielle Nutzung erfordert eine Lizenz). Die private Nutzung ist weiterhin gestattet.")
+            btn_text = self.tr("btn_enter_license_key", "Lizenzschlüssel eingeben...")
+            status_style = "color: #c0392b; font-weight: bold; font-size: 11px;"
+        else:
+            bg_color = "#fef9e7"
+            border_color = "#f39c12"
+            title_text = self.tr("license_not_activated", "Nicht aktiviert (Testphase)")
+            days_str = self.tr("license_days", "{days} Tage").format(days=max(0, remaining_days))
+            sub_text = f"<b>{days_str}</b> von 30 Tagen verbleibend."
+            btn_text = self.tr("btn_enter_license_key", "Lizenzschlüssel eingeben...")
+            status_style = "color: #d35400; font-weight: bold; font-size: 11px;"
+            
+        license_html = f"""
+        <div style="padding: 8px; background-color: {bg_color}; border: 1px solid {border_color}; border-radius: 4px;">
+            <div style="{status_style}">🔑 {title_text}</div>
+            <div style="font-size: 10.5px; margin-top: 3px; color: #555555; line-height: 1.3;">{sub_text}</div>
+        </div>
+        """
+        self.lbl_license_status.setText(license_html)
+        self.btn_license.setText(btn_text)
+
+    def on_license_button_clicked(self):
+        from PyQt5.QtWidgets import QInputDialog, QMessageBox
+        from PyQt5.QtCore import QSettings
+        
+        key, ok = QInputDialog.getText(
+            self,
+            self.tr("license_prompt_title", "Lizenzschlüssel eingeben"),
+            self.tr("license_prompt_label", "Bitte geben Sie den QUCORE-Lizenzschlüssel ein:"),
+            text=""
+        )
+        if ok:
+            key_clean = key.strip()
+            if key_clean == "QUCORE-COMM-2026":
+                # Save key in settings
+                settings = QSettings()
+                settings.setValue("QUCORE/license_key", key_clean)
+                
+                # Update plugin params
+                self.plugin.params["commercial_unlocked"] = True
+                
+                # Show success message
+                QMessageBox.information(
+                    self,
+                    self.tr("license_success_title", "Aktivierung erfolgreich"),
+                    self.tr("license_success_text", "Lizenz erfolgreich aktiviert! Vielen Dank für die Unterstützung von QUCORE.")
+                )
+                
+                # Refresh our dialog UI
+                self.update_license_ui()
+                
+                # Refresh the main plugin panel if it exists!
+                if hasattr(self.plugin, 'lbl_trial_warning') and self.plugin.lbl_trial_warning:
+                    self.plugin.lbl_trial_warning.setVisible(False)
+            else:
+                # Show error message
+                QMessageBox.warning(
+                    self,
+                    self.tr("license_invalid_title", "Ungültiger Lizenzschlüssel"),
+                    self.tr("license_invalid_text", "Ungültiger Lizenzschlüssel. Bitte überprüfen Sie Ihre Eingabe oder kontaktieren Sie den Autor unter tim.strohbach@gmx.de.")
+                )
 
 
 class DroneCorridorPlanner(object):
@@ -576,6 +691,20 @@ class DroneCorridorPlanner(object):
                 defaults[new_key] = defaults.pop(old_key)
             elif old_key in defaults:
                 defaults.pop(old_key)
+        
+        # Check QSettings for license activation to override commercial_unlocked
+        from PyQt5.QtCore import QSettings
+        settings = QSettings()
+        saved_key = settings.value("QUCORE/license_key", "")
+        
+        is_comm = defaults.get("commercial_unlocked", False)
+        if isinstance(is_comm, str):
+            is_comm = (is_comm.lower() == "true" or is_comm == "QUCORE-COMM-2026")
+            
+        if saved_key == "QUCORE-COMM-2026":
+            is_comm = True
+            
+        defaults["commercial_unlocked"] = is_comm
         
         return defaults
 
@@ -873,11 +1002,14 @@ class DroneCorridorPlanner(object):
         if isinstance(is_commercial_unlocked, str):
             is_commercial_unlocked = (is_commercial_unlocked.lower() == "true" or is_commercial_unlocked == "QUCORE-COMM-2026")
             
+        if settings.value("QUCORE/license_key", "") == "QUCORE-COMM-2026":
+            is_commercial_unlocked = True
+            
         if hasattr(self, 'lbl_trial_warning'):
             if days_since_install > 30 and not is_commercial_unlocked:
                 self.lbl_trial_warning.setText(
                     "<div style='color: #eb5757; font-size: 10px; font-weight: bold; margin-top: 4px; text-align: center;'>"
-                    "⚠️ Testphase abgelaufen (Kommerzielle Nutzung erfordert eine Lizenz. Bitte kontaktieren Sie den Autor unter tim.strohbach@gmx.de.)"
+                    "⚠️ Testphase für kommerzielle Nutzung abgelaufen (Kommerzielle Nutzung erfordert eine Lizenz. Die private Nutzung ist weiterhin gestattet. Support: tim.strohbach@gmx.de)"
                     "</div>"
                 )
                 self.lbl_trial_warning.setVisible(True)
@@ -1048,7 +1180,7 @@ class DroneCorridorPlanner(object):
             except Exception:
                 pass
                 
-        dlg = AboutDialog(self.gui if self.gui else self.iface.mainWindow(), metadata, self.plugin_dir, self.tr)
+        dlg = AboutDialog(self.gui if self.gui else self.iface.mainWindow(), metadata, self)
         dlg.exec_()
 
     def on_geometry_type_changed(self, index):

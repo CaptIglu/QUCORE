@@ -1022,6 +1022,70 @@
   "compatibility_note": {
     "de": "Entwickelt für QGIS 3.44.10-Solothurn LTR. Nur hier wird die beste Kompatibilität erwartet.",
     "en": "Developed for QGIS 3.44.10-Solothurn LTR. Best compatibility is only expected here."
+  },
+  "license_status_title": {
+    "de": "Lizenzierung und Testzeitraum",
+    "en": "Licensing & Trial Period"
+  },
+  "license_status": {
+    "de": "Lizenz-Status",
+    "en": "License Status"
+  },
+  "license_activated": {
+    "de": "Aktiviert (Kommerzielle Lizenz)",
+    "en": "Activated (Commercial License)"
+  },
+  "license_not_activated": {
+    "de": "Nicht aktiviert (Testphase)",
+    "en": "Not activated (Trial Period)"
+  },
+  "license_trial_days_remaining": {
+    "de": "Verbleibende Testtage",
+    "en": "Remaining trial days"
+  },
+  "license_days": {
+    "de": "{days} Tage",
+    "en": "{days} days"
+  },
+  "license_expired": {
+    "de": "Abgelaufen (Kommerzielle Lizenz erforderlich)",
+    "en": "Expired (Commercial license required)"
+  },
+  "btn_enter_license_key": {
+    "de": "Lizenzschlüssel eingeben...",
+    "en": "Enter license key..."
+  },
+  "btn_change_license_key": {
+    "de": "Lizenzschlüssel ändern...",
+    "en": "Change license key..."
+  },
+  "license_prompt_title": {
+    "de": "Lizenzschlüssel eingeben",
+    "en": "Enter License Key"
+  },
+  "license_prompt_label": {
+    "de": "Bitte geben Sie den QUCORE-Lizenzschlüssel ein:",
+    "en": "Please enter the QUCORE license key:"
+  },
+  "license_success_title": {
+    "de": "Aktivierung erfolgreich",
+    "en": "Activation Successful"
+  },
+  "license_success_text": {
+    "de": "Lizenz erfolgreich aktiviert! Vielen Dank für die Unterstützung von QUCORE.",
+    "en": "License successfully activated! Thank you for supporting QUCORE."
+  },
+  "license_invalid_title": {
+    "de": "Ungültiger Lizenzschlüssel",
+    "en": "Invalid License Key"
+  },
+  "license_invalid_text": {
+    "de": "Ungültiger Lizenzschlüssel. Bitte überprüfen Sie Ihre Eingabe oder kontaktieren Sie den Autor unter tim.strohbach@gmx.de.",
+    "en": "Invalid license key. Please check your input or contact the author at tim.strohbach@gmx.de."
+  },
+  "license_expired_desc": {
+    "de": "Die 30-tägige Testphase für die kommerzielle Nutzung ist abgelaufen (kommerzielle Nutzung erfordert eine Lizenz). Die private Nutzung ist weiterhin gestattet.",
+    "en": "The 30-day trial period for commercial use has expired (commercial use requires a license). Private use is still permitted."
   }
 }
 
