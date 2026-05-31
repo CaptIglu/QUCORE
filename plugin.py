@@ -576,6 +576,40 @@ class AboutDialog(QDialog):
                 )
 
 
+def hex_to_rgba(hex_str, opacity):
+    """
+    Helper function to convert hex color string and opacity to 'R,G,B,A' format for QGIS styling.
+    """
+    try:
+        h = hex_str.lstrip('#')
+        r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+        alpha = int(round(float(opacity) * 255 / 100))
+        return f"{r},{g},{b},{alpha}"
+    except Exception as e:
+        from qgis.core import QgsMessageLog, Qgis
+        QgsMessageLog.logMessage(
+            f"Ungültiger Hex-Farbwert '{hex_str}' oder Opazität '{opacity}': {e}",
+            "QUCORE", Qgis.Warning
+        )
+        return "200,200,200,40"
+
+def hex_to_border_rgba(hex_str, default_fallback="100,100,100,255"):
+    """
+    Helper function to convert hex color string to border 'R,G,B,255' format for QGIS styling.
+    """
+    try:
+        h = hex_str.lstrip('#')
+        r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+        return f"{r},{g},{b},255"
+    except Exception as e:
+        from qgis.core import QgsMessageLog, Qgis
+        QgsMessageLog.logMessage(
+            f"Ungültiger Hex-Farbwert für Rahmen '{hex_str}': {e}",
+            "QUCORE", Qgis.Warning
+        )
+        return default_fallback
+
+
 class DroneCorridorPlanner(object):
     def __init__(self, iface):
         self.iface = iface
@@ -1454,33 +1488,7 @@ class DroneCorridorPlanner(object):
         lw_grb = float(self.params.get("linewidth_grb", 1.0))
         lw_aga = float(self.params.get("linewidth_adjacentarea", 1.0))
 
-        # Convert hex colors and opacities to RGBA format for QGIS styling
-        def hex_to_rgba(hex_str, opacity):
-            try:
-                h = hex_str.lstrip('#')
-                r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
-                alpha = int(round(float(opacity) * 255 / 100))
-                return f"{r},{g},{b},{alpha}"
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(
-                    f"Ungültiger Hex-Farbwert '{hex_str}' oder Opazität '{opacity}': {e}",
-                    "QUCORE", Qgis.Warning
-                )
-                return "200,200,200,40"
-
-        def hex_to_border_rgba(hex_str):
-            try:
-                h = hex_str.lstrip('#')
-                r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
-                return f"{r},{g},{b},255"
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(
-                    f"Ungültiger Hex-Farbwert für Rahmen '{hex_str}': {e}",
-                    "QUCORE", Qgis.Warning
-                )
-                return "100,100,100,255"
+        # (Nested hex conversion helper functions have been refactored to module-level)
 
         color_route = self.params.get("color_route", "#50505a")
         color_fg = self.params.get("color_fg", "#397c59")
@@ -1599,26 +1607,9 @@ class DroneCorridorPlanner(object):
         return layer_var
 
     def style_aga_layer(self, layer, color_hex, opacity_pct, border_width):
-        def hex_to_rgba(hex_str, opacity):
-            try:
-                h = hex_str.lstrip('#')
-                r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
-                alpha = int(round(float(opacity) * 255 / 100))
-                return f"{r},{g},{b},{alpha}"
-            except Exception:
-                return "0,0,0,0"
-
-        def hex_to_border_rgba(hex_str):
-            try:
-                h = hex_str.lstrip('#')
-                r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
-                return f"{r},{g},{b},255"
-            except Exception:
-                return "41,128,185,255"
-
         props = {
             'color': hex_to_rgba(color_hex, opacity_pct),
-            'outline_color': hex_to_border_rgba(color_hex),
+            'outline_color': hex_to_border_rgba(color_hex, "41,128,185,255"),
             'outline_width': str(border_width),
             'outline_style': 'dash',
             'style': 'solid' if float(opacity_pct) > 0 else 'no'
@@ -1680,26 +1671,9 @@ class DroneCorridorPlanner(object):
         opacity_pct = self.params.get("opacity_vlos", 0)
         border_width = self.params.get("linewidth_vlos", 0.8)
 
-        def hex_to_rgba(hex_str, opacity):
-            try:
-                h = hex_str.lstrip('#')
-                r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
-                alpha = int(round(float(opacity) * 255 / 100))
-                return f"{r},{g},{b},{alpha}"
-            except Exception:
-                return "0,0,0,0"
-
-        def hex_to_border_rgba(hex_str):
-            try:
-                h = hex_str.lstrip('#')
-                r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
-                return f"{r},{g},{b},255"
-            except Exception:
-                return "45,156,219,255"
-
         props = {
             'color': hex_to_rgba(color_hex, opacity_pct),
-            'outline_color': hex_to_border_rgba(color_hex),
+            'outline_color': hex_to_border_rgba(color_hex, "45,156,219,255"),
             'outline_width': str(border_width),
             'outline_style': 'dash_dot',
             'style': 'solid' if float(opacity_pct) > 0 else 'no'
