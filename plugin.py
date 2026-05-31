@@ -1165,6 +1165,14 @@ class DroneCorridorPlanner(object):
         # Smart re-bind layers first
         self.initialize_layers()
 
+        # 1. Restore state from project entries if available (preferred for rich state restoration)
+        try:
+            state_json, ok = QgsProject.instance().readEntry("QUCORE", "state")
+            if ok and state_json and not self.waypoints:
+                self.deserialize_state(state_json)
+        except Exception:
+            pass
+
         # Fallback: Restore waypoints and pilot from layers if python state is still empty (e.g. on reload without project entry)
         if self.is_layer_valid(self.lyr_waypoints) and not self.waypoints:
             try:
@@ -2007,6 +2015,14 @@ class DroneCorridorPlanner(object):
         if not is_dragging:
             self.canvas.refresh()
 
+        # Save state to QgsProject entry if not dragging
+        if not is_dragging:
+            try:
+                state_json = self.serialize_state()
+                QgsProject.instance().writeEntry("QUCORE", "state", state_json)
+            except Exception:
+                pass
+
 
     def update_pilot_layer(self):
         """
@@ -2072,6 +2088,12 @@ class DroneCorridorPlanner(object):
             self.lyr_vlos.updateExtents()
             self.lyr_vlos.triggerRepaint()
         self.canvas.refresh()
+
+        try:
+            state_json = self.serialize_state()
+            QgsProject.instance().writeEntry("QUCORE", "state", state_json)
+        except Exception:
+            pass
 
 
     def update_results_panel(self):
