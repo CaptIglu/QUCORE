@@ -764,6 +764,10 @@ class DroneCorridorPlanner(object):
         self.pilot_tool = QgsMapToolEmitPoint(self.canvas)
         self.pilot_tool.canvasClicked.connect(self.on_pilot_clicked)
 
+        # Auto-cleanup on project clear
+        from qgis.core import QgsProject
+        QgsProject.instance().cleared.connect(self.on_project_cleared)
+
     def unload(self):
         """
         Removes action from QGIS toolbar and menus, disconnects signals,
@@ -826,10 +830,63 @@ class DroneCorridorPlanner(object):
             except Exception:
                 pass
 
+        # Disconnect project cleared signal
+        try:
+            from qgis.core import QgsProject
+            QgsProject.instance().cleared.disconnect(self.on_project_cleared)
+        except Exception:
+            pass
+
+        # Remove memory layers and the group from the active project
+        self.remove_layers_and_group()
+
         # 6. Nullify references to trigger Python Garbage Collection
         self.wp_tool = None
         self.pilot_tool = None
         self.gui = None
+
+    def on_project_cleared(self):
+        """
+        Triggered when QgsProject is cleared. Removes all state and layer references
+        so that subsequent plugin actions start in a completely empty and clean state.
+        """
+        self.waypoints = []
+        self.pilot_pos = None
+        self.geometry_type = "Corridor"
+        self.undo_stack = []
+        self.redo_stack = []
+        
+        self.layer_group = None
+        self.lyr_waypoints = None
+        self.lyr_pilot = None
+        self.lyr_route = None
+        self.lyr_fg = None
+        self.lyr_cv = None
+        self.lyr_grb = None
+        self.lyr_aga = None
+        self.lyr_vlos = None
+
+    def remove_layers_and_group(self):
+        """
+        Removes the QUCORE-Korridorplanung group and all its memory layers from the map canvas and registry.
+        """
+        try:
+            from qgis.core import QgsProject, QgsLayerTreeNode
+            root = QgsProject.instance().layerTreeRoot()
+            group = root.findGroup("QUCORE-Korridorplanung")
+            if group:
+                # Remove all child layers in the group from the map layer registry
+                for child in list(group.children()):
+                    if child.nodeType() == QgsLayerTreeNode.NodeLayer:
+                        layer = child.layer()
+                        if layer:
+                            QgsProject.instance().removeMapLayer(layer.id())
+                # Remove the group node itself
+                parent = group.parent()
+                if parent:
+                    parent.removeChildNode(group)
+        except Exception:
+            pass
 
     def run(self):
         """
@@ -1111,15 +1168,7 @@ class DroneCorridorPlanner(object):
         # Smart re-bind layers first
         self.initialize_layers()
 
-        # 1. Restore state from project entries if available (preferred for rich state restoration)
-        try:
-            state_json, ok = QgsProject.instance().readEntry("QUCORE", "state")
-            if ok and state_json and not self.waypoints:
-                self.deserialize_state(state_json)
-        except Exception:
-            pass
-
-        # 2. Fallback: Restore waypoints and pilot from layers if python state is still empty (e.g. on reload without project entry)
+        # Fallback: Restore waypoints and pilot from layers if python state is still empty (e.g. on reload)
         if self.is_layer_valid(self.lyr_waypoints) and not self.waypoints:
             try:
                 features = list(self.lyr_waypoints.getFeatures())
@@ -1961,13 +2010,6 @@ class DroneCorridorPlanner(object):
         if not is_dragging:
             self.canvas.refresh()
 
-        # Save state to QgsProject entry if not dragging
-        if not is_dragging:
-            try:
-                state_json = self.serialize_state()
-                QgsProject.instance().writeEntry("QUCORE", "state", state_json)
-            except Exception:
-                pass
 
     def update_pilot_layer(self):
         """
@@ -2034,11 +2076,6 @@ class DroneCorridorPlanner(object):
             self.lyr_vlos.triggerRepaint()
         self.canvas.refresh()
 
-        try:
-            state_json = self.serialize_state()
-            QgsProject.instance().writeEntry("QUCORE", "state", state_json)
-        except Exception:
-            pass
 
     def update_results_panel(self):
         """
