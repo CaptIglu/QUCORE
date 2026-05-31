@@ -38,16 +38,17 @@ class BufferCalculator:
         uas_type = params.get("uas_type", "FixedWing") # "FixedWing" or "Multikopter"
         altimetry = params.get("altimetry", "GPS") # "GPS" or "Baro"
         
-        v0 = float(params.get("maxVelocity", 30.0))
-        CD = float(params.get("maxCharacteristicDimension", 3.6))
+        # Enforce positive bounds to avoid singularities or negative scaling
+        v0 = max(0.1, float(params.get("maxVelocity", 30.0)))
+        CD = max(0.1, float(params.get("maxCharacteristicDimension", 3.6)))
         
-        gps_inaccuracy = float(params.get("gpsInaccuracy", 3.0))
-        pos_error = float(params.get("positionError", 3.0))
-        map_error = float(params.get("mapError", 1.0))
-        t_rz = float(params.get("reactionTime", 1.0))
+        gps_inaccuracy = max(0.0, float(params.get("gpsInaccuracy", 3.0)))
+        pos_error = max(0.0, float(params.get("positionError", 3.0)))
+        map_error = max(0.0, float(params.get("mapError", 1.0)))
+        t_rz = max(0.1, float(params.get("reactionTime", 1.0)))
         
-        alt_err_gps = float(params.get("altitudeErrorGps", 4.0))
-        alt_err_baro = float(params.get("altitudeErrorBarometric", 1.0))
+        alt_err_gps = max(0.0, float(params.get("altitudeErrorGps", 4.0)))
+        alt_err_baro = max(0.0, float(params.get("altitudeErrorBarometric", 1.0)))
         
         # Altimetry vertical error
         h_delta = alt_err_gps if altimetry == "GPS" else alt_err_baro
@@ -66,19 +67,23 @@ class BufferCalculator:
             # For Multikopter: Stop manoeuvre
             if uas_type == "Multikopter":
                 angle = float(params.get("maxPitchAngle", 30.0))
+                # Clamp pitch angle between 1.0 and 85.0 degrees to avoid tangent singularities
+                angle = max(1.0, min(85.0, angle))
                 rad = math.radians(angle)
                 s_cm = (0.5 * v0 * v0) / (g * math.tan(rad)) if rad > 0 else 0
             else:
                 # For Fixed Wing: Turnaround curve
                 angle = float(params.get("maxRollAngle", 30.0))
+                # Clamp roll angle between 1.0 and 85.0 degrees
+                angle = max(1.0, min(85.0, angle))
                 rad = math.radians(angle)
                 s_cm = (v0 * v0) / (g * math.tan(rad)) if rad > 0 else 0
         elif lat_manoeuvre == "Parachute" or lat_manoeuvre == "Auslösen des Fallschirms":
-            t_parachute = float(params.get("parachuteOpeningTimeLateral", 2.0))
+            t_parachute = max(0.1, float(params.get("parachuteOpeningTimeLateral", 2.0)))
             s_cm = v0 * t_parachute
             
         # Lateral CV extension
-        add_horiz = float(params.get("additionalErrorLateral", 0.0))
+        add_horiz = max(0.0, float(params.get("additionalErrorLateral", 0.0)))
         s_cv = gps_inaccuracy + pos_error + map_error + s_rz + s_cm + add_horiz
         
         # ----------------------------------------------------
@@ -99,11 +104,11 @@ class BufferCalculator:
                 # Fixed Wing: 45 degree climb via circular path to horizontal flight
                 h_cm = 0.3 * (v0 * v0) / g
         elif vert_manoeuvre == "Parachute" or vert_manoeuvre == "Auslösen des Fallschirms":
-            t_para_vert = float(params.get("parachuteOpeningTimeVertical", 2.0))
+            t_para_vert = max(0.1, float(params.get("parachuteOpeningTimeVertical", 2.0)))
             h_cm = 0.7 * v0 * t_para_vert
             
         # Absolute height of CV ceiling
-        add_vert = float(params.get("additionalErrorVertical", 0.0))
+        add_vert = max(0.0, float(params.get("additionalErrorVertical", 0.0)))
         h_cv = h + h_delta + h_rz + h_cm + add_vert
         
         # ----------------------------------------------------
@@ -119,13 +124,13 @@ class BufferCalculator:
             s_grb = v0 * math.sqrt(2 * h_cv / g) + 0.5 * CD
             
         elif grb_method == "Glide" or grb_method == "Antrieb wird ausgeschaltet mit Gleitflug":
-            glide_ratio = float(params.get("glideRatioDenominator", 10.0))
+            glide_ratio = max(0.1, float(params.get("glideRatioDenominator", 10.0)))
             s_grb = h_cv * glide_ratio
             
         elif grb_method == "Parachute" or grb_method == "Terminierung mit Auslösen des Fallschirms":
-            t_para_grb = float(params.get("parachuteOpeningTimeGRB", 1.0))
-            v_wind = float(params.get("maxWindVelocity", 3.0))
-            v_z = float(params.get("parachuteDescentRate", 2.0))
+            t_para_grb = max(0.1, float(params.get("parachuteOpeningTimeGRB", 1.0)))
+            v_wind = max(0.0, float(params.get("maxWindVelocity", 3.0)))
+            v_z = max(0.1, float(params.get("parachuteDescentRate", 2.0)))
             s_grb = v0 * t_para_grb + v_wind * (h_cv / v_z) if v_z > 0 else 0
             
         # ----------------------------------------------------
@@ -159,27 +164,46 @@ class BufferCalculator:
         if not waypoints:
             return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
 
-        # Parse waypoints to robust format
+        # Parse waypoints to robust format, clamp coordinates, and filter out coincident duplicates
         parsed_wpts = []
-        def_h = float(params.get("maxFlightHeight", 100.0))
-        def_spd = float(params.get("maxVelocity", 30.0))
-        def_fg = float(params.get("corridorWidth", 50.0))
+        def_h = max(1.0, float(params.get("maxFlightHeight", 100.0)))
+        def_spd = max(0.1, float(params.get("maxVelocity", 30.0)))
+        def_fg = max(0.1, float(params.get("corridorWidth", 50.0)))
         
         for w in waypoints:
-            if isinstance(w, dict):
-                lon = w.get('lon')
-                lat = w.get('lat')
-                h = w.get('height', def_h)
-                spd = w.get('speed', def_spd)
-                fg = w.get('fg_width', def_fg)
+            try:
+                if isinstance(w, dict):
+                    lon = float(w.get('lon', 0.0))
+                    lat = float(w.get('lat', 0.0))
+                    h = float(w.get('height', def_h))
+                    spd = float(w.get('speed', def_spd))
+                    fg = float(w.get('fg_width', def_fg))
+                else:
+                    lon = float(w[0])
+                    lat = float(w[1])
+                    h = float(w[2]) if len(w) > 2 else def_h
+                    spd = float(w[3]) if len(w) > 3 else def_spd
+                    fg = float(w[4]) if len(w) > 4 else def_fg
+                
+                # WGS84 boundary clamping
+                lon = max(-180.0, min(180.0, lon))
+                lat = max(-90.0, min(90.0, lat))
+                h = max(0.0, h)
+                spd = max(0.1, spd)
+                fg = max(0.1, fg)
+                
+                # Skip coincident consecutive waypoints (< 1e-7 deg difference, approx. 1.1 cm)
+                if parsed_wpts:
+                    prev_lon, prev_lat = parsed_wpts[-1][0], parsed_wpts[-1][1]
+                    if abs(lon - prev_lon) < 1e-7 and abs(lat - prev_lat) < 1e-7:
+                        continue
                 parsed_wpts.append((lon, lat, h, spd, fg))
-            else:
-                lon = w[0]
-                lat = w[1]
-                h = w[2] if len(w) > 2 else def_h
-                spd = w[3] if len(w) > 3 else def_spd
-                fg = w[4] if len(w) > 4 else def_fg
-                parsed_wpts.append((lon, lat, h, spd, fg))
+            except (ValueError, TypeError, IndexError):
+                # Ignore malformed points
+                pass
+
+        if not parsed_wpts:
+            return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
                 
         # ----------------------------------------------------
         # BRANCH ON GEOMETRY TYPE
@@ -203,28 +227,43 @@ class BufferCalculator:
             elif s_aga > 35000.0:
                 s_aga = 35000.0
                 
-            # Use local UTM zone for this single point (100% native EPSG, no custom Proj distortion)
-            utm_epsg = get_utm_epsg(lon, lat)
-            src_crs = QgsCoordinateReferenceSystem("EPSG:4326")
-            dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg}")
-            project = QgsProject.instance()
-            transform = QgsCoordinateTransform(src_crs, dest_crs, project)
-            inverse_transform = QgsCoordinateTransform(dest_crs, src_crs, project)
-            
-            center_utm = transform.transform(QgsPointXY(lon, lat))
-            
-            fg_geom = QgsGeometry.fromPointXY(center_utm).buffer(r_fg, BUFFER_SEGMENTS)
-            cv_geom = QgsGeometry.fromPointXY(center_utm).buffer(r_cv, BUFFER_SEGMENTS)
-            grb_geom = QgsGeometry.fromPointXY(center_utm).buffer(r_grb, BUFFER_SEGMENTS)
-            aga_geom = cv_geom.buffer(s_aga, BUFFER_SEGMENTS)
-            
-            # Project back to WGS 84
-            fg_geom.transform(inverse_transform)
-            cv_geom.transform(inverse_transform)
-            grb_geom.transform(inverse_transform)
-            aga_geom.transform(inverse_transform)
-            
-            return fg_geom, cv_geom, grb_geom, aga_geom
+            try:
+                # Use local UTM zone for this single point (100% native EPSG, no custom Proj distortion)
+                utm_epsg = get_utm_epsg(lon, lat)
+                src_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+                dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg}")
+                project = QgsProject.instance()
+                transform = QgsCoordinateTransform(src_crs, dest_crs, project)
+                inverse_transform = QgsCoordinateTransform(dest_crs, src_crs, project)
+                
+                center_utm = transform.transform(QgsPointXY(lon, lat))
+                
+                fg_geom = QgsGeometry.fromPointXY(center_utm).buffer(r_fg, BUFFER_SEGMENTS)
+                cv_geom = QgsGeometry.fromPointXY(center_utm).buffer(r_cv, BUFFER_SEGMENTS)
+                grb_geom = QgsGeometry.fromPointXY(center_utm).buffer(r_grb, BUFFER_SEGMENTS)
+                aga_geom = cv_geom.buffer(s_aga, BUFFER_SEGMENTS)
+                
+                # Project back to WGS 84
+                fg_geom.transform(inverse_transform)
+                cv_geom.transform(inverse_transform)
+                grb_geom.transform(inverse_transform)
+                aga_geom.transform(inverse_transform)
+                
+                # Enforce validity of final output geometries
+                if fg_geom and not fg_geom.isValid():
+                    fg_geom = fg_geom.makeValid()
+                if cv_geom and not cv_geom.isValid():
+                    cv_geom = cv_geom.makeValid()
+                if grb_geom and not grb_geom.isValid():
+                    grb_geom = grb_geom.makeValid()
+                if aga_geom and not aga_geom.isValid():
+                    aga_geom = aga_geom.makeValid()
+                
+                return fg_geom, cv_geom, grb_geom, aga_geom
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(f"Fehler bei Kreis-Geometrieberechnung: {e}", "QUCORE", Qgis.Error)
+                return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
             
         elif geometry_type == "Polygon":
             # Vertices polygon
@@ -249,42 +288,61 @@ class BufferCalculator:
             elif s_aga > 35000.0:
                 s_aga = 35000.0
                 
-            # Use native UTM zone of the polygon's midpoint to eliminate any scale distortion
-            lons = [w[0] for w in parsed_wpts]
-            lats = [w[1] for w in parsed_wpts]
-            mid_lon = sum(lons) / len(lons)
-            mid_lat = sum(lats) / len(lats)
-            
-            utm_epsg = get_utm_epsg(mid_lon, mid_lat)
-            src_crs = QgsCoordinateReferenceSystem("EPSG:4326")
-            dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg}")
-            project = QgsProject.instance()
-            transform = QgsCoordinateTransform(src_crs, dest_crs, project)
-            inverse_transform = QgsCoordinateTransform(dest_crs, src_crs, project)
-            
-            # Project vertices to UTM
-            utm_pts = []
-            for lon, lat, _, _, _ in parsed_wpts:
-                pt_wgs = QgsPointXY(lon, lat)
-                pt_utm = transform.transform(pt_wgs)
-                utm_pts.append(pt_utm)
+            try:
+                # Use native UTM zone of the polygon's midpoint to eliminate any scale distortion
+                lons = [w[0] for w in parsed_wpts]
+                lats = [w[1] for w in parsed_wpts]
+                mid_lon = sum(lons) / len(lons)
+                mid_lat = sum(lats) / len(lats)
                 
-            # Create outer ring (closed)
-            ring = list(utm_pts)
-            ring.append(utm_pts[0])
-            fg_geom = QgsGeometry.fromPolygonXY([ring])
-            
-            cv_geom = fg_geom.buffer(s_cv, BUFFER_SEGMENTS)
-            grb_geom = cv_geom.buffer(s_grb, BUFFER_SEGMENTS)
-            aga_geom = cv_geom.buffer(s_aga, BUFFER_SEGMENTS)
-            
-            # Project back to WGS 84
-            fg_geom.transform(inverse_transform)
-            cv_geom.transform(inverse_transform)
-            grb_geom.transform(inverse_transform)
-            aga_geom.transform(inverse_transform)
-            
-            return fg_geom, cv_geom, grb_geom, aga_geom
+                utm_epsg = get_utm_epsg(mid_lon, mid_lat)
+                src_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+                dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg}")
+                project = QgsProject.instance()
+                transform = QgsCoordinateTransform(src_crs, dest_crs, project)
+                inverse_transform = QgsCoordinateTransform(dest_crs, src_crs, project)
+                
+                # Project vertices to UTM
+                utm_pts = []
+                for lon, lat, _, _, _ in parsed_wpts:
+                    pt_wgs = QgsPointXY(lon, lat)
+                    pt_utm = transform.transform(pt_wgs)
+                    utm_pts.append(pt_utm)
+                    
+                # Create outer ring (closed)
+                ring = list(utm_pts)
+                ring.append(utm_pts[0])
+                fg_geom = QgsGeometry.fromPolygonXY([ring])
+                
+                # Check and enforce validity of input polygon first to handle self-crossing paths
+                if fg_geom and not fg_geom.isValid():
+                    fg_geom = fg_geom.makeValid()
+                
+                cv_geom = fg_geom.buffer(s_cv, BUFFER_SEGMENTS)
+                grb_geom = cv_geom.buffer(s_grb, BUFFER_SEGMENTS)
+                aga_geom = cv_geom.buffer(s_aga, BUFFER_SEGMENTS)
+                
+                # Project back to WGS 84
+                fg_geom.transform(inverse_transform)
+                cv_geom.transform(inverse_transform)
+                grb_geom.transform(inverse_transform)
+                aga_geom.transform(inverse_transform)
+                
+                # Enforce validity of final projected outputs
+                if fg_geom and not fg_geom.isValid():
+                    fg_geom = fg_geom.makeValid()
+                if cv_geom and not cv_geom.isValid():
+                    cv_geom = cv_geom.makeValid()
+                if grb_geom and not grb_geom.isValid():
+                    grb_geom = grb_geom.makeValid()
+                if aga_geom and not aga_geom.isValid():
+                    aga_geom = aga_geom.makeValid()
+                
+                return fg_geom, cv_geom, grb_geom, aga_geom
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(f"Fehler bei Polygon-Geometrieberechnung: {e}", "QUCORE", Qgis.Error)
+                return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
             
         else: # Corridor (Default)
             # stores (r_fg, r_cv, r_grb) for each waypoint
@@ -316,25 +374,40 @@ class BufferCalculator:
                 elif s_aga > 35000.0:
                     s_aga = 35000.0
                     
-                utm_epsg = get_utm_epsg(lon, lat)
-                dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg}")
-                transform = QgsCoordinateTransform(src_crs, dest_crs, project)
-                inverse_transform = QgsCoordinateTransform(dest_crs, src_crs, project)
-                
-                pt_utm = transform.transform(QgsPointXY(lon, lat))
-                
-                fg_geom = QgsGeometry.fromPointXY(pt_utm).buffer(r_fg, BUFFER_SEGMENTS)
-                cv_geom = QgsGeometry.fromPointXY(pt_utm).buffer(r_cv, BUFFER_SEGMENTS)
-                grb_geom = QgsGeometry.fromPointXY(pt_utm).buffer(r_grb, BUFFER_SEGMENTS)
-                aga_geom = cv_geom.buffer(s_aga, BUFFER_SEGMENTS)
-                
-                # Project back to WGS 84
-                fg_geom.transform(inverse_transform)
-                cv_geom.transform(inverse_transform)
-                grb_geom.transform(inverse_transform)
-                aga_geom.transform(inverse_transform)
-                
-                return fg_geom, cv_geom, grb_geom, aga_geom
+                try:
+                    utm_epsg = get_utm_epsg(lon, lat)
+                    dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg}")
+                    transform = QgsCoordinateTransform(src_crs, dest_crs, project)
+                    inverse_transform = QgsCoordinateTransform(dest_crs, src_crs, project)
+                    
+                    pt_utm = transform.transform(QgsPointXY(lon, lat))
+                    
+                    fg_geom = QgsGeometry.fromPointXY(pt_utm).buffer(r_fg, BUFFER_SEGMENTS)
+                    cv_geom = QgsGeometry.fromPointXY(pt_utm).buffer(r_cv, BUFFER_SEGMENTS)
+                    grb_geom = QgsGeometry.fromPointXY(pt_utm).buffer(r_grb, BUFFER_SEGMENTS)
+                    aga_geom = cv_geom.buffer(s_aga, BUFFER_SEGMENTS)
+                    
+                    # Project back to WGS 84
+                    fg_geom.transform(inverse_transform)
+                    cv_geom.transform(inverse_transform)
+                    grb_geom.transform(inverse_transform)
+                    aga_geom.transform(inverse_transform)
+                    
+                    # Enforce validity of outputs
+                    if fg_geom and not fg_geom.isValid():
+                        fg_geom = fg_geom.makeValid()
+                    if cv_geom and not cv_geom.isValid():
+                        cv_geom = cv_geom.makeValid()
+                    if grb_geom and not grb_geom.isValid():
+                        grb_geom = grb_geom.makeValid()
+                    if aga_geom and not aga_geom.isValid():
+                        aga_geom = aga_geom.makeValid()
+                    
+                    return fg_geom, cv_geom, grb_geom, aga_geom
+                except Exception as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    QgsMessageLog.logMessage(f"Fehler bei Einzelwegpunkt-Corridor-Geometrieberechnung: {e}", "QUCORE", Qgis.Error)
+                    return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
     
             # For multiple waypoints, build tapered capsules for each segment.
             # To ensure the flightway remains perfectly and symmetrically centered inside the buffers
@@ -342,38 +415,45 @@ class BufferCalculator:
             # each segment is buffered in its OWN local UTM zone and immediately transformed back to WGS 84.
             # This completely bypasses the slow sub-segment loop, improving performance by 1000x on long routes.
             for i in range(len(parsed_wpts) - 1):
-                lon_a, lat_a, h_a, spd_a, fg_a = parsed_wpts[i]
-                lon_b, lat_b, h_b, spd_b, fg_b = parsed_wpts[i+1]
-                
-                r_fg_a, r_cv_a, r_grb_a, _ = radii[i]
-                r_fg_b, r_cv_b, r_grb_b, _ = radii[i+1]
-                
-                utm_epsg = get_utm_epsg(lon_a, lat_a)
-                dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg}")
-                
-                transform = QgsCoordinateTransform(src_crs, dest_crs, project)
-                inverse_transform = QgsCoordinateTransform(dest_crs, src_crs, project)
-                
-                pt_a_utm = transform.transform(QgsPointXY(lon_a, lat_a))
-                pt_b_utm = transform.transform(QgsPointXY(lon_b, lat_b))
-                
-                c_fg_a = QgsGeometry.fromPointXY(pt_a_utm).buffer(r_fg_a, BUFFER_SEGMENTS)
-                c_fg_b = QgsGeometry.fromPointXY(pt_b_utm).buffer(r_fg_b, BUFFER_SEGMENTS)
-                fg_capsule = c_fg_a.combine(c_fg_b).convexHull()
-                fg_capsule.transform(inverse_transform) # Transform back to WGS 84 immediately
-                fg_capsules.append(fg_capsule)
-                
-                c_cv_a = QgsGeometry.fromPointXY(pt_a_utm).buffer(r_cv_a, BUFFER_SEGMENTS)
-                c_cv_b = QgsGeometry.fromPointXY(pt_b_utm).buffer(r_cv_b, BUFFER_SEGMENTS)
-                cv_capsule = c_cv_a.combine(c_cv_b).convexHull()
-                cv_capsule.transform(inverse_transform) # Transform back to WGS 84 immediately
-                cv_capsules.append(cv_capsule)
-                
-                c_grb_a = QgsGeometry.fromPointXY(pt_a_utm).buffer(r_grb_a, BUFFER_SEGMENTS)
-                c_grb_b = QgsGeometry.fromPointXY(pt_b_utm).buffer(r_grb_b, BUFFER_SEGMENTS)
-                grb_capsule = c_grb_a.combine(c_grb_b).convexHull()
-                grb_capsule.transform(inverse_transform) # Transform back to WGS 84 immediately
-                grb_capsules.append(grb_capsule)
+                try:
+                    lon_a, lat_a, h_a, spd_a, fg_a = parsed_wpts[i]
+                    lon_b, lat_b, h_b, spd_b, fg_b = parsed_wpts[i+1]
+                    
+                    r_fg_a, r_cv_a, r_grb_a, _ = radii[i]
+                    r_fg_b, r_cv_b, r_grb_b, _ = radii[i+1]
+                    
+                    utm_epsg = get_utm_epsg(lon_a, lat_a)
+                    dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg}")
+                    
+                    transform = QgsCoordinateTransform(src_crs, dest_crs, project)
+                    inverse_transform = QgsCoordinateTransform(dest_crs, src_crs, project)
+                    
+                    pt_a_utm = transform.transform(QgsPointXY(lon_a, lat_a))
+                    pt_b_utm = transform.transform(QgsPointXY(lon_b, lat_b))
+                    
+                    c_fg_a = QgsGeometry.fromPointXY(pt_a_utm).buffer(r_fg_a, BUFFER_SEGMENTS)
+                    c_fg_b = QgsGeometry.fromPointXY(pt_b_utm).buffer(r_fg_b, BUFFER_SEGMENTS)
+                    fg_capsule = c_fg_a.combine(c_fg_b).convexHull()
+                    fg_capsule.transform(inverse_transform) # Transform back to WGS 84 immediately
+                    fg_capsules.append(fg_capsule)
+                    
+                    c_cv_a = QgsGeometry.fromPointXY(pt_a_utm).buffer(r_cv_a, BUFFER_SEGMENTS)
+                    c_cv_b = QgsGeometry.fromPointXY(pt_b_utm).buffer(r_cv_b, BUFFER_SEGMENTS)
+                    cv_capsule = c_cv_a.combine(c_cv_b).convexHull()
+                    cv_capsule.transform(inverse_transform) # Transform back to WGS 84 immediately
+                    cv_capsules.append(cv_capsule)
+                    
+                    c_grb_a = QgsGeometry.fromPointXY(pt_a_utm).buffer(r_grb_a, BUFFER_SEGMENTS)
+                    c_grb_b = QgsGeometry.fromPointXY(pt_b_utm).buffer(r_grb_b, BUFFER_SEGMENTS)
+                    grb_capsule = c_grb_a.combine(c_grb_b).convexHull()
+                    grb_capsule.transform(inverse_transform) # Transform back to WGS 84 immediately
+                    grb_capsules.append(grb_capsule)
+                except Exception as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    QgsMessageLog.logMessage(f"Fehler bei Kapsel-Berechnung für Segment {i}: {e}", "QUCORE", Qgis.Warning)
+                    
+            if not fg_capsules:
+                return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
                 
             # Determine Adjacent Area width S_AGA based on max speed across all waypoints
             v0_max = max([w[3] for w in parsed_wpts])
@@ -382,7 +462,7 @@ class BufferCalculator:
                 s_aga = 5000.0
             elif s_aga > 35000.0:
                 s_aga = 35000.0
-
+ 
             # Merge all segment capsules in WGS 84
             fg_merged = QgsGeometry.unaryUnion(fg_capsules)
             cv_merged = QgsGeometry.unaryUnion(cv_capsules)
@@ -390,21 +470,36 @@ class BufferCalculator:
             
             # Generate Adjacent Area buffer around the merged WGS 84 CV.
             # We project cv_merged to the UTM zone of the route's midpoint, buffer it there, and project back.
-            lons = [w[0] for w in parsed_wpts]
-            lats = [w[1] for w in parsed_wpts]
-            mid_lon = sum(lons) / len(lons)
-            mid_lat = sum(lats) / len(lats)
+            aga_merged = QgsGeometry()
+            try:
+                lons = [w[0] for w in parsed_wpts]
+                lats = [w[1] for w in parsed_wpts]
+                mid_lon = sum(lons) / len(lons)
+                mid_lat = sum(lats) / len(lats)
+                
+                utm_epsg_mid = get_utm_epsg(mid_lon, mid_lat)
+                dest_crs_mid = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg_mid}")
+                
+                transform_mid = QgsCoordinateTransform(src_crs, dest_crs_mid, project)
+                inverse_transform_mid = QgsCoordinateTransform(dest_crs_mid, src_crs, project)
+                
+                # Clone cv_merged for adjacent area buffering in local UTM
+                cv_clone = QgsGeometry(cv_merged)
+                cv_clone.transform(transform_mid)
+                aga_merged = cv_clone.buffer(s_aga, BUFFER_SEGMENTS)
+                aga_merged.transform(inverse_transform_mid)
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(f"Fehler bei Adjacent-Area-Berechnung: {e}", "QUCORE", Qgis.Warning)
             
-            utm_epsg_mid = get_utm_epsg(mid_lon, mid_lat)
-            dest_crs_mid = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg_mid}")
-            
-            transform_mid = QgsCoordinateTransform(src_crs, dest_crs_mid, project)
-            inverse_transform_mid = QgsCoordinateTransform(dest_crs_mid, src_crs, project)
-            
-            cv_merged.transform(transform_mid)
-            aga_merged = cv_merged.buffer(s_aga, BUFFER_SEGMENTS)
-            
-            cv_merged.transform(inverse_transform_mid)
-            aga_merged.transform(inverse_transform_mid)
+            # Enforce validity of final output geometries
+            if fg_merged and not fg_merged.isValid():
+                fg_merged = fg_merged.makeValid()
+            if cv_merged and not cv_merged.isValid():
+                cv_merged = cv_merged.makeValid()
+            if grb_merged and not grb_merged.isValid():
+                grb_merged = grb_merged.makeValid()
+            if aga_merged and not aga_merged.isValid():
+                aga_merged = aga_merged.makeValid()
             
             return fg_merged, cv_merged, grb_merged, aga_merged

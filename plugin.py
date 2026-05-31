@@ -1762,19 +1762,29 @@ class DroneCorridorPlanner(object):
         """
         Transforms a point from the active QGIS Canvas CRS to EPSG:4326 WGS 84.
         """
-        canvas_crs = self.canvas.mapSettings().destinationCrs()
-        wgs_crs = QgsCoordinateReferenceSystem("EPSG:4326")
-        transform = QgsCoordinateTransform(canvas_crs, wgs_crs, QgsProject.instance())
-        return transform.transform(point_canvas)
+        try:
+            canvas_crs = self.canvas.mapSettings().destinationCrs()
+            wgs_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+            transform = QgsCoordinateTransform(canvas_crs, wgs_crs, QgsProject.instance())
+            return transform.transform(point_canvas)
+        except Exception as e:
+            from qgis.core import QgsMessageLog, Qgis
+            QgsMessageLog.logMessage(f"CRS-Transformationsfehler (zu WGS84): {e}", "QUCORE", Qgis.Warning)
+            return point_canvas
 
     def transform_from_wgs84(self, point_wgs):
         """
         Transforms a point from EPSG:4326 WGS 84 to the active QGIS Canvas CRS.
         """
-        canvas_crs = self.canvas.mapSettings().destinationCrs()
-        wgs_crs = QgsCoordinateReferenceSystem("EPSG:4326")
-        transform = QgsCoordinateTransform(wgs_crs, canvas_crs, QgsProject.instance())
-        return transform.transform(point_wgs)
+        try:
+            canvas_crs = self.canvas.mapSettings().destinationCrs()
+            wgs_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+            transform = QgsCoordinateTransform(wgs_crs, canvas_crs, QgsProject.instance())
+            return transform.transform(point_wgs)
+        except Exception as e:
+            from qgis.core import QgsMessageLog, Qgis
+            QgsMessageLog.logMessage(f"CRS-Transformationsfehler (aus WGS84): {e}", "QUCORE", Qgis.Warning)
+            return point_wgs
 
     def on_waypoint_clicked(self, point, button):
         """
