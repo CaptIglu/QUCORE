@@ -841,112 +841,6 @@ class DroneCorridorPlanner(object):
             self.gui.resize(330, 580)
             self.gui.setWindowFlags(Qt.Tool)
             
-            # Apply premium modern QSS stylesheet
-            stylesheet = """
-            QDialog {
-                background-color: #f8f9fa;
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }
-            QLabel {
-                color: #2c3e50;
-                font-size: 11.5px;
-            }
-            QGroupBox {
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                margin-top: 8px;
-                padding-top: 14px;
-                font-weight: bold;
-                color: #4a5568;
-                background-color: #ffffff;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-                color: #2b6cb0;
-            }
-            QPushButton {
-                background-color: #ffffff;
-                border: 1px solid #cbd5e0;
-                border-radius: 6px;
-                padding: 5px 10px;
-                color: #4a5568;
-                font-weight: 500;
-                font-size: 11px;
-            }
-            QPushButton:hover {
-                background-color: #f7fafc;
-                border-color: #a0aec0;
-                color: #2d3748;
-            }
-            QPushButton:pressed {
-                background-color: #edf2f7;
-            }
-            QPushButton:checked {
-                background-color: #ebf8ff;
-                border-color: #3182ce;
-                color: #2b6cb0;
-                font-weight: bold;
-            }
-            QPushButton#btn_reset_panel {
-                color: #e53e3e;
-                border-color: #feb2b2;
-            }
-            QPushButton#btn_reset_panel:hover {
-                background-color: #fff5f5;
-                border-color: #fc8181;
-            }
-            QPushButton#btn_close_panel {
-                background-color: #48bb78;
-                border-color: #38a169;
-                color: #ffffff;
-                font-weight: bold;
-            }
-            QPushButton#btn_close_panel:hover {
-                background-color: #38a169;
-                border-color: #2f855a;
-            }
-            QPushButton#btn_close_panel:pressed {
-                background-color: #2f855a;
-            }
-            QComboBox {
-                border: 1px solid #cbd5e0;
-                border-radius: 6px;
-                padding: 4px 6px;
-                background-color: #ffffff;
-                color: #2d3748;
-            }
-            QComboBox:hover {
-                border-color: #a0aec0;
-            }
-            QDoubleSpinBox {
-                border: 1px solid #cbd5e0;
-                border-radius: 6px;
-                padding: 4px 6px;
-                background-color: #ffffff;
-                color: #2d3748;
-            }
-            QDoubleSpinBox:hover {
-                border-color: #a0aec0;
-            }
-            QMenuBar {
-                background-color: #ffffff;
-                border-bottom: 1px solid #e2e8f0;
-            }
-            QMenuBar::item {
-                background-color: transparent;
-                padding: 4px 10px;
-                margin: 2px 0;
-                border-radius: 4px;
-                color: #4a5568;
-            }
-            QMenuBar::item:selected {
-                background-color: #edf2f7;
-                color: #2d3748;
-            }
-            """
-            self.gui.setStyleSheet(stylesheet)
             
             # Close dialog when QGIS is about to quit to prevent blocking modal exit dialogs
             from qgis.core import QgsApplication
@@ -1136,12 +1030,12 @@ class DroneCorridorPlanner(object):
             lay_actions.setSpacing(6)
             
             self.btn_reset_panel = QPushButton("Planung zurücksetzen")
-            self.btn_reset_panel.setObjectName("btn_reset_panel")
+            self.btn_reset_panel.setStyleSheet("QPushButton { color: red; font-weight: bold; }")
             self.btn_reset_panel.clicked.connect(self.reset_planning)
             lay_actions.addWidget(self.btn_reset_panel)
             
             self.btn_close_panel = QPushButton("Planung abschließen")
-            self.btn_close_panel.setObjectName("btn_close_panel")
+            self.btn_close_panel.setStyleSheet("QPushButton { color: green; font-weight: bold; }")
             self.btn_close_panel.clicked.connect(self.gui.accept)
             lay_actions.addWidget(self.btn_close_panel)
             
