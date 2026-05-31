@@ -41,8 +41,12 @@ class PopulationDensityDialog(QDialog):
             try:
                 with open(tr_path, 'r', encoding='utf-8') as f:
                     self.tr_strings = json.load(f)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Fehler beim Laden von translations.json in PopulationDensityDialog: {e}",
+                    "QUCORE", Qgis.Warning
+                )
                 
         self.setWindowTitle(self.tr("dialog_pop_title", "Bevölkerungsdichte im Adjacent Area (AA) Bereich"))
         self.init_ui()
@@ -356,6 +360,11 @@ class PopulationDensityDialog(QDialog):
                 self.params["aa_density"] = density
             
         except Exception as e:
+            from qgis.core import QgsMessageLog, Qgis
+            QgsMessageLog.logMessage(
+                f"Fehler bei der Zonalstatistik-Berechnung in PopulationDensityDialog: {e}",
+                "QUCORE", Qgis.Error
+            )
             QMessageBox.critical(
                 self,
                 self.tr("error_calc_failed_title", "Fehler bei Berechnung"),

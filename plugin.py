@@ -598,8 +598,12 @@ class DroneCorridorPlanner(object):
             try:
                 with open(tr_path, 'r', encoding='utf-8') as f:
                     self.tr_strings = json.load(f)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Fehler beim Laden von translations.json: {e}",
+                    "QUCORE", Qgis.Warning
+                )
                 
         self.params = self.load_config_params()
         
@@ -668,14 +672,22 @@ class DroneCorridorPlanner(object):
                 with open(self.config_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     defaults.update(data)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Fehler beim Laden von config.json: {e}",
+                    "QUCORE", Qgis.Warning
+                )
         else:
             try:
                 with open(self.config_path, 'w', encoding='utf-8') as f:
                     json.dump(defaults, f, indent=2, ensure_ascii=False)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Fehler beim Erstellen der standardmäßigen config.json: {e}",
+                    "QUCORE", Qgis.Error
+                )
                 
         # Restore active session style overrides
         defaults.update(session_styles)
@@ -1220,10 +1232,16 @@ class DroneCorridorPlanner(object):
                 try:
                     parent = self.layer_group.parent()
                     if parent:
-                        node = parent.takeChildNode(self.layer_group)
-                        root.insertChildNode(0, node)
-                except Exception:
-                    pass
+                        cloned_group = self.layer_group.clone()
+                        root.insertChildNode(0, cloned_group)
+                        parent.removeChildNode(self.layer_group)
+                        self.layer_group = cloned_group
+                except Exception as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    QgsMessageLog.logMessage(
+                        f"Fehler beim Verschieben der Layer-Gruppe an die Spitze des Baums: {e}",
+                        "QUCORE", Qgis.Warning
+                    )
 
         # Get linewidths from self.params
         lw_route = float(self.params.get("linewidth_route", 1.0))
@@ -1239,7 +1257,12 @@ class DroneCorridorPlanner(object):
                 r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
                 alpha = int(round(float(opacity) * 255 / 100))
                 return f"{r},{g},{b},{alpha}"
-            except Exception:
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Ungültiger Hex-Farbwert '{hex_str}' oder Opazität '{opacity}': {e}",
+                    "QUCORE", Qgis.Warning
+                )
                 return "200,200,200,40"
 
         def hex_to_border_rgba(hex_str):
@@ -1247,7 +1270,12 @@ class DroneCorridorPlanner(object):
                 h = hex_str.lstrip('#')
                 r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
                 return f"{r},{g},{b},255"
-            except Exception:
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Ungültiger Hex-Farbwert für Rahmen '{hex_str}': {e}",
+                    "QUCORE", Qgis.Warning
+                )
                 return "100,100,100,255"
 
         color_route = self.params.get("color_route", "#50505a")
@@ -1324,10 +1352,15 @@ class DroneCorridorPlanner(object):
                     try:
                         current_idx = parent.children().index(node)
                         if current_idx != target_idx:
-                            taken_node = parent.takeChildNode(node)
-                            parent.insertChildNode(target_idx, taken_node)
-                    except Exception:
-                        pass
+                            cloned_node = node.clone()
+                            parent.insertChildNode(target_idx, cloned_node)
+                            parent.removeChildNode(node)
+                    except Exception as e:
+                        from qgis.core import QgsMessageLog, Qgis
+                        QgsMessageLog.logMessage(
+                            f"Fehler beim Sortieren des Layers '{lyr.name()}': {e}",
+                            "QUCORE", Qgis.Warning
+                        )
 
     def is_layer_valid(self, layer):
         """

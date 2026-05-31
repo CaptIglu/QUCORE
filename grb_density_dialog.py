@@ -43,8 +43,12 @@ class GrbDensityDialog(QDialog):
             try:
                 with open(tr_path, 'r', encoding='utf-8') as f:
                     self.tr_strings = json.load(f)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Fehler beim Laden von translations.json in GrbDensityDialog: {e}",
+                    "QUCORE", Qgis.Warning
+                )
                 
         self.setWindowTitle(self.tr("dialog_grb_pop_title", "Bodenrisiko-Analyse (GRB-Bevölkerungsdichte)"))
         self.init_ui()
@@ -392,6 +396,11 @@ class GrbDensityDialog(QDialog):
                 self.params["grb_max_raw_value"] = max_pixel_val
             
         except Exception as e:
+            from qgis.core import QgsMessageLog, Qgis
+            QgsMessageLog.logMessage(
+                f"Fehler bei der Zonalstatistik-Berechnung in GrbDensityDialog: {e}",
+                "QUCORE", Qgis.Error
+            )
             QMessageBox.critical(
                 self,
                 self.tr("error_calc_failed_title", "Fehler bei Berechnung"),

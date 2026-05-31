@@ -1560,9 +1560,36 @@ class ImporterExporter:
                     with open(sora_viz_image_path, "rb") as f:
                         z_out.writestr("word/media/sora_viz.png", f.read())
                         
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        shutil.move(temp_zip_path, file_path)
+        try:
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except OSError as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    QgsMessageLog.logMessage(
+                        f"Fehler beim Entfernen der existierenden DOCX-Datei: {e}",
+                        "QUCORE", Qgis.Error
+                    )
+                    raise IOError(f"Zieldatei konnte nicht überschrieben werden (Möglicherweise geöffnet?): {e}")
+            
+            # Copy file content securely (handles cross-device/drive boundaries)
+            shutil.copy(temp_zip_path, file_path)
+            
+            try:
+                os.remove(temp_zip_path)
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Fehler beim Löschen der temporären ZIP-Datei: {e}",
+                    "QUCORE", Qgis.Warning
+                )
+        except Exception as e:
+            from qgis.core import QgsMessageLog, Qgis
+            QgsMessageLog.logMessage(
+                f"Fehler beim Speichern der finalen DOCX-Datei auf dem Ziellaufwerk: {e}",
+                "QUCORE", Qgis.Critical
+            )
+            raise IOError(f"Fehler beim Speichern der finalen DOCX-Datei auf dem Ziellaufwerk: {e}")
 
     @staticmethod
     def import_geojson(file_path):
