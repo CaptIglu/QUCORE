@@ -207,7 +207,17 @@ class GrbDensityDialog(QDialog):
     def on_raster_changed(self):
         layer_id = self.cmb_raster_layers.currentData()
         if not layer_id:
-            self.lbl_raster_info.setText(self.tr("no_raster_selected", "Kein Raster ausgewählt"))
+            download_url = "https://ghsl.jrc.ec.europa.eu/download.php?ds=pop"
+            msg = (
+                f"<span style='color: #b91c1c; font-weight: bold;'>{self.tr('no_raster_loaded_warn', 'Achtung: Kein Bevölkerungsraster geladen!')}</span><br>"
+                f"{self.tr('download_hint', 'Für die SORA-Analyse wird das offizielle GHS-POP GeoTIFF-Raster benötigt.')}<br><br>"
+                f"<b>{self.tr('download_link_label', 'Hier kostenfrei herunterladen:')}</b><br>"
+                f"<a href='{download_url}' style='color: #2563eb; text-decoration: underline;'>ghsl.jrc.ec.europa.eu (GHS-POP Download)</a><br><br>"
+                f"<span style='font-style: italic; color: #475569;'>{self.tr('download_tip', 'Tipp: Wählen Sie die 100m-Auflösung (WGS84) für optimale Ergebnisse.')}</span>"
+            )
+            self.lbl_raster_info.setText(msg)
+            self.lbl_raster_info.setOpenExternalLinks(True)
+            self.btn_calculate.setEnabled(False)
             return
             
         layer = QgsProject.instance().mapLayer(layer_id)

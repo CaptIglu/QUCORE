@@ -2,7 +2,7 @@
 import json
 import uuid
 import xml.etree.ElementTree as ET
-from qgis.core import QgsPointXY, QgsGeometry
+from qgis.core import QgsPointXY, QgsGeometry, QgsMessageLog, Qgis
 from .buffer_calculator import BufferCalculator
 
 class ImporterExporter:
@@ -315,6 +315,8 @@ class ImporterExporter:
                             if name == "Pilotenposition":
                                 break
                                 
+        if not waypoints:
+            raise ValueError("Keine gültigen Wegpunkte oder Centerline-Geometrien im KML-Dokument gefunden.")
         return waypoints, pilot_pos, geometry_type
 
     @staticmethod
@@ -351,8 +353,8 @@ class ImporterExporter:
             if not poly:
                 try:
                     poly = geom.constGet().geometryN(0).asPolygon() if hasattr(geom.constGet(), 'geometryN') else []
-                except Exception:
-                    pass
+                except Exception as e:
+                    QgsMessageLog.logMessage(f"KML geometry parsing fallback: {e}", "QUCORE", Qgis.Info)
             if not poly:
                 return ""
             
@@ -962,8 +964,8 @@ class ImporterExporter:
                         import struct
                         w, h = struct.unpack('>II', data[16:24])
                         return w, h
-            except Exception:
-                pass
+            except Exception as e:
+                QgsMessageLog.logMessage(f"Failed to parse PNG dimensions for {filepath}: {e}", "QUCORE", Qgis.Info)
             return None
         
         # 1. Path to template file in the plugin directory
@@ -1008,8 +1010,8 @@ class ImporterExporter:
                                     existing_rids.append(int(rid[3:]))
                                 except ValueError:
                                     pass
-        except Exception:
-            pass
+        except Exception as e:
+            QgsMessageLog.logMessage(f"Failed to parse docx rels: {e}", "QUCORE", Qgis.Warning)
             
         overview_zip_path = f"word/{overview_target}"
             
@@ -1045,7 +1047,8 @@ class ImporterExporter:
         if pilot_pos:
             try:
                 pilot_str = f"N{pilot_pos.y():.6f} E{pilot_pos.x():.6f}"
-            except Exception:
+            except Exception as e:
+                QgsMessageLog.logMessage(f"Failed to format pilot_pos using coordinates: {e}", "QUCORE", Qgis.Info)
                 pilot_str = str(pilot_pos)
         else:
             pilot_str = "Keine Pilotenposition definiert"
@@ -1692,6 +1695,8 @@ class ImporterExporter:
         params["corridorWidth"] = width
         params["maxFlightHeight"] = max_height
         
+        if not waypoints:
+            raise ValueError("Keine gültigen Wegpunkte oder Centerline-Geometrien im GeoJSON-Dokument gefunden.")
         return waypoints, pilot_pos, width, max_height, params, geom_type
 
     @staticmethod
@@ -1789,8 +1794,9 @@ class ImporterExporter:
         # 5. Safety Buffers (Flight Geography, Contingency Volume, Ground Risk Buffer, Adjacent Area)
         try:
             fg_geom, cv_geom, grb_geom, aga_geom = BufferCalculator.generate_buffers(waypoints, params, geometry_type)
-        except Exception:
-            fg_geom, cv_geom, grb_geom, aga_geom = None, None, None, None
+        except Exception as e:
+            QgsMessageLog.logMessage(f"Failed to generate buffers for GeoJSON: {e}", "QUCORE", Qgis.Error)
+            raise ValueError(f"Sicherheitskorridore konnten nicht generiert werden: {e}")
             
         def get_geojson_coordinates(geom):
             if not geom:
@@ -1805,8 +1811,8 @@ class ImporterExporter:
                 if not poly:
                     try:
                         poly = geom.constGet().geometryN(0).asPolygon() if hasattr(geom.constGet(), 'geometryN') else []
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        QgsMessageLog.logMessage(f"GeoJSON geometry parsing fallback: {e}", "QUCORE", Qgis.Info)
                 if not poly or len(poly) == 0:
                     return []
                 
@@ -1814,7 +1820,8 @@ class ImporterExporter:
                 for pt in poly[0]:
                     coords.append([float(pt.x()), float(pt.y())])
                 return coords
-            except Exception:
+            except Exception as e:
+                QgsMessageLog.logMessage(f"Failed to extract GeoJSON coordinates from geometry: {e}", "QUCORE", Qgis.Warning)
                 return []
                 
         fg_coords = get_geojson_coordinates(fg_geom)
