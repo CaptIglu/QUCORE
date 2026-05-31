@@ -1511,6 +1511,7 @@ class DroneCorridorPlanner(object):
         exists = self.is_layer_valid(self.lyr_waypoints)
         if not exists:
             self.lyr_waypoints = QgsVectorLayer("Point?crs=EPSG:4326", "Wegpunkte", "memory")
+            self.lyr_waypoints.setCustomProperty("skipMemoryLayersCheck", 1) # Suppress warning on close
             # Fields
             self.lyr_waypoints.dataProvider().addAttributes([
                 QgsField("index", QVariant.Int),
@@ -1581,6 +1582,7 @@ class DroneCorridorPlanner(object):
         exists = self.is_layer_valid(layer_var)
         if not exists:
             layer_var = QgsVectorLayer(layer_type, layer_name, "memory")
+            layer_var.setCustomProperty("skipMemoryLayersCheck", 1) # Suppress warning on close
             QgsProject.instance().addMapLayer(layer_var, False)
             style_fn(layer_var, *style_args)
         elif getattr(self, '_force_restyle', False):
