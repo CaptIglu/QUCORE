@@ -1107,14 +1107,77 @@ class DroneCorridorPlanner(object):
         except Exception:
             pass
 
-        self.gui.show()
-        # Restore state from project entries if available and waypoints are empty
+        # Smart re-bind layers first
+        self.initialize_layers()
+
+        # 1. Restore state from project entries if available (preferred for rich state restoration)
         try:
             state_json, ok = QgsProject.instance().readEntry("QUCORE", "state")
             if ok and state_json and not self.waypoints:
                 self.deserialize_state(state_json)
         except Exception:
             pass
+
+        # 2. Fallback: Restore waypoints and pilot from layers if python state is still empty (e.g. on reload without project entry)
+        if self.is_layer_valid(self.lyr_waypoints) and not self.waypoints:
+            try:
+                features = list(self.lyr_waypoints.getFeatures())
+                if features:
+                    def get_index_safe(feat):
+                        try:
+                            val = feat.attribute("index")
+                            from qgis.core import NULL
+                            if val is not None and val != NULL:
+                                return int(val)
+                        except Exception:
+                            pass
+                        return 999999
+                    
+                    features.sort(key=get_index_safe)
+                    
+                    def get_attr_safe(feat, field_name, default_val):
+                        try:
+                            val = feat.attribute(field_name)
+                            from qgis.core import NULL
+                            if val is not None and val != NULL:
+                                return float(val)
+                        except Exception:
+                            pass
+                        return default_val
+                    
+                    loaded_wps = []
+                    for f in features:
+                        geom = f.geometry()
+                        if geom and not geom.isEmpty():
+                            pt = geom.asPoint()
+                            alt_val = get_attr_safe(f, "altitude", float(self.params.get("maxFlightHeight", 100.0)))
+                            spd_val = get_attr_safe(f, "speed", float(self.params.get("maxVelocity", 30.0)))
+                            fg_val = get_attr_safe(f, "fg_width", float(self.params.get("corridorWidth", 50.0)))
+                            loaded_wps.append((pt.x(), pt.y(), alt_val, spd_val, fg_val))
+                    if loaded_wps:
+                        self.waypoints = loaded_wps
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Fehler beim Laden der Wegpunkte aus dem existierenden Layer beim Start: {e}",
+                    "QUCORE", Qgis.Warning
+                )
+
+        if self.is_layer_valid(self.lyr_pilot) and self.pilot_pos is None:
+            try:
+                features = list(self.lyr_pilot.getFeatures())
+                if features:
+                    geom = features[0].geometry()
+                    if geom and not geom.isEmpty():
+                        self.pilot_pos = geom.asPoint()
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Fehler beim Laden der Pilotenposition aus dem existierenden Layer beim Start: {e}",
+                    "QUCORE", Qgis.Warning
+                )
+
+        self.gui.show()
         self.rebuild_and_calculate()
 
     def change_language(self, lang):
@@ -1327,65 +1390,7 @@ class DroneCorridorPlanner(object):
                         elif name == "VLOS-Reichweite (Pilotenposition)" and not self.is_layer_valid(self.lyr_vlos):
                             self.lyr_vlos = layer
 
-        # Try to restore waypoints from the bound waypoints layer if the python list is empty
-        if self.is_layer_valid(self.lyr_waypoints) and not self.waypoints:
-            try:
-                features = list(self.lyr_waypoints.getFeatures())
-                if features:
-                    def get_index_safe(feat):
-                        try:
-                            val = feat.attribute("index")
-                            from qgis.core import NULL
-                            if val is not None and val != NULL:
-                                return int(val)
-                        except Exception:
-                            pass
-                        return 999999
-                    
-                    features.sort(key=get_index_safe)
-                    
-                    def get_attr_safe(feat, field_name, default_val):
-                        try:
-                            val = feat.attribute(field_name)
-                            from qgis.core import NULL
-                            if val is not None and val != NULL:
-                                return float(val)
-                        except Exception:
-                            pass
-                        return default_val
-                    
-                    loaded_wps = []
-                    for f in features:
-                        geom = f.geometry()
-                        if geom and not geom.isEmpty():
-                            pt = geom.asPoint()
-                            alt_val = get_attr_safe(f, "altitude", float(self.params.get("maxFlightHeight", 100.0)))
-                            spd_val = get_attr_safe(f, "speed", float(self.params.get("maxVelocity", 30.0)))
-                            fg_val = get_attr_safe(f, "fg_width", float(self.params.get("corridorWidth", 50.0)))
-                            loaded_wps.append((pt.x(), pt.y(), alt_val, spd_val, fg_val))
-                    if loaded_wps:
-                        self.waypoints = loaded_wps
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(
-                    f"Fehler beim Laden der Wegpunkte aus dem existierenden Layer: {e}",
-                    "QUCORE", Qgis.Warning
-                )
-
-        # Try to restore pilot position from the bound pilot layer if the python variable is None
-        if self.is_layer_valid(self.lyr_pilot) and self.pilot_pos is None:
-            try:
-                features = list(self.lyr_pilot.getFeatures())
-                if features:
-                    geom = features[0].geometry()
-                    if geom and not geom.isEmpty():
-                        self.pilot_pos = geom.asPoint()
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(
-                    f"Fehler beim Laden der Pilotenposition aus dem existierenden Layer: {e}",
-                    "QUCORE", Qgis.Warning
-                )
+        # (Restore logic has been moved to run() to prevent side-effects during clear/reset planning)
 
         # Get linewidths from self.params
         lw_route = float(self.params.get("linewidth_route", 1.0))
@@ -2285,6 +2290,12 @@ class DroneCorridorPlanner(object):
             # Clear state
             self.waypoints = []
             self.pilot_pos = None
+            
+            # Remove QgsProject state entry so it doesn't get restored on reload/reopen
+            try:
+                QgsProject.instance().removeEntry("QUCORE", "state")
+            except Exception:
+                pass
             
             # Clear layers
             self.rebuild_and_calculate()
