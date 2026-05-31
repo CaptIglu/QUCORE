@@ -686,7 +686,7 @@ class DroneCorridorPlanner(object):
                 from qgis.core import QgsMessageLog, Qgis
                 QgsMessageLog.logMessage(
                     f"Fehler beim Erstellen der standardmäßigen config.json: {e}",
-                    "QUCORE", Qgis.Error
+                    "QUCORE", Qgis.Critical
                 )
                 
         # Restore active session style overrides

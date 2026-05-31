@@ -250,19 +250,19 @@ class BufferCalculator:
                 aga_geom.transform(inverse_transform)
                 
                 # Enforce validity of final output geometries
-                if fg_geom and not fg_geom.isValid():
+                if fg_geom and not fg_geom.isGeosValid():
                     fg_geom = fg_geom.makeValid()
-                if cv_geom and not cv_geom.isValid():
+                if cv_geom and not cv_geom.isGeosValid():
                     cv_geom = cv_geom.makeValid()
-                if grb_geom and not grb_geom.isValid():
+                if grb_geom and not grb_geom.isGeosValid():
                     grb_geom = grb_geom.makeValid()
-                if aga_geom and not aga_geom.isValid():
+                if aga_geom and not aga_geom.isGeosValid():
                     aga_geom = aga_geom.makeValid()
                 
                 return fg_geom, cv_geom, grb_geom, aga_geom
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Fehler bei Kreis-Geometrieberechnung: {e}", "QUCORE", Qgis.Error)
+                QgsMessageLog.logMessage(f"Fehler bei Kreis-Geometrieberechnung: {e}", "QUCORE", Qgis.Critical)
                 return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
             
         elif geometry_type == "Polygon":
@@ -315,7 +315,7 @@ class BufferCalculator:
                 fg_geom = QgsGeometry.fromPolygonXY([ring])
                 
                 # Check and enforce validity of input polygon first to handle self-crossing paths
-                if fg_geom and not fg_geom.isValid():
+                if fg_geom and not fg_geom.isGeosValid():
                     fg_geom = fg_geom.makeValid()
                 
                 cv_geom = fg_geom.buffer(s_cv, BUFFER_SEGMENTS)
@@ -329,19 +329,19 @@ class BufferCalculator:
                 aga_geom.transform(inverse_transform)
                 
                 # Enforce validity of final projected outputs
-                if fg_geom and not fg_geom.isValid():
+                if fg_geom and not fg_geom.isGeosValid():
                     fg_geom = fg_geom.makeValid()
-                if cv_geom and not cv_geom.isValid():
+                if cv_geom and not cv_geom.isGeosValid():
                     cv_geom = cv_geom.makeValid()
-                if grb_geom and not grb_geom.isValid():
+                if grb_geom and not grb_geom.isGeosValid():
                     grb_geom = grb_geom.makeValid()
-                if aga_geom and not aga_geom.isValid():
+                if aga_geom and not aga_geom.isGeosValid():
                     aga_geom = aga_geom.makeValid()
                 
                 return fg_geom, cv_geom, grb_geom, aga_geom
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Fehler bei Polygon-Geometrieberechnung: {e}", "QUCORE", Qgis.Error)
+                QgsMessageLog.logMessage(f"Fehler bei Polygon-Geometrieberechnung: {e}", "QUCORE", Qgis.Critical)
                 return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
             
         else: # Corridor (Default)
@@ -394,19 +394,19 @@ class BufferCalculator:
                     aga_geom.transform(inverse_transform)
                     
                     # Enforce validity of outputs
-                    if fg_geom and not fg_geom.isValid():
+                    if fg_geom and not fg_geom.isGeosValid():
                         fg_geom = fg_geom.makeValid()
-                    if cv_geom and not cv_geom.isValid():
+                    if cv_geom and not cv_geom.isGeosValid():
                         cv_geom = cv_geom.makeValid()
-                    if grb_geom and not grb_geom.isValid():
+                    if grb_geom and not grb_geom.isGeosValid():
                         grb_geom = grb_geom.makeValid()
-                    if aga_geom and not aga_geom.isValid():
+                    if aga_geom and not aga_geom.isGeosValid():
                         aga_geom = aga_geom.makeValid()
                     
                     return fg_geom, cv_geom, grb_geom, aga_geom
                 except Exception as e:
                     from qgis.core import QgsMessageLog, Qgis
-                    QgsMessageLog.logMessage(f"Fehler bei Einzelwegpunkt-Corridor-Geometrieberechnung: {e}", "QUCORE", Qgis.Error)
+                    QgsMessageLog.logMessage(f"Fehler bei Einzelwegpunkt-Corridor-Geometrieberechnung: {e}", "QUCORE", Qgis.Critical)
                     return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
     
             # For multiple waypoints, build tapered capsules for each segment.
@@ -493,13 +493,13 @@ class BufferCalculator:
                 QgsMessageLog.logMessage(f"Fehler bei Adjacent-Area-Berechnung: {e}", "QUCORE", Qgis.Warning)
             
             # Enforce validity of final output geometries
-            if fg_merged and not fg_merged.isValid():
+            if fg_merged and not fg_merged.isGeosValid():
                 fg_merged = fg_merged.makeValid()
-            if cv_merged and not cv_merged.isValid():
+            if cv_merged and not cv_merged.isGeosValid():
                 cv_merged = cv_merged.makeValid()
-            if grb_merged and not grb_merged.isValid():
+            if grb_merged and not grb_merged.isGeosValid():
                 grb_merged = grb_merged.makeValid()
-            if aga_merged and not aga_merged.isValid():
+            if aga_merged and not aga_merged.isGeosValid():
                 aga_merged = aga_merged.makeValid()
             
             return fg_merged, cv_merged, grb_merged, aga_merged
