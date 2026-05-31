@@ -766,18 +766,70 @@ class DroneCorridorPlanner(object):
 
     def unload(self):
         """
-        Removes action from QGIS toolbar and menus.
+        Removes action from QGIS toolbar and menus, disconnects signals,
+        and cleans up active map tools to prevent memory leaks.
         """
+        # 0. Close the dialog and disconnect its finished signal to avoid triggering on_gui_finished during teardown
+        if hasattr(self, 'gui') and self.gui:
+            try:
+                self.gui.finished.disconnect(self.on_gui_finished)
+            except Exception:
+                pass
+            try:
+                self.gui.close()
+            except Exception:
+                pass
+
+        # 1. Disconnect UI action triggers
         if self.action:
+            try:
+                self.action.triggered.disconnect(self.run)
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(f"Entwickler-Warnung beim Trennen der Hauptaktion: {e}", "QUCORE", Qgis.Info)
             self.iface.removePluginVectorMenu("QUCORE", self.action)
             self.iface.removeVectorToolBarIcon(self.action)
             
         if hasattr(self, 'help_action') and self.help_action:
+            try:
+                self.help_action.triggered.disconnect(self.open_help)
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(f"Entwickler-Warnung beim Trennen der Hilfeaktion: {e}", "QUCORE", Qgis.Info)
             self.iface.removePluginVectorMenu("QUCORE", self.help_action)
+
+        # 2. Safely disconnect global application exit listener
+        if hasattr(self, 'gui') and self.gui:
+            try:
+                from qgis.core import QgsApplication
+                QgsApplication.instance().aboutToQuit.disconnect(self.gui.reject)
+            except Exception:
+                pass
+
+        # 3. Disconnect and clean up map tools
+        if hasattr(self, 'pilot_tool') and self.pilot_tool:
+            try:
+                self.pilot_tool.canvasClicked.disconnect(self.on_pilot_clicked)
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(f"Entwickler-Warnung beim Trennen des Piloten-Werkzeugs: {e}", "QUCORE", Qgis.Info)
+
+        # 4. Deactivate tools if active on the canvas
+        if hasattr(self, 'wp_tool') and hasattr(self, 'pilot_tool'):
+            if self.canvas.mapTool() in [self.wp_tool, self.pilot_tool]:
+                self.canvas.unsetMapTool(self.canvas.mapTool())
             
-        # Deactivate tools if active
-        if self.canvas.mapTool() in [self.wp_tool, self.pilot_tool]:
-            self.canvas.unsetMapTool(self.canvas.mapTool())
+        # 5. Clean up active midpoint markers
+        if hasattr(self, 'wp_tool') and self.wp_tool:
+            try:
+                self.wp_tool.clear_midpoint_markers()
+            except Exception:
+                pass
+
+        # 6. Nullify references to trigger Python Garbage Collection
+        self.wp_tool = None
+        self.pilot_tool = None
+        self.gui = None
 
     def run(self):
         """
@@ -1056,6 +1108,13 @@ class DroneCorridorPlanner(object):
             pass
 
         self.gui.show()
+        # Restore state from project entries if available and waypoints are empty
+        try:
+            state_json, ok = QgsProject.instance().readEntry("QUCORE", "state")
+            if ok and state_json and not self.waypoints:
+                self.deserialize_state(state_json)
+        except Exception:
+            pass
         self.rebuild_and_calculate()
 
     def change_language(self, lang):
@@ -1242,6 +1301,91 @@ class DroneCorridorPlanner(object):
                         f"Fehler beim Verschieben der Layer-Gruppe an die Spitze des Baums: {e}",
                         "QUCORE", Qgis.Warning
                     )
+
+        # Smart Re-Binding of existing project layers to avoid duplicate creation upon plugin reload
+        if self.layer_group:
+            from qgis.core import QgsLayerTreeNode
+            for child in self.layer_group.children():
+                if child.nodeType() == QgsLayerTreeNode.NodeLayer:
+                    layer = child.layer()
+                    if layer:
+                        name = layer.name()
+                        if name == "Wegpunkte" and not self.is_layer_valid(self.lyr_waypoints):
+                            self.lyr_waypoints = layer
+                        elif name == "Flugweg (Mittelachse)" and not self.is_layer_valid(self.lyr_route):
+                            self.lyr_route = layer
+                        elif name == "Flight Geography (FG)" and not self.is_layer_valid(self.lyr_fg):
+                            self.lyr_fg = layer
+                        elif name == "Contingency Volume (CV)" and not self.is_layer_valid(self.lyr_cv):
+                            self.lyr_cv = layer
+                        elif name == "Ground Risk Buffer (GRB)" and not self.is_layer_valid(self.lyr_grb):
+                            self.lyr_grb = layer
+                        elif name == "Adjacent Area (AA)" and not self.is_layer_valid(self.lyr_aga):
+                            self.lyr_aga = layer
+                        elif name == "Pilotenposition" and not self.is_layer_valid(self.lyr_pilot):
+                            self.lyr_pilot = layer
+                        elif name == "VLOS-Reichweite (Pilotenposition)" and not self.is_layer_valid(self.lyr_vlos):
+                            self.lyr_vlos = layer
+
+        # Try to restore waypoints from the bound waypoints layer if the python list is empty
+        if self.is_layer_valid(self.lyr_waypoints) and not self.waypoints:
+            try:
+                features = list(self.lyr_waypoints.getFeatures())
+                if features:
+                    def get_index_safe(feat):
+                        try:
+                            val = feat.attribute("index")
+                            from qgis.core import NULL
+                            if val is not None and val != NULL:
+                                return int(val)
+                        except Exception:
+                            pass
+                        return 999999
+                    
+                    features.sort(key=get_index_safe)
+                    
+                    def get_attr_safe(feat, field_name, default_val):
+                        try:
+                            val = feat.attribute(field_name)
+                            from qgis.core import NULL
+                            if val is not None and val != NULL:
+                                return float(val)
+                        except Exception:
+                            pass
+                        return default_val
+                    
+                    loaded_wps = []
+                    for f in features:
+                        geom = f.geometry()
+                        if geom and not geom.isEmpty():
+                            pt = geom.asPoint()
+                            alt_val = get_attr_safe(f, "altitude", float(self.params.get("maxFlightHeight", 100.0)))
+                            spd_val = get_attr_safe(f, "speed", float(self.params.get("maxVelocity", 30.0)))
+                            fg_val = get_attr_safe(f, "fg_width", float(self.params.get("corridorWidth", 50.0)))
+                            loaded_wps.append((pt.x(), pt.y(), alt_val, spd_val, fg_val))
+                    if loaded_wps:
+                        self.waypoints = loaded_wps
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Fehler beim Laden der Wegpunkte aus dem existierenden Layer: {e}",
+                    "QUCORE", Qgis.Warning
+                )
+
+        # Try to restore pilot position from the bound pilot layer if the python variable is None
+        if self.is_layer_valid(self.lyr_pilot) and self.pilot_pos is None:
+            try:
+                features = list(self.lyr_pilot.getFeatures())
+                if features:
+                    geom = features[0].geometry()
+                    if geom and not geom.isEmpty():
+                        self.pilot_pos = geom.asPoint()
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Fehler beim Laden der Pilotenposition aus dem existierenden Layer: {e}",
+                    "QUCORE", Qgis.Warning
+                )
 
         # Get linewidths from self.params
         lw_route = float(self.params.get("linewidth_route", 1.0))
@@ -1801,6 +1945,14 @@ class DroneCorridorPlanner(object):
         if not is_dragging:
             self.canvas.refresh()
 
+        # Save state to QgsProject entry if not dragging
+        if not is_dragging:
+            try:
+                state_json = self.serialize_state()
+                QgsProject.instance().writeEntry("QUCORE", "state", state_json)
+            except Exception:
+                pass
+
     def update_pilot_layer(self):
         """
         Updates the pilot position layer feature and the VLOS range circle.
@@ -1865,6 +2017,12 @@ class DroneCorridorPlanner(object):
             self.lyr_vlos.updateExtents()
             self.lyr_vlos.triggerRepaint()
         self.canvas.refresh()
+
+        try:
+            state_json = self.serialize_state()
+            QgsProject.instance().writeEntry("QUCORE", "state", state_json)
+        except Exception:
+            pass
 
     def update_results_panel(self):
         """
