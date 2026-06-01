@@ -3133,15 +3133,20 @@ class DroneCorridorPlanner(object):
         default_spd = float(self.params.get("maxVelocity", 30.0))
         default_fg = float(self.params.get("corridorWidth", 50.0))
         
-        # If there are waypoints, we can also pre-populate using the first waypoint's altitude, speed, and FG width
+        # If there are waypoints, we pre-populate using the most frequently occurring (mode/cruise) values
         if self.waypoints:
-            w0 = self.waypoints[0]
-            if len(w0) > 2:
-                default_h = w0[2]
-            if len(w0) > 3:
-                default_spd = w0[3]
-            if len(w0) > 4:
-                default_fg = w0[4]
+            from collections import Counter
+            
+            heights = [w[2] for w in self.waypoints if len(w) > 2]
+            speeds = [w[3] for w in self.waypoints if len(w) > 3]
+            fgs = [w[4] for w in self.waypoints if len(w) > 4]
+            
+            if heights:
+                default_h = Counter(heights).most_common(1)[0][0]
+            if speeds:
+                default_spd = Counter(speeds).most_common(1)[0][0]
+            if fgs:
+                default_fg = Counter(fgs).most_common(1)[0][0]
                 
         dialog = ExportSettingsDialog(self.gui, default_h, default_spd, default_fg, params=self.params)
         if dialog.exec_() != QDialog.Accepted:
