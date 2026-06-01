@@ -906,6 +906,15 @@ class DroneCorridorPlanner(object):
         self.wp_tool = None
         self.pilot_tool = None
         self.gui = None
+        self.layer_group = None
+        self.lyr_waypoints = None
+        self.lyr_pilot = None
+        self.lyr_route = None
+        self.lyr_fg = None
+        self.lyr_cv = None
+        self.lyr_grb = None
+        self.lyr_aga = None
+        self.lyr_vlos = None
 
     def on_project_cleared(self):
         """
