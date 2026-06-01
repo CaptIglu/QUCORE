@@ -71,11 +71,12 @@ class WaypointMapTool(QgsMapTool):
             import sip
             for marker_info in self.midpoint_markers:
                 marker = marker_info.get('marker')
-                if marker:
+                if marker and not sip.isdeleted(marker):
                     try:
                         if self.canvas and self.canvas.scene():
                             self.canvas.scene().removeItem(marker)
-                        sip.delete(marker)
+                        if not sip.isdeleted(marker):
+                            sip.delete(marker)
                     except Exception:
                         pass
             self.midpoint_markers = []
