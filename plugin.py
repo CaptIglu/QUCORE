@@ -68,14 +68,23 @@ class WaypointMapTool(QgsMapTool):
     def clear_midpoint_markers(self):
         """Removes all midpoint markers from the map canvas."""
         if hasattr(self, 'midpoint_markers'):
+            import sip
             for marker_info in self.midpoint_markers:
                 marker = marker_info.get('marker')
                 if marker:
                     try:
-                        self.canvas.scene().removeItem(marker)
+                        if self.canvas and self.canvas.scene():
+                            self.canvas.scene().removeItem(marker)
+                        sip.delete(marker)
                     except Exception:
                         pass
             self.midpoint_markers = []
+
+    def cleanup(self):
+        """Breaks circular references to allow clean garbage collection."""
+        self.clear_midpoint_markers()
+        self.plugin = None
+        self.canvas = None
 
     def update_midpoint_markers(self):
         """Creates or updates markers at the midpoints between waypoints."""
@@ -488,8 +497,8 @@ class AboutDialog(QDialog):
         
         # Check license activation
         is_commercial_unlocked = self.plugin.params.get("commercial_unlocked", False)
-        saved_key = settings.value("QUCORE/license_key", "")
-        if saved_key == "QUCORE-COMM-2026":
+        saved_key = str(settings.value("QUCORE/license_key", ""))
+        if verify_license_key(saved_key):
             is_commercial_unlocked = True
             
         # Get trial details
@@ -506,7 +515,7 @@ class AboutDialog(QDialog):
             bg_color = "#e8f8f5"
             border_color = "#2ecc71"
             title_text = self.tr("license_activated", "Aktiviert (Kommerzielle Lizenz)")
-            sub_text = f"Lizenzschlüssel: {saved_key if saved_key else 'In Konfigurationsdatei freigeschaltet'}"
+            sub_text = f"Registrierte E-Mail: {saved_key.split(':', 1)[0] if ':' in saved_key else 'In Konfigurationsdatei freigeschaltet'}"
             btn_text = self.tr("btn_change_license_key", "Lizenzschlüssel ändern...")
             status_style = "color: #27ae60; font-weight: bold; font-size: 11px;"
         elif remaining_days < 0:
@@ -541,12 +550,12 @@ class AboutDialog(QDialog):
         key, ok = QInputDialog.getText(
             self,
             self.tr("license_prompt_title", "Lizenzschlüssel eingeben"),
-            self.tr("license_prompt_label", "Bitte geben Sie den QUCORE-Lizenzschlüssel ein:"),
+            self.tr("license_prompt_label", "Bitte geben Sie Ihren Lizenzschlüssel ein (Format: E-Mail:Schlüssel):"),
             text=""
         )
         if ok:
             key_clean = key.strip()
-            if key_clean == "QUCORE-COMM-2026":
+            if verify_license_key(key_clean):
                 # Save key in settings
                 settings = QSettings()
                 settings.setValue("QUCORE/license_key", key_clean)
@@ -572,8 +581,30 @@ class AboutDialog(QDialog):
                 QMessageBox.warning(
                     self,
                     self.tr("license_invalid_title", "Ungültiger Lizenzschlüssel"),
-                    self.tr("license_invalid_text", "Ungültiger Lizenzschlüssel. Bitte überprüfen Sie Ihre Eingabe oder kontaktieren Sie den Autor unter tim.strohbach@gmx.de.")
+                    self.tr("license_invalid_text", "Ungültiger Lizenzschlüssel. Bitte geben Sie den Schlüssel im Format 'E-Mail:Schlüssel' ein. Wenden Sie sich bei Fragen an tim.strohbach@gmx.de.")
                 )
+
+
+def verify_license_key(key_str):
+    """
+    Verifies if a license key is a valid SHA-256 hash of an email and secret salt.
+    Format of license key is expected to be 'email:signature'
+    """
+    if not key_str or ":" not in key_str:
+        return False
+    try:
+        email, signature = key_str.split(":", 1)
+        email = email.strip().lower()
+        signature = signature.strip()
+        
+        import hashlib
+        secret_salt = "QUCORE-SALT-2026-SECRET"
+        data = f"{email}:{secret_salt}".encode('utf-8')
+        expected_sig = hashlib.sha256(data).hexdigest()[:16]
+        
+        return signature == expected_sig
+    except Exception:
+        return False
 
 
 def hex_to_rgba(hex_str, opacity):
@@ -712,16 +743,6 @@ class DroneCorridorPlanner(object):
                     f"Fehler beim Laden von config.json: {e}",
                     "QUCORE", Qgis.Warning
                 )
-        else:
-            try:
-                with open(self.config_path, 'w', encoding='utf-8') as f:
-                    json.dump(defaults, f, indent=2, ensure_ascii=False)
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(
-                    f"Fehler beim Erstellen der standardmäßigen config.json: {e}",
-                    "QUCORE", Qgis.Critical
-                )
                 
         # Restore active session style overrides
         defaults.update(session_styles)
@@ -741,13 +762,13 @@ class DroneCorridorPlanner(object):
         # Check QSettings for license activation to override commercial_unlocked
         from PyQt5.QtCore import QSettings
         settings = QSettings()
-        saved_key = settings.value("QUCORE/license_key", "")
+        saved_key = str(settings.value("QUCORE/license_key", ""))
         
         is_comm = defaults.get("commercial_unlocked", False)
         if isinstance(is_comm, str):
-            is_comm = (is_comm.lower() == "true" or is_comm == "QUCORE-COMM-2026")
+            is_comm = (is_comm.lower() == "true" or verify_license_key(is_comm))
             
-        if saved_key == "QUCORE-COMM-2026":
+        if verify_license_key(saved_key) or is_comm:
             is_comm = True
             
         defaults["commercial_unlocked"] = is_comm
@@ -818,6 +839,12 @@ class DroneCorridorPlanner(object):
             except Exception:
                 pass
 
+        # Remove layers and group silently on unload
+        try:
+            self.remove_layers_and_group()
+        except Exception:
+            pass
+
         # 1. Disconnect UI action triggers
         if self.action:
             try:
@@ -857,10 +884,10 @@ class DroneCorridorPlanner(object):
             if self.canvas.mapTool() in [self.wp_tool, self.pilot_tool]:
                 self.canvas.unsetMapTool(self.canvas.mapTool())
             
-        # 5. Clean up active midpoint markers
+        # 5. Clean up active midpoint markers and break references
         if hasattr(self, 'wp_tool') and self.wp_tool:
             try:
-                self.wp_tool.clear_midpoint_markers()
+                self.wp_tool.cleanup()
             except Exception:
                 pass
 
@@ -1153,9 +1180,10 @@ class DroneCorridorPlanner(object):
         
         is_commercial_unlocked = self.params.get("commercial_unlocked", False)
         if isinstance(is_commercial_unlocked, str):
-            is_commercial_unlocked = (is_commercial_unlocked.lower() == "true" or is_commercial_unlocked == "QUCORE-COMM-2026")
+            is_commercial_unlocked = (is_commercial_unlocked.lower() == "true" or verify_license_key(is_commercial_unlocked))
             
-        if settings.value("QUCORE/license_key", "") == "QUCORE-COMM-2026":
+        saved_key = str(settings.value("QUCORE/license_key", ""))
+        if verify_license_key(saved_key):
             is_commercial_unlocked = True
             
         if hasattr(self, 'lbl_trial_warning'):

@@ -319,70 +319,119 @@ class GrbDensityDialog(QDialog):
             )
             return
             
-        try:
-            from qgis.core import Qgis
-            stat_sum = Qgis.ZonalStatistic.Sum
-            stat_count = Qgis.ZonalStatistic.Count
-            stat_max = Qgis.ZonalStatistic.Max
-        except ImportError:
-            stat_sum = QgsZonalStatistics.Sum
-            stat_count = QgsZonalStatistics.Count
-            stat_max = QgsZonalStatistics.Max
-            
-        prefix = "grb_"
-        
-        zonal_stats = QgsZonalStatistics(
-            self.lyr_grb,
-            raster_layer,
-            prefix,
-            1,
-            stat_sum | stat_count | stat_max
-        )
-        
-        self.setCursor(Qt.WaitCursor)
+        # UI updates: disable calculation button and set wait status
         self.btn_calculate.setEnabled(False)
+        self.btn_calculate.setText(self.tr("btn_calculating", "Berechnung läuft..."))
+        self.setCursor(Qt.WaitCursor)
         
-        try:
-            result = zonal_stats.calculateStatistics(None)
+        raster_path = raster_layer.source()
+        raster_name = raster_layer.name()
+        
+        # Calculate cell area in km2 on main thread securely
+        cell_area_km2 = self.get_raster_cell_area_km2(raster_layer)
+        
+        # Clone geometries as WKT to safely pass to the background thread
+        geoms_wkt = []
+        for feature in self.lyr_grb.getFeatures():
+            if feature.hasGeometry() and not feature.geometry().isEmpty():
+                geoms_wkt.append(feature.geometry().asWkt())
+                
+        from qgis.core import QgsTask, QgsApplication
+        
+        def run_zstats_async(task):
+            try:
+                from qgis.core import QgsVectorLayer, QgsFeature, QgsGeometry, QgsRasterLayer, QgsField
+                from qgis.analysis import QgsZonalStatistics
+                from PyQt5.QtCore import QVariant
+                
+                # 1. Create a local in-memory vector layer inside the worker thread
+                temp_lyr = QgsVectorLayer("Polygon?crs=EPSG:4326", "temp_zstats", "memory")
+                dp = temp_lyr.dataProvider()
+                dp.addAttributes([QgsField("fid", QVariant.Int)])
+                temp_lyr.updateFields()
+                
+                # Add features safely
+                temp_features = []
+                for idx, wkt in enumerate(geoms_wkt):
+                    f = QgsFeature(temp_lyr.fields())
+                    f.setGeometry(QgsGeometry.fromWkt(wkt))
+                    f.setAttribute(0, idx)
+                    temp_features.append(f)
+                dp.addFeatures(temp_features)
+                
+                # 2. Instantiate raster layer locally in worker thread
+                local_raster = QgsRasterLayer(raster_path, raster_name)
+                if not local_raster.isValid():
+                    return False, "Raster-Layer konnte im Hintergrund-Thread nicht geladen werden."
+                    
+                # Determine stats enum constants
+                try:
+                    from qgis.core import Qgis
+                    stat_sum = Qgis.ZonalStatistic.Sum
+                    stat_count = Qgis.ZonalStatistic.Count
+                    stat_max = Qgis.ZonalStatistic.Max
+                except ImportError:
+                    stat_sum = QgsZonalStatistics.Sum
+                    stat_count = QgsZonalStatistics.Count
+                    stat_max = QgsZonalStatistics.Max
+                    
+                # 3. Create Zonal Statistics inside worker thread
+                zonal_stats = QgsZonalStatistics(
+                    temp_lyr,
+                    local_raster,
+                    "grb_",
+                    1,
+                    stat_sum | stat_count | stat_max
+                )
+                
+                # Run computation asynchronously
+                zonal_stats.calculateStatistics(None)
+                
+                # Parse results
+                results = []
+                from qgis.core import NULL
+                for feature in temp_lyr.getFeatures():
+                    pop_sum = feature["grb_sum"]
+                    pop_count = feature["grb_count"]
+                    pop_max = feature["grb_max"]
+                    
+                    val_sum = float(pop_sum) if pop_sum != NULL and pop_sum is not None else 0.0
+                    val_count = int(pop_count) if pop_count != NULL and pop_count is not None else 0
+                    val_max = float(pop_max) if pop_max != NULL and pop_max is not None else 0.0
+                    results.append((val_sum, val_count, val_max))
+                    
+                return True, results
+            except Exception as e:
+                return False, str(e)
+                
+        # Define task finished handler
+        def on_task_completed(success, results_or_error):
+            self.setCursor(Qt.ArrowCursor)
+            self.btn_calculate.setEnabled(True)
+            self.btn_calculate.setText(self.tr("btn_calculate_pop", "Berechnung starten"))
             
+            if not success:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Fehler bei der Zonalstatistik-Berechnung in GrbDensityDialog: {results_or_error}",
+                    "QUCORE", Qgis.Critical
+                )
+                QMessageBox.critical(
+                    self,
+                    self.tr("error_calc_failed_title", "Fehler bei Berechnung"),
+                    self.tr("error_calc_failed_text", "Zonalstatistik-Berechnung fehlgeschlagen:\n{error}").format(error=str(results_or_error))
+                )
+                return
+                
+            # Process results safely on main GUI thread
             total_population = 0.0
             max_pixel_val = 0.0
-            pixel_count = 0
             
-            for feature in self.lyr_grb.getFeatures():
-                pop_sum = feature["grb_sum"]
-                pop_count = feature["grb_count"]
-                pop_max = feature["grb_max"]
-                
-                if pop_sum != NULL and pop_sum is not None:
-                    total_population += float(pop_sum)
-                if pop_count != NULL and pop_count is not None:
-                    pixel_count += int(pop_count)
-                if pop_max != NULL and pop_max is not None:
-                    if float(pop_max) > max_pixel_val:
-                        max_pixel_val = float(pop_max)
-                        
-            # Clean up added columns
-            dp = self.lyr_grb.dataProvider()
-            fields = self.lyr_grb.fields()
-            sum_idx = fields.indexOf("grb_sum")
-            count_idx = fields.indexOf("grb_count")
-            max_idx = fields.indexOf("grb_max")
-            
-            fields_to_delete = []
-            if sum_idx != -1:
-                fields_to_delete.append(sum_idx)
-            if count_idx != -1:
-                fields_to_delete.append(count_idx)
-            if max_idx != -1:
-                fields_to_delete.append(max_idx)
-                
-            if fields_to_delete:
-                self.lyr_grb.startEditing()
-                dp.deleteAttributes(fields_to_delete)
-                self.lyr_grb.commitChanges()
-                self.lyr_grb.updateFields()
-                
+            for val_sum, val_count, val_max in results_or_error:
+                total_population += val_sum
+                if val_max > max_pixel_val:
+                    max_pixel_val = val_max
+                    
             # Display results
             self.lbl_total_pop.setText(f"{total_population:,.1f} {self.tr('people', 'Personen')}")
             
@@ -390,7 +439,6 @@ class GrbDensityDialog(QDialog):
             self.lbl_avg_density.setText(f"{avg_density:.2f} {self.tr('people_per_km2', 'Einwohner / km²')}")
             
             # Calculate maximum cell density (conservative approach)
-            cell_area_km2 = self.get_raster_cell_area_km2(raster_layer)
             if cell_area_km2 > 0.0:
                 max_density = max_pixel_val / cell_area_km2
             else:
@@ -404,18 +452,8 @@ class GrbDensityDialog(QDialog):
                 self.params["grb_avg_density"] = avg_density
                 self.params["grb_max_density"] = max_density
                 self.params["grb_max_raw_value"] = max_pixel_val
-            
-        except Exception as e:
-            from qgis.core import QgsMessageLog, Qgis
-            QgsMessageLog.logMessage(
-                f"Fehler bei der Zonalstatistik-Berechnung in GrbDensityDialog: {e}",
-                "QUCORE", Qgis.Error
-            )
-            QMessageBox.critical(
-                self,
-                self.tr("error_calc_failed_title", "Fehler bei Berechnung"),
-                self.tr("error_calc_failed_text", "Zonalstatistik-Berechnung fehlgeschlagen:\n{error}").format(error=str(e))
-            )
-        finally:
-            self.setCursor(Qt.ArrowCursor)
-            self.btn_calculate.setEnabled(True)
+                
+        # Create and start the QgsTask
+        task = QgsTask.fromFunction("QUCORE Zonal Statistics GRB", run_zstats_async)
+        task.taskCompleted.connect(lambda: on_task_completed(*task.returned_values))
+        QgsApplication.taskManager().addTask(task)

@@ -16,7 +16,13 @@ BUFFER_SEGMENTS = 8
 def get_utm_epsg(lon, lat):
     """
     Finds the appropriate UTM zone EPSG code for a WGS 84 coordinate.
+    Safely falls back to Universal Polar Stereographic (UPS) outside UTM bounds.
     """
+    if lat > 84.0:
+        return 32661  # WGS 84 / UPS North
+    elif lat < -80.0:
+        return 32761  # WGS 84 / UPS South
+
     zone = int((lon + 180) / 6) + 1
     if lat >= 0:
         return 32600 + zone

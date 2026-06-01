@@ -298,64 +298,107 @@ class PopulationDensityDialog(QDialog):
             )
             return
             
-        # 2. Run QgsZonalStatistics
-        # Determine stats enum constants (supporting fallback for different QGIS versions)
-        try:
-            from qgis.core import Qgis
-            stat_sum = Qgis.ZonalStatistic.Sum
-            stat_count = Qgis.ZonalStatistic.Count
-        except ImportError:
-            stat_sum = QgsZonalStatistics.Sum
-            stat_count = QgsZonalStatistics.Count
-            
-        prefix = "pop_"
-        
-        # Construct and run zonal statistics
-        # Note: polygonLayer, rasterLayer, attributePrefix, rasterBand, stats
-        zonal_stats = QgsZonalStatistics(
-            self.lyr_aga,
-            raster_layer,
-            prefix,
-            1,
-            stat_sum | stat_count
-        )
-        
-        self.setCursor(Qt.WaitCursor)
+        # UI updates: disable calculation button and set wait status
         self.btn_calculate.setEnabled(False)
+        self.btn_calculate.setText(self.tr("btn_calculating", "Berechnung läuft..."))
+        self.setCursor(Qt.WaitCursor)
         
-        try:
-            result = zonal_stats.calculateStatistics(None)
-            
-            # Read calculated sum and count
-            total_population = 0.0
-            pixel_count = 0
-            
-            for feature in self.lyr_aga.getFeatures():
-                pop_sum = feature["pop_sum"]
-                pop_count = feature["pop_count"]
+        raster_path = raster_layer.source()
+        raster_name = raster_layer.name()
+        
+        # Clone geometries as WKT to safely pass to the background thread
+        geoms_wkt = []
+        for feature in self.lyr_aga.getFeatures():
+            if feature.hasGeometry() and not feature.geometry().isEmpty():
+                geoms_wkt.append(feature.geometry().asWkt())
                 
-                if pop_sum != NULL and pop_sum is not None:
-                    total_population += float(pop_sum)
-                if pop_count != NULL and pop_count is not None:
-                    pixel_count += int(pop_count)
+        from qgis.core import QgsTask, QgsApplication
+        
+        def run_zstats_async(task):
+            try:
+                from qgis.core import QgsVectorLayer, QgsFeature, QgsGeometry, QgsRasterLayer, QgsField
+                from qgis.analysis import QgsZonalStatistics
+                from PyQt5.QtCore import QVariant
+                
+                # 1. Create a local in-memory vector layer inside the worker thread
+                temp_lyr = QgsVectorLayer("Polygon?crs=EPSG:4326", "temp_zstats", "memory")
+                dp = temp_lyr.dataProvider()
+                dp.addAttributes([QgsField("fid", QVariant.Int)])
+                temp_lyr.updateFields()
+                
+                # Add features safely
+                temp_features = []
+                for idx, wkt in enumerate(geoms_wkt):
+                    f = QgsFeature(temp_lyr.fields())
+                    f.setGeometry(QgsGeometry.fromWkt(wkt))
+                    f.setAttribute(0, idx)
+                    temp_features.append(f)
+                dp.addFeatures(temp_features)
+                
+                # 2. Instantiate raster layer locally in worker thread
+                local_raster = QgsRasterLayer(raster_path, raster_name)
+                if not local_raster.isValid():
+                    return False, "Raster-Layer konnte im Hintergrund-Thread nicht geladen werden."
                     
-            # 3. Clean up the added temporary columns from memory layer data source
-            dp = self.lyr_aga.dataProvider()
-            fields = self.lyr_aga.fields()
-            sum_idx = fields.indexOf("pop_sum")
-            count_idx = fields.indexOf("pop_count")
-            
-            fields_to_delete = []
-            if sum_idx != -1:
-                fields_to_delete.append(sum_idx)
-            if count_idx != -1:
-                fields_to_delete.append(count_idx)
+                # Determine stats enum constants
+                try:
+                    from qgis.core import Qgis
+                    stat_sum = Qgis.ZonalStatistic.Sum
+                    stat_count = Qgis.ZonalStatistic.Count
+                except ImportError:
+                    stat_sum = QgsZonalStatistics.Sum
+                    stat_count = QgsZonalStatistics.Count
+                    
+                # 3. Create Zonal Statistics inside worker thread
+                zonal_stats = QgsZonalStatistics(
+                    temp_lyr,
+                    local_raster,
+                    "pop_",
+                    1,
+                    stat_sum | stat_count
+                )
                 
-            if fields_to_delete:
-                self.lyr_aga.startEditing()
-                dp.deleteAttributes(fields_to_delete)
-                self.lyr_aga.commitChanges()
-                self.lyr_aga.updateFields()
+                # Run computation asynchronously
+                zonal_stats.calculateStatistics(None)
+                
+                # Parse results
+                results = []
+                from qgis.core import NULL
+                for feature in temp_lyr.getFeatures():
+                    pop_sum = feature["pop_sum"]
+                    pop_count = feature["pop_count"]
+                    
+                    val_sum = float(pop_sum) if pop_sum != NULL and pop_sum is not None else 0.0
+                    val_count = int(pop_count) if pop_count != NULL and pop_count is not None else 0
+                    results.append((val_sum, val_count))
+                    
+                return True, results
+            except Exception as e:
+                return False, str(e)
+                
+        # Define task finished handler
+        def on_task_completed(success, results_or_error):
+            self.setCursor(Qt.ArrowCursor)
+            self.btn_calculate.setEnabled(True)
+            self.btn_calculate.setText(self.tr("btn_calculate_pop", "Berechnung starten"))
+            
+            if not success:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(
+                    f"Fehler bei der Zonalstatistik-Berechnung in PopulationDensityDialog: {results_or_error}",
+                    "QUCORE", Qgis.Critical
+                )
+                QMessageBox.critical(
+                    self,
+                    self.tr("error_calc_failed_title", "Fehler bei Berechnung"),
+                    self.tr("error_calc_failed_text", "Zonalstatistik-Berechnung fehlgeschlagen:\n{error}").format(error=str(results_or_error))
+                )
+                return
+                
+            # Process results safely on main GUI thread
+            total_population = 0.0
+            for val_sum, val_count in results_or_error:
+                total_population += val_sum
                 
             # Display results
             self.lbl_total_pop.setText(f"{total_population:,.0f} {self.tr('people', 'Personen')}")
@@ -368,18 +411,8 @@ class PopulationDensityDialog(QDialog):
                 self.params["aa_area_km2"] = total_area_km2
                 self.params["aa_population"] = total_population
                 self.params["aa_density"] = density
-            
-        except Exception as e:
-            from qgis.core import QgsMessageLog, Qgis
-            QgsMessageLog.logMessage(
-                f"Fehler bei der Zonalstatistik-Berechnung in PopulationDensityDialog: {e}",
-                "QUCORE", Qgis.Error
-            )
-            QMessageBox.critical(
-                self,
-                self.tr("error_calc_failed_title", "Fehler bei Berechnung"),
-                self.tr("error_calc_failed_text", "Zonalstatistik-Berechnung fehlgeschlagen:\n{error}").format(error=str(e))
-            )
-        finally:
-            self.setCursor(Qt.ArrowCursor)
-            self.btn_calculate.setEnabled(True)
+                
+        # Create and start the QgsTask
+        task = QgsTask.fromFunction("QUCORE Zonal Statistics AA", run_zstats_async)
+        task.taskCompleted.connect(lambda: on_task_completed(*task.returned_values))
+        QgsApplication.taskManager().addTask(task)

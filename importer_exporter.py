@@ -222,24 +222,67 @@ class ImporterExporter:
         Parses waypoints and pilot position from a KML file.
         Returns a tuple: (waypoints, pilot_pos, geometry_type)
         """
-        tree = ET.parse(file_path)
-        root = tree.getroot()
+        from PyQt5.QtXml import QDomDocument
         
-        ns = {'kml': 'http://www.opengis.net/kml/2.2'}
+        doc = QDomDocument()
+        with open(file_path, 'rb') as f:
+            xml_data = f.read()
+        ok, error_msg, error_line, error_col = doc.setContent(xml_data)
+        if not ok:
+            raise ValueError(f"XML-Parsing der KML-Datei fehlgeschlagen: {error_msg} in Zeile {error_line}, Spalte {error_col}")
+            
+        root = doc.documentElement()
         
+        def find_local_elements(parent, local_name):
+            results = []
+            def recurse(node):
+                if node.isElement():
+                    elem = node.toElement()
+                    tag = elem.tagName()
+                    if ":" in tag:
+                        tag = tag.split(":", 1)[1]
+                    if tag == local_name:
+                        results.append(elem)
+                child = node.firstChild()
+                while not child.isNull():
+                    recurse(child)
+                    child = child.nextSibling()
+            recurse(parent)
+            return results
+            
+        def find_first_local_element(parent, local_name):
+            def recurse(node):
+                if node.isElement():
+                    elem = node.toElement()
+                    tag = elem.tagName()
+                    if ":" in tag:
+                        tag = tag.split(":", 1)[1]
+                    if tag == local_name:
+                        return elem
+                child = node.firstChild()
+                while not child.isNull():
+                    res = recurse(child)
+                    if res is not None:
+                        return res
+                    child = child.nextSibling()
+                return None
+            return recurse(parent)
+
         waypoints = []
         pilot_pos = None
         geometry_type = "Corridor"
         
         found_centerline = False
         
+        placemarks = find_local_elements(root, "Placemark")
+        
         # 1. Search for LineString or Point (Circle Center) or Polygon (vertices)
-        for pm in root.findall('.//kml:Placemark', ns):
-            ls = pm.find('.//kml:LineString', ns)
+        for pm in placemarks:
+            ls = find_first_local_element(pm, "LineString")
             if ls is not None:
-                coord_elem = ls.find('kml:coordinates', ns)
-                if coord_elem is not None and coord_elem.text:
-                    coord_text = coord_elem.text.strip()
+                coord_elem = find_first_local_element(ls, "coordinates")
+                if coord_elem is not None and coord_elem.text():
+                    coord_text = coord_elem.text().strip()
                     pts = []
                     for pt_str in coord_text.split():
                         parts = pt_str.split(',')
@@ -259,13 +302,13 @@ class ImporterExporter:
                     found_centerline = True
                     break
                     
-            pt = pm.find('.//kml:Point', ns)
-            name_elem = pm.find('kml:name', ns)
-            name = name_elem.text if name_elem is not None else ""
+            pt = find_first_local_element(pm, "Point")
+            name_elem = find_first_local_element(pm, "name")
+            name = name_elem.text() if name_elem is not None else ""
             if pt is not None and name != "Pilotenposition":
-                coord_elem = pt.find('kml:coordinates', ns)
-                if coord_elem is not None and coord_elem.text:
-                    parts = coord_elem.text.strip().split(',')
+                coord_elem = find_first_local_element(pt, "coordinates")
+                if coord_elem is not None and coord_elem.text():
+                    parts = coord_elem.text().strip().split(',')
                     if len(parts) >= 2:
                         lon = float(parts[0])
                         lat = float(parts[1])
@@ -277,12 +320,12 @@ class ImporterExporter:
                         break
                         
         if not found_centerline:
-            for pm in root.findall('.//kml:Placemark', ns):
-                poly = pm.find('.//kml:Polygon', ns)
+            for pm in placemarks:
+                poly = find_first_local_element(pm, "Polygon")
                 if poly is not None:
-                    coord_elem = poly.find('.//kml:coordinates', ns)
-                    if coord_elem is not None and coord_elem.text:
-                        coord_text = coord_elem.text.strip()
+                    coord_elem = find_first_local_element(poly, "coordinates")
+                    if coord_elem is not None and coord_elem.text():
+                        coord_text = coord_elem.text().strip()
                         pts = []
                         for pt_str in coord_text.split():
                             parts = pt_str.split(',')
@@ -300,16 +343,16 @@ class ImporterExporter:
                                 waypoints = pts
                             break
                             
-        for pm in root.findall('.//kml:Placemark', ns):
-            name_elem = pm.find('kml:name', ns)
-            name = name_elem.text if name_elem is not None else ""
+        for pm in placemarks:
+            name_elem = find_first_local_element(pm, "name")
+            name = name_elem.text() if name_elem is not None else ""
             
-            pt = pm.find('.//kml:Point', ns)
+            pt = find_first_local_element(pm, "Point")
             if pt is not None:
                 if name == "Pilotenposition" or not pilot_pos:
-                    coord_elem = pt.find('kml:coordinates', ns)
-                    if coord_elem is not None and coord_elem.text:
-                        parts = coord_elem.text.strip().split(',')
+                    coord_elem = find_first_local_element(pt, "coordinates")
+                    if coord_elem is not None and coord_elem.text():
+                        parts = coord_elem.text().strip().split(',')
                         if len(parts) >= 2:
                             pilot_pos = QgsPointXY(float(parts[0]), float(parts[1]))
                             if name == "Pilotenposition":
@@ -536,26 +579,70 @@ class ImporterExporter:
                     lon = dms_to_decimal(p)
             return lon, lat
 
-        tree = ET.parse(file_path)
-        root = tree.getroot()
+        from PyQt5.QtXml import QDomDocument
         
-        pr = root.find('.//PrimaryRoute')
+        doc = QDomDocument()
+        with open(file_path, 'rb') as f:
+            xml_data = f.read()
+        ok, error_msg, error_line, error_col = doc.setContent(xml_data)
+        if not ok:
+            raise ValueError(f"XML-Parsing des Flugplans fehlgeschlagen: {error_msg} in Zeile {error_line}, Spalte {error_col}")
+            
+        root = doc.documentElement()
+        
+        def find_local_elements(parent, local_name):
+            results = []
+            def recurse(node):
+                if node.isElement():
+                    elem = node.toElement()
+                    tag = elem.tagName()
+                    if ":" in tag:
+                        tag = tag.split(":", 1)[1]
+                    if tag == local_name:
+                        results.append(elem)
+                child = node.firstChild()
+                while not child.isNull():
+                    recurse(child)
+                    child = child.nextSibling()
+            recurse(parent)
+            return results
+            
+        def find_first_local_element(parent, local_name):
+            def recurse(node):
+                if node.isElement():
+                    elem = node.toElement()
+                    tag = elem.tagName()
+                    if ":" in tag:
+                        tag = tag.split(":", 1)[1]
+                    if tag == local_name:
+                        return elem
+                child = node.firstChild()
+                while not child.isNull():
+                    res = recurse(child)
+                    if res is not None:
+                        return res
+                    child = child.nextSibling()
+                return None
+            return recurse(parent)
+
+        pr = find_first_local_element(root, "PrimaryRoute")
         if pr is None:
             raise ValueError("Ungültiges SkyDemon-Flugplanformat: <PrimaryRoute> nicht gefunden.")
             
-        level_feet = float(pr.attrib.get("Level", "3000"))
+        level_feet = float(pr.attribute("Level", "3000"))
         max_height = level_feet / 3.28084
         
         waypoints = []
         
-        start_str = pr.attrib.get("Start", "")
+        start_str = pr.attribute("Start", "")
         if start_str:
             lon, lat = parse_dms_pair(start_str)
             if lon is not None and lat is not None:
                 waypoints.append((lon, lat, max_height, 30.0, 50.0))
                 
-        for r in pr.findall('.//RhumbLineRoute'):
-            to_str = r.attrib.get("To", "")
+        rhumb_lines = find_local_elements(pr, "RhumbLineRoute")
+        for r in rhumb_lines:
+            to_str = r.attribute("To", "")
             if to_str:
                 lon, lat = parse_dms_pair(to_str)
                 if lon is not None and lat is not None:
@@ -674,274 +761,19 @@ class ImporterExporter:
             
         xml.append('</w:tbl>')
         return "\n".join(xml)
+
     @staticmethod
     def get_document_xml_template():
-        return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document mc:Ignorable="w14 w15 wp14" xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" xmlns:cx1="http://schemas.microsoft.com/office/drawing/2015/9/8/chartex" xmlns:cx2="http://schemas.microsoft.com/office/drawing/2015/10/21/chartex" xmlns:cx3="http://schemas.microsoft.com/office/drawing/2016/5/9/chartex" xmlns:cx4="http://schemas.microsoft.com/office/drawing/2016/5/10/chartex" xmlns:cx5="http://schemas.microsoft.com/office/drawing/2016/5/11/chartex" xmlns:cx6="http://schemas.microsoft.com/office/drawing/2016/5/12/chartex" xmlns:cx7="http://schemas.microsoft.com/office/drawing/2016/5/13/chartex" xmlns:cx8="http://schemas.microsoft.com/office/drawing/2016/5/14/chartex" xmlns:aink="http://schemas.microsoft.com/office/drawing/2016/ink" xmlns:am3d="http://schemas.microsoft.com/office/drawing/2017/model3d" xmlns:w16cex="http://schemas.microsoft.com/office/word/2018/wordml/cex" xmlns:w16cid="http://schemas.microsoft.com/office/word/2016/wordml/cid" xmlns:w16="http://schemas.microsoft.com/office/word/2018/wordml" xmlns:w16sdtdh="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash" xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex">
-<w:body>
-  <w:p>
-    <w:pPr>
-      <w:pStyle w:val="a"/>
-      <w:spacing w:before="1200"/>
-      <w:jc w:val="center"/>
-    </w:pPr>
-    <w:r><w:t xml:space="preserve">Beschreibung des Fluggebiets</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr>
-      <w:pStyle w:val="a"/>
-      <w:spacing w:before="600"/>
-      <w:jc w:val="center"/>
-    </w:pPr>
-    <w:r><w:t xml:space="preserve">__NAME__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr>
-      <w:pStyle w:val="a0"/>
-      <w:spacing w:before="800"/>
-      <w:jc w:val="center"/>
-    </w:pPr>
-    <w:r><w:t xml:space="preserve">Erstellt am __DATE__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr>
-      <w:pStyle w:val="a0"/>
-      <w:spacing w:before="2000"/>
-      <w:jc w:val="center"/>
-    </w:pPr>
-    <w:r><w:t xml:space="preserve">Angelehnt an den Export des Digitale Plattform Unbemannte Luftfahrt (dipul) Volumenplaners - Exportiert mit dem QUCORE-QGIS-Plugin</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr>
-      <w:pStyle w:val="a0"/>
-      <w:spacing w:before="4000"/>
-      <w:jc w:val="center"/>
-    </w:pPr>
-    <w:r><w:t xml:space="preserve">Die folgenden Seiten können in dem Betriebshandbuch in das Kapitel „Fluggebiete“ eingefügt werden.</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:r>
-      <w:br w:type="page"/>
-    </w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="berschrift2"/></w:pPr>
-    <w:r><w:t xml:space="preserve">Fluggebiet __NAME__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="berschrift3"/></w:pPr>
-    <w:r><w:t xml:space="preserve">Beschreibung</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:r><w:t xml:space="preserve">Das Fluggebiet mit seinen exakten Koordinaten wurde im QGIS-Planungstool festgelegt und ist in der folgenden Abbildung dargestellt.</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:r>
-      <w:drawing>
-        <wp:inline distT="0" distB="0" distL="0" distR="0">
-          <wp:extent cx="__MAIN_MAP_CX__" cy="__MAIN_MAP_CY__"/>
-          <wp:effectExtent t="0" r="0" b="0" l="0"/>
-          <wp:docPr id="1" name="QGIS_Map" descr="QGIS Map Screenshot"/>
-          <wp:cNvGraphicFramePr>
-            <a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
-          </wp:cNvGraphicFramePr>
-          <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-            <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
-              <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
-                <pic:nvPicPr>
-                  <pic:cNvPr id="0" name="" descr=""/>
-                  <pic:cNvPicPr>
-                    <a:picLocks noChangeAspect="1" noChangeArrowheads="1"/>
-                  </pic:cNvPicPr>
-                </pic:nvPicPr>
-                <pic:blipFill>
-                  <a:blip r:embed="rId6" cstate="none"/>
-                  <a:srcRect/>
-                  <a:stretch><a:fillRect/></a:stretch>
-                </pic:blipFill>
-                <pic:spPr bwMode="auto">
-                  <a:xfrm>
-                    <a:off x="0" y="0"/>
-                    <a:ext cx="__MAIN_MAP_CX__" cy="__MAIN_MAP_CY__"/>
-                  </a:xfrm>
-                  <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-                </pic:spPr>
-              </pic:pic>
-            </a:graphicData>
-          </a:graphic>
-        </wp:inline>
-      </w:drawing>
-    </w:r>
-  </w:p>
-  <w:p>
-    <w:r><w:t xml:space="preserve">Die Abbildungsmitte hat die Koordinaten: __CENTER_COORDS__.</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:r><w:t xml:space="preserve">Die Pilotenposition befindet sich bei: __PILOT_COORDS__.</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:r><w:t xml:space="preserve">Kommentar: __COMMENT__</w:t></w:r>
-  </w:p>
-  __DETAIL_MAPS_XML__
-  <w:p>
-    <w:pPr><w:pStyle w:val="berschrift3"/></w:pPr>
-    <w:r><w:t xml:space="preserve">Eingangswerte der Rechnung CV/GRB</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:r><w:t xml:space="preserve">Die Berechnung des Contingency Volumens und des Ground Risk Buffers erfolgte gemäss EASA SORA-Leitlinien und LBA-Richtlinien.</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:spacing w:before="200" w:after="100"/></w:pPr>
-    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Es wurden folgende Parameter verwendet:</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Höhe Fluggebiet H_FG: __H_FG__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Horizontales Contingency-Volumen Manöver: __LAT_MAN_TEXT__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Vertikales Contingency Manöver: __VERT_MAN_TEXT__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Ground risk buffer manoeuver: __GRB_MAN_TEXT__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:spacing w:before="400"/></w:pPr>
-    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">UAS Eigenschaften:</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Typ: __UAS_TYPE__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Höhenmessung: __ALTIMETRY__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Maximale Geschwindigkeit im Betrieb (v0): __V0__ m/s</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Maximale erlaubte Windgeschwindigkeit (v_wind): __V_WIND__ m/s</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Charakteristische Dimension (CD): __CD__ m</w:t></w:r>
-  </w:p>
-  __SPEC_FIELDS__
-  <w:p>
-    <w:pPr><w:spacing w:before="400"/></w:pPr>
-    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Sicherheitsmanöver und Methoden:</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Horizontales Contingency-Volumen Manöver: __LAT_MAN__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Vertikales Contingency Manöver: __VERT_MAN__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Ground Risk Buffer Methode: __METHOD__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:spacing w:before="400"/></w:pPr>
-    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Annahmen &amp; Unsicherheiten:</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">GPS-Ungenauigkeit (S_GPS): __GPS_INACC__ m</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Positionshaltefehler (S_POS): __POS_ERR__ m</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Kartenfehler (S_K): __MAP_ERR__ m</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Reaktionszeit (t_Reak): __REACTION__ s</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Höhenmessfehler (barometrisch H_Baro): __ALT_BARO__ m</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Höhenmessfehler (GPS H_GPS): __ALT_GPS__ m</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Zusatzentfernung (horizontal): __ADD_HORIZ__ m</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Zusatzentfernung (vertikal): __ADD_VERT__ m</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Schrittweite der Berechnung: __STEP_SIZE__ m</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr>
-      <w:pStyle w:val="berschrift3"/>
-      <w:pageBreakBefore/>
-    </w:pPr>
-    <w:r><w:t xml:space="preserve">Zusammenfassung der Sicherheitsgrenzen</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:r><w:t xml:space="preserve">Basierend auf der Flugweg-Geometrie und den gewählten Risikoparametern ergeben sich folgende zusammenfassende Schutzbereiche:</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Flight Geography (Halbbreite): __FG_RANGE__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Contingency Volume (Gesamt-Halbbreite): __CV_RANGE__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Ground Risk Buffer (Gesamt-Halbbreite): __GRB_RANGE__</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Maximale Contingency Deckenhöhe (h_CV): __H_CV_RANGE__</w:t></w:r>
-  </w:p>
-  __SORA_VIZ_XML__
-  <w:p>
-    <w:pPr>
-      <w:pStyle w:val="berschrift3"/>
-    </w:pPr>
-    <w:r><w:t xml:space="preserve">SORA-Berechnungsergebnisse pro Wegpunkt</w:t></w:r>
-  </w:p>
-  <w:p>
-    <w:r><w:t xml:space="preserve">Da das Fluggebiet variable Parameter entlang des Flugwegs besitzt, sind die berechneten Puffer und Höhengrenzen für jeden Wegpunkt in der folgenden Tabelle detailliert aufgeführt:</w:t></w:r>
-  </w:p>
-  __TABLE_XML__
-  <w:p><w:spacing w:before="600"/></w:p>
-  <w:p>
-    <w:r><w:t xml:space="preserve">Bemerkungen: Der Ground Risk Buffer (GRB) schliesst an das Contingency Volume (CV) an und berücksichtigt die ballistische Drift, Gleitflugfähigkeit oder das Absinken per Fallschirm im Falle eines Kontrollverlusts gemäss gewählter Methode.</w:t></w:r>
-  </w:p>
-  __POPULATION_ANALYSIS_XML__
-  <w:sectPr>
-    <w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/>
-    <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/>
-    <w:pgNumType/>
-    <w:docGrid w:linePitch="360"/>
-    __HEADER_FOOTER_XML__
-  </w:sectPr>
-</w:body>
-</w:document>"""
+        """Reads the report XML structure from the template file."""
+        import os
+        plugin_dir = os.path.dirname(os.path.abspath(__file__))
+        template_xml_path = os.path.join(plugin_dir, "document_template.xml")
+        
+        if os.path.exists(template_xml_path):
+            with open(template_xml_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        else:
+            raise FileNotFoundError("Die Berichtsvorlage 'document_template.xml' fehlt im Plugin-Ordner.")
 
     @staticmethod
     def export_sora_docx(file_path, waypoints, pilot_pos, params, map_image_path, geometry_type="Corridor", start_image_path=None, end_image_path=None, sora_viz_image_path=None):
@@ -1571,7 +1403,7 @@ class ImporterExporter:
                     from qgis.core import QgsMessageLog, Qgis
                     QgsMessageLog.logMessage(
                         f"Fehler beim Entfernen der existierenden DOCX-Datei: {e}",
-                        "QUCORE", Qgis.Error
+                        "QUCORE", Qgis.Critical
                     )
                     raise IOError(f"Zieldatei konnte nicht überschrieben werden (Möglicherweise geöffnet?): {e}")
             
@@ -1795,7 +1627,7 @@ class ImporterExporter:
         try:
             fg_geom, cv_geom, grb_geom, aga_geom = BufferCalculator.generate_buffers(waypoints, params, geometry_type)
         except Exception as e:
-            QgsMessageLog.logMessage(f"Failed to generate buffers for GeoJSON: {e}", "QUCORE", Qgis.Error)
+            QgsMessageLog.logMessage(f"Failed to generate buffers for GeoJSON: {e}", "QUCORE", Qgis.Critical)
             raise ValueError(f"Sicherheitskorridore konnten nicht generiert werden: {e}")
             
         def get_geojson_coordinates(geom):
