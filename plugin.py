@@ -838,6 +838,10 @@ class DroneCorridorPlanner(object):
                 self.gui.close()
             except Exception:
                 pass
+            try:
+                self.gui.deleteLater()
+            except Exception:
+                pass
 
         # Remove layers and group silently on unload
         try:

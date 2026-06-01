@@ -331,10 +331,18 @@ class GrbDensityDialog(QDialog):
         cell_area_km2 = self.get_raster_cell_area_km2(raster_layer)
         
         # Clone geometries as WKT to safely pass to the background thread
+        from qgis.core import QgsCoordinateTransform, QgsGeometry
+        raster_crs = raster_layer.crs()
+        raster_crs_auth = raster_crs.authid()
+        vector_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+        transform = QgsCoordinateTransform(vector_crs, raster_crs, QgsProject.instance())
+        
         geoms_wkt = []
         for feature in self.lyr_grb.getFeatures():
             if feature.hasGeometry() and not feature.geometry().isEmpty():
-                geoms_wkt.append(feature.geometry().asWkt())
+                geom = QgsGeometry(feature.geometry())
+                geom.transform(transform)
+                geoms_wkt.append(geom.asWkt())
                 
         from qgis.core import QgsTask, QgsApplication
         
@@ -344,8 +352,8 @@ class GrbDensityDialog(QDialog):
                 from qgis.analysis import QgsZonalStatistics
                 from PyQt5.QtCore import QVariant
                 
-                # 1. Create a local in-memory vector layer inside the worker thread
-                temp_lyr = QgsVectorLayer("Polygon?crs=EPSG:4326", "temp_zstats", "memory")
+                # 1. Create a local in-memory vector layer inside the worker thread using raster's CRS
+                temp_lyr = QgsVectorLayer(f"Polygon?crs={raster_crs_auth}", "temp_zstats", "memory")
                 dp = temp_lyr.dataProvider()
                 dp.addAttributes([QgsField("fid", QVariant.Int)])
                 temp_lyr.updateFields()
