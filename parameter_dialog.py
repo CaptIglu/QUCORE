@@ -14,7 +14,8 @@ from PyQt5.QtWidgets import (
     QFormLayout,
     QGroupBox,
     QPushButton,
-    QDialogButtonBox
+    QDialogButtonBox,
+    QCheckBox
 )
 
 class ParameterDialog(QDialog):
@@ -162,6 +163,17 @@ class ParameterDialog(QDialog):
         self.spin_v0.setValue(self.params["maxVelocity"])
         self.spin_v0.setSuffix(" m/s")
         uas_layout.addRow(f"{self.tr('label_v0', 'Max. Betriebsgeschwindigkeit (v0)')} ({default_label}: {v0_def:.1f} m/s):", self.spin_v0)
+        
+        self.chk_override_v = QCheckBox(self.tr("chk_override_v", "Individuelle Wegpunktgeschwindigkeiten überschreiben"))
+        self.chk_override_v.setStyleSheet("color: #d97706; font-weight: bold;")
+        self.chk_override_v.setChecked(False)
+        self.has_custom_v = self.has_individual_speeds()
+        self.chk_override_v.setVisible(self.has_custom_v)
+        self.chk_override_v.toggled.connect(self.on_override_v_toggled)
+        uas_layout.addRow("", self.chk_override_v)
+        
+        if self.has_custom_v:
+            self.spin_v0.setEnabled(False)
         
         self.spin_cd = QDoubleSpinBox()
         self.spin_cd.setRange(0.01, 100.0)
@@ -358,9 +370,16 @@ class ParameterDialog(QDialog):
         self.spin_corridor_width.setSuffix(" m")
         gen_layout.addRow(f"{self.tr('label_corridor_width', 'Standard Flight Geography Breite (W_FG)')} ({default_label}: {w_fg_def:.1f} m):", self.spin_corridor_width)
         
-        self.btn_apply_w_all = QPushButton(self.tr("btn_apply_w_all", "Flight Geography Breite für alle Wegpunkte übernehmen"))
-        self.btn_apply_w_all.clicked.connect(self.on_apply_w_all_clicked)
-        gen_layout.addRow("", self.btn_apply_w_all)
+        self.chk_override_w = QCheckBox(self.tr("chk_override_w", "Individuelle Wegpunktbreiten überschreiben"))
+        self.chk_override_w.setStyleSheet("color: #d97706; font-weight: bold;")
+        self.chk_override_w.setChecked(False)
+        self.has_custom_w = self.has_individual_widths()
+        self.chk_override_w.setVisible(self.has_custom_w)
+        self.chk_override_w.toggled.connect(self.on_override_w_toggled)
+        gen_layout.addRow("", self.chk_override_w)
+        
+        if self.has_custom_w:
+            self.spin_corridor_width.setEnabled(False)
         
         self.spin_default_h = QDoubleSpinBox()
         self.spin_default_h.setRange(0.0, 2000.0)
@@ -368,9 +387,16 @@ class ParameterDialog(QDialog):
         self.spin_default_h.setSuffix(" m")
         gen_layout.addRow(f"{self.tr('label_default_height', 'Standard Flughöhe (h)')} ({default_label}: {h_fg_def:.1f} m):", self.spin_default_h)
         
-        self.btn_apply_h_all = QPushButton(self.tr("btn_apply_h_all", "Flughöhe für alle Wegpunkte übernehmen"))
-        self.btn_apply_h_all.clicked.connect(self.on_apply_h_all_clicked)
-        gen_layout.addRow("", self.btn_apply_h_all)
+        self.chk_override_h = QCheckBox(self.tr("chk_override_h", "Individuelle Wegpunkthöhen überschreiben"))
+        self.chk_override_h.setStyleSheet("color: #d97706; font-weight: bold;")
+        self.chk_override_h.setChecked(False)
+        self.has_custom_h = self.has_individual_heights()
+        self.chk_override_h.setVisible(self.has_custom_h)
+        self.chk_override_h.toggled.connect(self.on_override_h_toggled)
+        gen_layout.addRow("", self.chk_override_h)
+        
+        if self.has_custom_h:
+            self.spin_default_h.setEnabled(False)
 
         # ----------------------------------------------------
         # BUTTONS
@@ -497,32 +523,15 @@ class ParameterDialog(QDialog):
             "parachuteOpeningTimeGRB": self.spin_para_grb.value(),
             "parachuteDescentRate": self.spin_descent.value(),
             "additionalErrorLateral": self.spin_add_horiz.value(),
-            "additionalErrorVertical": self.spin_add_vert.value()
+            "additionalErrorVertical": self.spin_add_vert.value(),
+            "override_heights": self.chk_override_h.isChecked() if (hasattr(self, 'chk_override_h') and self.has_custom_h) else True,
+            "override_widths": self.chk_override_w.isChecked() if (hasattr(self, 'chk_override_w') and self.has_custom_w) else True,
+            "override_speeds": self.chk_override_v.isChecked() if (hasattr(self, 'chk_override_v') and self.has_custom_v) else True
         }
 
-    def on_apply_h_all_clicked(self):
-        if not hasattr(self, 'waypoints') or not self.waypoints:
-            from PyQt5.QtWidgets import QMessageBox
-            QMessageBox.information(
-                self,
-                self.tr("msg_no_wp_title", "Keine Wegpunkte"),
-                self.tr("msg_no_wp_for_h", "Es sind derzeit keine Wegpunkte vorhanden, auf die die Flughöhe angewendet werden könnte.")
-            )
-            return
-            
-        from PyQt5.QtWidgets import QMessageBox
-        title = self.tr("confirm_h_all_title", "Höhe übernehmen")
-        text = self.tr("confirm_h_all_text", "Möchten Sie die Flughöhe für alle Wegpunkte wirklich auf die Standardhöhe ({height:.1f} m) zurücksetzen und alle wegpunktspezifischen Höhen überschreiben?").format(height=self.spin_default_h.value())
-        
-        reply = QMessageBox.question(
-            self,
-            title,
-            text,
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-        
-        if reply == QMessageBox.Yes:
+    def on_override_h_toggled(self, checked):
+        self.spin_default_h.setEnabled(checked)
+        if checked:
             new_h = self.spin_default_h.value()
             for idx in range(len(self.waypoints)):
                 w = self.waypoints[idx]
@@ -530,37 +539,11 @@ class ParameterDialog(QDialog):
                 spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
                 fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
                 self.waypoints[idx] = (lon, lat, new_h, spd, fg)
-                
-            QMessageBox.information(
-                self,
-                self.tr("msg_h_applied_title", "Erfolg"),
-                self.tr("msg_h_applied_text", "Die Flughöhe wurde erfolgreich für alle Wegpunkte übernommen.")
-            )
             self.on_value_changed()
 
-    def on_apply_w_all_clicked(self):
-        if not hasattr(self, 'waypoints') or not self.waypoints:
-            from PyQt5.QtWidgets import QMessageBox
-            QMessageBox.information(
-                self,
-                self.tr("msg_no_wp_title", "Keine Wegpunkte"),
-                self.tr("msg_no_wp_for_w", "Es sind derzeit keine Wegpunkte vorhanden, auf die die Flight Geography Breite angewendet werden könnte.")
-            )
-            return
-            
-        from PyQt5.QtWidgets import QMessageBox
-        title = self.tr("confirm_w_all_title", "Breite übernehmen")
-        text = self.tr("confirm_w_all_text", "Möchten Sie die Flight Geography Breite für alle Wegpunkte wirklich auf die Standardbreite ({width:.1f} m) zurücksetzen und alle wegpunktspezifischen Breiten überschreiben?").format(width=self.spin_corridor_width.value())
-        
-        reply = QMessageBox.question(
-            self,
-            title,
-            text,
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-        
-        if reply == QMessageBox.Yes:
+    def on_override_w_toggled(self, checked):
+        self.spin_corridor_width.setEnabled(checked)
+        if checked:
             new_w = self.spin_corridor_width.value()
             for idx in range(len(self.waypoints)):
                 w = self.waypoints[idx]
@@ -568,13 +551,37 @@ class ParameterDialog(QDialog):
                 alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
                 spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
                 self.waypoints[idx] = (lon, lat, alt, spd, new_w)
-                
-            QMessageBox.information(
-                self,
-                self.tr("msg_w_applied_title", "Erfolg"),
-                self.tr("msg_w_applied_text", "Die Flight Geography Breite wurde erfolgreich für alle Wegpunkte übernommen.")
-            )
             self.on_value_changed()
+
+    def on_override_v_toggled(self, checked):
+        self.spin_v0.setEnabled(checked)
+        if checked:
+            new_v = self.spin_v0.value()
+            for idx in range(len(self.waypoints)):
+                w = self.waypoints[idx]
+                lon, lat = w[0], w[1]
+                alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
+                fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
+                self.waypoints[idx] = (lon, lat, alt, new_v, fg)
+            self.on_value_changed()
+
+    def has_individual_heights(self):
+        if not self.waypoints:
+            return False
+        standard = self.params.get("maxFlightHeight", 100.0)
+        return any(len(w) > 2 and abs(w[2] - standard) > 1e-3 for w in self.waypoints)
+
+    def has_individual_widths(self):
+        if not self.waypoints:
+            return False
+        standard = self.params.get("corridorWidth", 50.0)
+        return any(len(w) > 4 and abs(w[4] - standard) > 1e-3 for w in self.waypoints)
+
+    def has_individual_speeds(self):
+        if not self.waypoints:
+            return False
+        standard = self.params.get("maxVelocity", 30.0)
+        return any(len(w) > 3 and abs(w[3] - standard) > 1e-3 for w in self.waypoints)
 
     def reject(self):
         # Restore the waypoints backup in case of cancellation

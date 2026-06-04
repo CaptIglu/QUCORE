@@ -6,8 +6,21 @@ from unittest.mock import MagicMock
 
 # 1. Mock qgis and PyQt5 environments to allow running standalone without QGIS or PyQt5 installations
 import types
-sys.modules['qgis'] = MagicMock()
-sys.modules['qgis.core'] = MagicMock()
+qgis_mock = MagicMock()
+qgis_core_mock = MagicMock()
+
+class RealMockQgsPointXY:
+    def __init__(self, x=0.0, y=0.0):
+        self._x = x
+        self._y = y
+    def x(self):
+        return float(self._x)
+    def y(self):
+        return float(self._y)
+
+qgis_core_mock.QgsPointXY = RealMockQgsPointXY
+sys.modules['qgis'] = qgis_mock
+sys.modules['qgis.core'] = qgis_core_mock
 
 # Mock PyQt5 modules with simple mock types so subclasses execute normal python initialization
 qt_widgets = types.ModuleType("QtWidgets")
@@ -59,6 +72,7 @@ qt_widgets.QFormLayout = MockQWidget
 qt_widgets.QGroupBox = MockQWidget
 qt_widgets.QPushButton = MockQWidget
 qt_widgets.QDialogButtonBox = MockQWidget
+qt_widgets.QCheckBox = MockQWidget
 qt_widgets.QApplication = MagicMock
 qt_widgets.QHeaderView = MagicMock
 qt_widgets.QTableWidget = MockQWidget
@@ -582,12 +596,9 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         dialog.reject()
         self.assertEqual(waypoints[0][2], 100.0) # Restored!
         
-        # Test clicking the apply button (mocking MockQMessageBox directly)
+        # Test toggling the override checkbox
         dialog2 = ParameterDialog(None, params, waypoints)
-        MockQMessageBox.question = MagicMock(return_value=MockQMessageBox.Yes)
-        MockQMessageBox.information = MagicMock()
-        
-        dialog2.on_apply_h_all_clicked()
+        dialog2.on_override_h_toggled(True)
                 
         self.assertEqual(waypoints[0][2], 120.0)
         self.assertEqual(waypoints[1][2], 120.0)
@@ -615,12 +626,9 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         dialog.reject()
         self.assertEqual(waypoints[0][4], 50.0) # Restored!
         
-        # Test clicking the apply button (mocking MockQMessageBox directly)
+        # Test toggling the override checkbox
         dialog2 = ParameterDialog(None, params, waypoints)
-        MockQMessageBox.question = MagicMock(return_value=MockQMessageBox.Yes)
-        MockQMessageBox.information = MagicMock()
-        
-        dialog2.on_apply_w_all_clicked()
+        dialog2.on_override_w_toggled(True)
                 
         self.assertEqual(waypoints[0][4], 75.0)
         self.assertEqual(waypoints[1][4], 75.0)

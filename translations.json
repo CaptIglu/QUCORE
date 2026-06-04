@@ -1102,6 +1102,17 @@
   "download_tip": {
     "de": "Tipp: Wählen Sie die 100m-Auflösung (WGS84) für optimale Ergebnisse.",
     "en": "Tip: Choose the 100m resolution (WGS84) for optimal results."
+  },
+  "chk_override_h": {
+    "de": "Individuelle Wegpunkthöhen überschreiben",
+    "en": "Override individual waypoint heights"
+  },
+  "chk_override_w": {
+    "de": "Individuelle Wegpunktbreiten überschreiben",
+    "en": "Override individual waypoint widths"
+  },
+  "chk_override_v": {
+    "de": "Individuelle Wegpunktgeschwindigkeiten überschreiben",
+    "en": "Override individual waypoint velocities"
   }
 }
-

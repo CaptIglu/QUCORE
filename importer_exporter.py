@@ -1169,7 +1169,7 @@ class ImporterExporter:
         
         if not has_any_pop:
             pop_xml.append('  <w:p>')
-            pop_xml.append('    <w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">Berechnung wurde nicht durchgeführt. Wenn Sie diesen Abschnitt brauchen, dann führen Sie die Berechnung im Plugin vor dem Export einmal durch.</w:t></w:r>')
+            pop_xml.append('    <w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">Für diese Planung wurde vor dem Export keine Bevölkerungsdichte-Analyse für die Adjacent Area (AA) oder den Ground Risk Buffer (GRB) berechnet. Wenn Sie diesen Abschnitt brauchen, dann führen Sie die Berechnung im Plugin vor dem Export mindestens einmal durch.</w:t></w:r>')
             pop_xml.append('  </w:p>')
             
         pop_analysis_xml_str = "\n".join(pop_xml)

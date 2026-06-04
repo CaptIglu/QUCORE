@@ -2211,20 +2211,35 @@ class DroneCorridorPlanner(object):
             self.rebuild_and_calculate()
 
     def on_parameter_dialog_changed(self, new_params):
+        old_h = self.params.get("maxFlightHeight", 100.0)
         old_v0 = self.params.get("maxVelocity", 30.0)
+        old_w = self.params.get("corridorWidth", 50.0)
+        
         self.params.update(new_params)
         
+        new_h = self.params.get("maxFlightHeight", 100.0)
         new_v0 = self.params.get("maxVelocity", 30.0)
+        new_w = self.params.get("corridorWidth", 50.0)
         new_cd = self.params.get("maxCharacteristicDimension", 3.6)
         min_fg = 3.0 * new_cd
         
+        override_h = new_params.get("override_heights", True)
+        override_w = new_params.get("override_widths", True)
+        override_v = new_params.get("override_speeds", True)
+        
         for idx in range(len(self.waypoints)):
             w = self.waypoints[idx]
-            alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
-            spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
-            fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
+            alt = w[2] if len(w) > 2 else new_h
+            spd = w[3] if len(w) > 3 else new_v0
+            fg = w[4] if len(w) > 4 else new_w
             
-            if abs(new_v0 - old_v0) > 1e-5:
+            if override_h and abs(new_h - old_h) > 1e-5:
+                alt = new_h
+                
+            if override_w and abs(new_w - old_w) > 1e-5:
+                fg = new_w
+                
+            if override_v and abs(new_v0 - old_v0) > 1e-5:
                 spd = new_v0
             elif spd > new_v0:
                 spd = new_v0
