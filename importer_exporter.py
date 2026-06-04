@@ -763,17 +763,18 @@ class ImporterExporter:
         return "\n".join(xml)
 
     @staticmethod
-    def get_document_xml_template():
+    def get_document_xml_template(lang="de"):
         """Reads the report XML structure from the template file."""
         import os
         plugin_dir = os.path.dirname(os.path.abspath(__file__))
-        template_xml_path = os.path.join(plugin_dir, "document_template.xml")
+        template_xml_name = f"report_template_{lang}.xml"
+        template_xml_path = os.path.join(plugin_dir, template_xml_name)
         
         if os.path.exists(template_xml_path):
             with open(template_xml_path, 'r', encoding='utf-8') as f:
                 return f.read()
         else:
-            raise FileNotFoundError("Die Berichtsvorlage 'document_template.xml' fehlt im Plugin-Ordner.")
+            raise FileNotFoundError(f"Die Berichtsvorlage '{template_xml_name}' fehlt im Plugin-Ordner.")
 
     @staticmethod
     def export_sora_docx(file_path, waypoints, pilot_pos, params, map_image_path, geometry_type="Corridor", start_image_path=None, end_image_path=None, sora_viz_image_path=None):
@@ -788,6 +789,11 @@ class ImporterExporter:
         import uuid
         from datetime import datetime
         
+        lang = params.get("language", "de")
+        if lang not in ["de", "en"]:
+            lang = "de"
+        is_en = (lang == "en")
+        
         def get_png_size(filepath):
             try:
                 with open(filepath, 'rb') as f:
@@ -797,12 +803,14 @@ class ImporterExporter:
                         w, h = struct.unpack('>II', data[16:24])
                         return w, h
             except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
                 QgsMessageLog.logMessage(f"Failed to parse PNG dimensions for {filepath}: {e}", "QUCORE", Qgis.Info)
             return None
-        
+            
         # 1. Path to template file in the plugin directory
         plugin_dir = os.path.dirname(os.path.abspath(__file__))
-        template_path = os.path.join(plugin_dir, "report_template.docx")
+        template_name = f"report_template_{lang}.docx"
+        template_path = os.path.join(plugin_dir, template_name)
         
         has_logo = False
                     
@@ -865,7 +873,7 @@ class ImporterExporter:
             
         # 2. Extract and format variables
         name = os.path.splitext(os.path.basename(file_path))[0]
-        date_str = datetime.now().strftime("%d.%m.%Y")
+        date_str = datetime.now().strftime("%Y-%m-%d") if is_en else datetime.now().strftime("%d.%m.%Y")
         
         # Calculate coordinate center
         center_lat = 0.0
@@ -883,69 +891,109 @@ class ImporterExporter:
                 QgsMessageLog.logMessage(f"Failed to format pilot_pos using coordinates: {e}", "QUCORE", Qgis.Info)
                 pilot_str = str(pilot_pos)
         else:
-            pilot_str = "Keine Pilotenposition definiert"
+            pilot_str = "No pilot position defined" if is_en else "Keine Pilotenposition definiert"
             
         # Comment
-        comment_str = params.get("comment", "Kein allgemeiner Kommentar zum Projekt.")
+        fallback_comment = "No general comment on the project." if is_en else "Kein allgemeiner Kommentar zum Projekt."
+        comment_str = params.get("comment", fallback_comment)
         if not comment_str or comment_str.strip() == "":
-            comment_str = "Kein allgemeiner Kommentar zum Projekt."
+            comment_str = fallback_comment
             
         # UAS Properties
         uas_type = params.get("uas_type", "FixedWing")
-        uas_type_str = "Multikopter" if uas_type == "Multikopter" or "kopter" in str(uas_type).lower() else "Flächenflieger (Fixed Wing)"
-        
-        altimetry = params.get("altimetry", "GPS")
-        altimetry_str = "GPS-basiert" if altimetry == "GPS" else "Barometrisch"
+        is_copter = uas_type == "Multikopter" or "kopter" in str(uas_type).lower()
+        if is_en:
+            uas_type_str = "Multicopter" if is_copter else "Fixed Wing"
+            altimetry = params.get("altimetry", "GPS")
+            altimetry_str = "GPS-based" if altimetry == "GPS" else "Barometric"
+        else:
+            uas_type_str = "Multikopter" if is_copter else "Flächenflieger (Fixed Wing)"
+            altimetry = params.get("altimetry", "GPS")
+            altimetry_str = "GPS-basiert" if altimetry == "GPS" else "Barometrisch"
         
         v0 = params.get("maxVelocity", 30.0)
         v_wind = params.get("maxWindVelocity", 10.0)
         cd = params.get("maxCharacteristicDimension", 1.5)
         
         uas_spec_fields = []
-        if "fixed" in uas_type_str.lower() or "flächen" in uas_type_str.lower():
+        is_fixed_wing = not is_copter
+        if is_fixed_wing:
             glide = params.get("glideRatioDenominator", 10.0)
             roll = params.get("maxRollAngle", 30.0)
             v_stall = params.get("stallVelocity", 10.0)
-            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Gleitzahl: {glide:.1f}</w:t></w:r></w:p>')
-            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Maximaler Rollwinkel: {roll:.1f}°</w:t></w:r></w:p>')
-            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Geschwindigkeit bei Strömungsabriss (v_stall): {v_stall:.1f} m/s</w:t></w:r></w:p>')
+            if is_en:
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Glide Ratio: {glide:.1f}</w:t></w:r></w:p>')
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Maximum Roll Angle: {roll:.1f}°</w:t></w:r></w:p>')
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Stall Velocity (v_stall): {v_stall:.1f} m/s</w:t></w:r></w:p>')
+            else:
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Gleitzahl: {glide:.1f}</w:t></w:r></w:p>')
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Maximaler Rollwinkel: {roll:.1f}°</w:t></w:r></w:p>')
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Geschwindigkeit bei Strömungsabriss (v_stall): {v_stall:.1f} m/s</w:t></w:r></w:p>')
         else:
             pitch = params.get("maxPitchAngle", 45.0)
-            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Maximaler Nickwinkel: {pitch:.1f}°</w:t></w:r></w:p>')
+            if is_en:
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Maximum Pitch Angle: {pitch:.1f}°</w:t></w:r></w:p>')
+            else:
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Maximaler Nickwinkel: {pitch:.1f}°</w:t></w:r></w:p>')
             
         grb_method = params.get("groundRiskBufferMethod", "Simplified")
         if grb_method == "Parachute" or "parachute" in str(grb_method).lower():
             t_para_grb = params.get("parachuteOpeningTimeGRB", 1.0)
             v_z = params.get("parachuteDescentRate", 2.0)
-            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Öffnungszeit (GRB): {t_para_grb:.1f} s</w:t></w:r></w:p>')
-            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Sinkgeschwindigkeit (vZ): {v_z:.1f} m/s</w:t></w:r></w:p>')
+            if is_en:
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Parachute Opening Time (GRB): {t_para_grb:.1f} s</w:t></w:r></w:p>')
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Parachute Descent Rate (vZ): {v_z:.1f} m/s</w:t></w:r></w:p>')
+            else:
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Öffnungszeit (GRB): {t_para_grb:.1f} s</w:t></w:r></w:p>')
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Sinkgeschwindigkeit (vZ): {v_z:.1f} m/s</w:t></w:r></w:p>')
             
         lat_man_type = params.get("lateralContingencyManoeuvreType", "Default")
         if lat_man_type == "Parachute" or "parachute" in str(lat_man_type).lower():
             t_para_lat = params.get("parachuteOpeningTimeLateral", 2.0)
-            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Öffnungszeit (horizontal): {t_para_lat:.1f} s</w:t></w:r></w:p>')
+            if is_en:
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Parachute Opening Time (horizontal): {t_para_lat:.1f} s</w:t></w:r></w:p>')
+            else:
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Öffnungszeit (horizontal): {t_para_lat:.1f} s</w:t></w:r></w:p>')
             
         vert_man_type = params.get("verticalContingencyManoeuvreType", "Default")
         if vert_man_type == "Parachute" or "parachute" in str(vert_man_type).lower():
             t_para_vert = params.get("parachuteOpeningTimeVertical", 2.0)
-            uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Öffnungszeit (vertikal): {t_para_vert:.1f} s</w:t></w:r></w:p>')
+            if is_en:
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Parachute Opening Time (vertical): {t_para_vert:.1f} s</w:t></w:r></w:p>')
+            else:
+                uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Öffnungszeit (vertikal): {t_para_vert:.1f} s</w:t></w:r></w:p>')
             
         uas_spec_fields_str = "\n".join(uas_spec_fields)
         
         # Buffer methods
-        if grb_method == "Simplified":
-            method_str = "Vereinfachter Ansatz (1:1 Regel)"
-        elif grb_method == "Ballistic":
-            method_str = "Ballistischer Ansatz"
-        elif grb_method == "Glide":
-            method_str = "Antrieb aus mit Gleitflug"
-        elif grb_method == "Parachute":
-            method_str = "Terminierung mit Auslösen des Fallschirms"
+        if is_en:
+            if grb_method == "Simplified":
+                method_str = "Simplified Approach (1:1 Rule)"
+            elif grb_method == "Ballistic":
+                method_str = "Ballistic Approach"
+            elif grb_method == "Glide":
+                method_str = "Power-off with Glide Flight"
+            elif grb_method == "Parachute":
+                method_str = "Termination with Parachute Deployment"
+            else:
+                method_str = str(grb_method)
+                
+            lat_man = "Turn / Hover" if params.get("lateralContingencyManoeuvreType") == "Default" else "Parachute Deployment"
+            vert_man = "Descent / Climb" if params.get("verticalContingencyManoeuvreType") == "Default" else "Parachute Deployment"
         else:
-            method_str = str(grb_method)
-            
-        lat_man = "Kurve / Anhalten" if params.get("lateralContingencyManoeuvreType") == "Default" else "Auslösen des Fallschirms"
-        vert_man = "Sinkflug / Climb" if params.get("verticalContingencyManoeuvreType") == "Default" else "Auslösen des Fallschirms"
+            if grb_method == "Simplified":
+                method_str = "Vereinfachter Ansatz (1:1 Regel)"
+            elif grb_method == "Ballistic":
+                method_str = "Ballistischer Ansatz"
+            elif grb_method == "Glide":
+                method_str = "Antrieb aus mit Gleitflug"
+            elif grb_method == "Parachute":
+                method_str = "Terminierung mit Auslösen des Fallschirms"
+            else:
+                method_str = str(grb_method)
+                
+            lat_man = "Kurve / Anhalten" if params.get("lateralContingencyManoeuvreType") == "Default" else "Auslösen des Fallschirms"
+            vert_man = "Sinkflug / Climb" if params.get("verticalContingencyManoeuvreType") == "Default" else "Auslösen des Fallschirms"
         
         # Assumptions
         gps_inacc = params.get("gpsInaccuracy", 3.0)
@@ -1011,13 +1059,17 @@ class ImporterExporter:
         # Format overall results ranges
         def get_range_str(val_list, unit="m"):
             if not val_list:
-                return f"0,0 {unit}"
+                return f"0.0 {unit}" if is_en else f"0,0 {unit}"
             min_v = min(val_list)
             max_v = max(val_list)
             if abs(min_v - max_v) < 0.05:
-                return f"{min_v:.1f} {unit}".replace('.', ',')
+                val_str = f"{min_v:.1f} {unit}"
+                return val_str if is_en else val_str.replace('.', ',')
             else:
-                return f"{min_v:.1f} {unit} bis {max_v:.1f} {unit}".replace('.', ',')
+                if is_en:
+                    return f"{min_v:.1f} {unit} to {max_v:.1f} {unit}"
+                else:
+                    return f"{min_v:.1f} {unit} bis {max_v:.1f} {unit}".replace('.', ',')
                 
         fg_range = get_range_str(fg_widths)
         cv_range = get_range_str(cv_radii)
@@ -1025,7 +1077,7 @@ class ImporterExporter:
         h_cv_range = get_range_str(h_cvs)
         
         # 4. Generate dynamic document.xml using placeholder replacements
-        xml_content = ImporterExporter.get_document_xml_template()
+        xml_content = ImporterExporter.get_document_xml_template(lang)
         
         # Replace the hardcoded overview map blip relationship ID with the one discovered from the template
         xml_content = xml_content.replace('<a:blip r:embed="rId6"', f'<a:blip r:embed="{overview_rid}"')
@@ -1034,28 +1086,52 @@ class ImporterExporter:
             
         # Format custom parameter block values
         h_fg_val = params.get("maxFlightHeight", 100.0)
-        h_fg_str = f"{float(h_fg_val):.1f}".replace('.', ',') + " m"
-        
-        if params.get("lateralContingencyManoeuvreType") == "Default":
-            lat_man_text = "180° Kurve" if "fixed" in uas_type_str.lower() or "flächen" in uas_type_str.lower() else "Anhalten"
-        else:
-            lat_man_text = "Auslösen des Fallschirms"
+        if is_en:
+            h_fg_str = f"{float(h_fg_val):.1f} m"
             
-        if params.get("verticalContingencyManoeuvreType") == "Default":
-            vert_man_text = "Übergang in den Sinkflug"
+            if params.get("lateralContingencyManoeuvreType") == "Default":
+                lat_man_text = "180° Turn" if is_fixed_wing else "Hover"
+            else:
+                lat_man_text = "Parachute Deployment"
+                
+            if params.get("verticalContingencyManoeuvreType") == "Default":
+                vert_man_text = "Transition to Descent"
+            else:
+                vert_man_text = "Parachute Deployment"
+                
+            if grb_method == "Simplified":
+                grb_man_text = "1:1 Rule"
+            elif grb_method == "Ballistic":
+                grb_man_text = "Ballistic Case"
+            elif grb_method == "Glide":
+                grb_man_text = "Glide Flight"
+            elif grb_method == "Parachute":
+                grb_man_text = "Parachute Deployment"
+            else:
+                grb_man_text = str(grb_method)
         else:
-            vert_man_text = "Auslösen des Fallschirms"
+            h_fg_str = f"{float(h_fg_val):.1f}".replace('.', ',') + " m"
             
-        if grb_method == "Simplified":
-            grb_man_text = "1:1 Regel"
-        elif grb_method == "Ballistic":
-            grb_man_text = "ballistischer Fall"
-        elif grb_method == "Glide":
-            grb_man_text = "Gleitflug"
-        elif grb_method == "Parachute":
-            grb_man_text = "Auslösen des Fallschirms"
-        else:
-            grb_man_text = str(grb_method)
+            if params.get("lateralContingencyManoeuvreType") == "Default":
+                lat_man_text = "180° Kurve" if is_fixed_wing else "Anhalten"
+            else:
+                lat_man_text = "Auslösen des Fallschirms"
+                
+            if params.get("verticalContingencyManoeuvreType") == "Default":
+                vert_man_text = "Übergang in den Sinkflug"
+            else:
+                vert_man_text = "Auslösen des Fallschirms"
+                
+            if grb_method == "Simplified":
+                grb_man_text = "1:1 Regel"
+            elif grb_method == "Ballistic":
+                grb_man_text = "ballistischer Fall"
+            elif grb_method == "Glide":
+                grb_man_text = "Gleitflug"
+            elif grb_method == "Parachute":
+                grb_man_text = "Auslösen des Fallschirms"
+            else:
+                grb_man_text = str(grb_method)
             
         # Get aspect ratios and replace main map placeholders
         main_cx, main_cy = 5715000, 4000000
@@ -1106,16 +1182,28 @@ class ImporterExporter:
         
         # Build and replace __POPULATION_ANALYSIS_XML__
         pop_xml = []
-        pop_xml.append('  <w:p>')
-        pop_xml.append('    <w:pPr>')
-        pop_xml.append('      <w:pStyle w:val="berschrift3"/>')
-        pop_xml.append('      <w:spacing w:before="400" w:after="100"/>')
-        pop_xml.append('    </w:pPr>')
-        pop_xml.append('    <w:r><w:t xml:space="preserve">Bevölkerungsdichte- und Bodenrisikobewertung</w:t></w:r>')
-        pop_xml.append('  </w:p>')
-        pop_xml.append('  <w:p>')
-        pop_xml.append('    <w:r><w:t xml:space="preserve">Die Analyse der Bevölkerungsdichte in den Sicherheitszonen (Adjacent Area und Ground Risk Buffer) wurde auf Basis der geladenen GHS-POP Rasterdaten durchgeführt. Dies dient zur Bewertung der Betriebsrisiken und zur GRC-Verifizierung gemäss den SORA-Richtlinien:</w:t></w:r>')
-        pop_xml.append('  </w:p>')
+        if is_en:
+            pop_xml.append('  <w:p>')
+            pop_xml.append('    <w:pPr>')
+            pop_xml.append('      <w:pStyle w:val="berschrift3"/>')
+            pop_xml.append('      <w:spacing w:before="400" w:after="100"/>')
+            pop_xml.append('    </w:pPr>')
+            pop_xml.append('    <w:r><w:t xml:space="preserve">Population Density and Ground Risk Assessment</w:t></w:r>')
+            pop_xml.append('  </w:p>')
+            pop_xml.append('  <w:p>')
+            pop_xml.append('    <w:r><w:t xml:space="preserve">The analysis of the population density in the safety zones (Adjacent Area and Ground Risk Buffer) was performed based on the loaded GHS-POP raster data. This serves to evaluate operating risks and verify GRC according to SORA guidelines:</w:t></w:r>')
+            pop_xml.append('  </w:p>')
+        else:
+            pop_xml.append('  <w:p>')
+            pop_xml.append('    <w:pPr>')
+            pop_xml.append('      <w:pStyle w:val="berschrift3"/>')
+            pop_xml.append('      <w:spacing w:before="400" w:after="100"/>')
+            pop_xml.append('    </w:pPr>')
+            pop_xml.append('    <w:r><w:t xml:space="preserve">Bevölkerungsdichte- und Bodenrisikobewertung</w:t></w:r>')
+            pop_xml.append('  </w:p>')
+            pop_xml.append('  <w:p>')
+            pop_xml.append('    <w:r><w:t xml:space="preserve">Die Analyse der Bevölkerungsdichte in den Sicherheitszonen (Adjacent Area und Ground Risk Buffer) wurde auf Basis der geladenen GHS-POP Rasterdaten durchgeführt. Dies dient zur Bewertung der Betriebsrisiken und zur GRC-Verifizierung gemäss den SORA-Richtlinien:</w:t></w:r>')
+            pop_xml.append('  </w:p>')
         
         # Check if Adjacent Area population analysis was run
         aa_area = params.get("aa_area_km2")
@@ -1134,42 +1222,74 @@ class ImporterExporter:
         if aa_area is not None or grb_area is not None:
             if aa_area is not None:
                 has_any_pop = True
-                pop_xml.append('  <w:p>')
-                pop_xml.append('    <w:pPr><w:jc w:val="left"/></w:pPr>')
-                pop_xml.append('    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">1. Bevölkerungsdichte in der Adjacent Area (AA):</w:t></w:r>')
-                pop_xml.append('  </w:p>')
-                
-                headers_aa = ["Parameter in der Adjacent Area (AA)", "Wert"]
-                rows_aa = [
-                    ["AA - Gesamtfläche", f"{float(aa_area):.3f} km²".replace('.', ',')],
-                    ["AA - Anzahl Personen (Summe)", f"{int(round(float(aa_pop))):,}".replace(',', '.') + " Personen"],
-                    ["AA - Durchschnittliche Bevölkerungsdichte", f"{float(aa_dens):.2f}".replace('.', ',') + " Einwohner / km²"]
-                ]
+                if is_en:
+                    pop_xml.append('  <w:p>')
+                    pop_xml.append('    <w:pPr><w:jc w:val="left"/></w:pPr>')
+                    pop_xml.append('    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">1. Population Density in the Adjacent Area (AA):</w:t></w:r>')
+                    pop_xml.append('  </w:p>')
+                    
+                    headers_aa = ["Parameter in the Adjacent Area (AA)", "Value"]
+                    rows_aa = [
+                        ["AA - Total Area", f"{float(aa_area):.3f} km²"],
+                        ["AA - Total Number of People", f"{int(round(float(aa_pop))):,}" + " People"],
+                        ["AA - Average Population Density", f"{float(aa_dens):.2f}" + " People / km²"]
+                    ]
+                else:
+                    pop_xml.append('  <w:p>')
+                    pop_xml.append('    <w:pPr><w:jc w:val="left"/></w:pPr>')
+                    pop_xml.append('    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">1. Bevölkerungsdichte in der Adjacent Area (AA):</w:t></w:r>')
+                    pop_xml.append('  </w:p>')
+                    
+                    headers_aa = ["Parameter in der Adjacent Area (AA)", "Wert"]
+                    rows_aa = [
+                        ["AA - Gesamtfläche", f"{float(aa_area):.3f} km²".replace('.', ',')],
+                        ["AA - Anzahl Personen (Summe)", f"{int(round(float(aa_pop))):,}".replace(',', '.') + " Personen"],
+                        ["AA - Durchschnittliche Bevölkerungsdichte", f"{float(aa_dens):.2f}".replace('.', ',') + " Einwohner / km²"]
+                    ]
                 pop_xml.append(ImporterExporter.make_docx_table(headers_aa, rows_aa))
                 pop_xml.append('  <w:p><w:spacing w:before="200"/></w:p>')
                 
             if grb_area is not None:
                 has_any_pop = True
-                pop_xml.append('  <w:p>')
-                pop_xml.append('    <w:pPr><w:jc w:val="left"/></w:pPr>')
-                pop_xml.append('    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">2. Bevölkerungsdichte im Ground Risk Buffer (GRB):</w:t></w:r>')
-                pop_xml.append('  </w:p>')
-                
-                headers_grb = ["Parameter im Ground Risk Buffer (GRB)", "Wert"]
-                raw_str = f"{float(grb_max_raw):.6f}".replace('.', ',') if grb_max_raw is not None else "0"
-                rows_grb = [
-                    ["GRB - Gesamtfläche", f"{float(grb_area):.3f} km²".replace('.', ',')],
-                    ["GRB - Anzahl Personen (Summe)", f"{int(round(float(grb_pop))):,}".replace(',', '.') + " Personen"],
-                    ["GRB - Durchschnittliche Bevölkerungsdichte", f"{float(grb_avg_dens):.2f}".replace('.', ',') + " Einwohner / km²"],
-                    ["GRB - Maximalwert der Bevölkerungsdichte (Konservativer EASA-Ansatz)", f"{float(grb_max_dens):.2f}".replace('.', ',') + " Einwohner / km²"],
-                    ["GRB - Rohwert der maximalen Bevölkerungsdichte", f"{raw_str} Personen/Zelle"]
-                ]
+                if is_en:
+                    pop_xml.append('  <w:p>')
+                    pop_xml.append('    <w:pPr><w:jc w:val="left"/></w:pPr>')
+                    pop_xml.append('    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">2. Population Density in the Ground Risk Buffer (GRB):</w:t></w:r>')
+                    pop_xml.append('  </w:p>')
+                    
+                    headers_grb = ["Parameter in the Ground Risk Buffer (GRB)", "Value"]
+                    raw_str = f"{float(grb_max_raw):.6f}" if grb_max_raw is not None else "0"
+                    rows_grb = [
+                        ["GRB - Total Area", f"{float(grb_area):.3f} km²"],
+                        ["GRB - Total Number of People", f"{int(round(float(grb_pop))):,}" + " People"],
+                        ["GRB - Average Population Density", f"{float(grb_avg_dens):.2f}" + " People / km²"],
+                        ["GRB - Maximum Population Density (Conservative EASA Approach)", f"{float(grb_max_dens):.2f}" + " People / km²"],
+                        ["GRB - Raw Maximum Population Density Value", f"{raw_str} People/Cell"]
+                    ]
+                else:
+                    pop_xml.append('  <w:p>')
+                    pop_xml.append('    <w:pPr><w:jc w:val="left"/></w:pPr>')
+                    pop_xml.append('    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">2. Bevölkerungsdichte im Ground Risk Buffer (GRB):</w:t></w:r>')
+                    pop_xml.append('  </w:p>')
+                    
+                    headers_grb = ["Parameter im Ground Risk Buffer (GRB)", "Wert"]
+                    raw_str = f"{float(grb_max_raw):.6f}".replace('.', ',') if grb_max_raw is not None else "0"
+                    rows_grb = [
+                        ["GRB - Gesamtfläche", f"{float(grb_area):.3f} km²".replace('.', ',')],
+                        ["GRB - Anzahl Personen (Summe)", f"{int(round(float(grb_pop))):,}".replace(',', '.') + " Personen"],
+                        ["GRB - Durchschnittliche Bevölkerungsdichte", f"{float(grb_avg_dens):.2f}".replace('.', ',') + " Einwohner / km²"],
+                        ["GRB - Maximalwert der Bevölkerungsdichte (Konservativer EASA-Ansatz)", f"{float(grb_max_dens):.2f}".replace('.', ',') + " Einwohner / km²"],
+                        ["GRB - Rohwert der maximalen Bevölkerungsdichte", f"{raw_str} Personen/Zelle"]
+                    ]
                 pop_xml.append(ImporterExporter.make_docx_table(headers_grb, rows_grb))
                 pop_xml.append('  <w:p><w:spacing w:before="200"/></w:p>')
         
         if not has_any_pop:
             pop_xml.append('  <w:p>')
-            pop_xml.append('    <w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">Für diese Planung wurde vor dem Export keine Bevölkerungsdichte-Analyse für die Adjacent Area (AA) oder den Ground Risk Buffer (GRB) berechnet. Wenn Sie diesen Abschnitt brauchen, dann führen Sie die Berechnung im Plugin vor dem Export mindestens einmal durch.</w:t></w:r>')
+            if is_en:
+                pop_xml.append('    <w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">No population density analysis was calculated for the Adjacent Area (AA) or the Ground Risk Buffer (GRB) before export. If you need this section, please run the calculation in the plugin at least once before exporting.</w:t></w:r>')
+            else:
+                pop_xml.append('    <w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">Für diese Planung wurde vor dem Export keine Bevölkerungsdichte-Analyse für die Adjacent Area (AA) oder den Ground Risk Buffer (GRB) berechnet. Wenn Sie diesen Abschnitt brauchen, dann führen Sie die Berechnung im Plugin vor dem Export mindestens einmal durch.</w:t></w:r>')
             pop_xml.append('  </w:p>')
             
         pop_analysis_xml_str = "\n".join(pop_xml)
@@ -1179,7 +1299,102 @@ class ImporterExporter:
         
         # Build Detail Maps XML
         if start_image_path and end_image_path and len(waypoints) >= 2:
-            detail_xml = """  <w:p>
+            if is_en:
+                detail_xml = """  <w:p>
+    <w:pPr><w:pStyle w:val="berschrift3"/><w:spacing w:before="300" w:after="100"/></w:pPr>
+    <w:r><w:t xml:space="preserve">Detail Views of Takeoff and Landing Area (approx. 500x500m)</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:r><w:t xml:space="preserve">For detailed safety assessment, the high-resolution views of the takeoff and landing areas (each approx. 500 x 500 m) are shown below:</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:jc w:val="center"/></w:pPr>
+    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">View of Takeoff Area (Takeoff / WP 1):</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:jc w:val="center"/></w:pPr>
+    <w:r>
+      <w:drawing>
+        <wp:inline distT="0" distB="0" distL="0" distR="0">
+          <wp:extent cx="__START_MAP_CX__" cy="__START_MAP_CY__"/>
+          <wp:effectExtent t="0" r="0" b="0" l="0"/>
+          <wp:docPr id="2" name="Start_Map" descr="QGIS Map Start Area"/>
+          <wp:cNvGraphicFramePr>
+            <a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
+          </wp:cNvGraphicFramePr>
+          <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+            <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+              <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                <pic:nvPicPr>
+                  <pic:cNvPr id="0" name="" descr=""/>
+                  <pic:cNvPicPr>
+                    <a:picLocks noChangeAspect="1" noChangeArrowheads="1"/>
+                  </pic:cNvPicPr>
+                </pic:nvPicPr>
+                <pic:blipFill>
+                  <a:blip r:embed="__START_RID__" cstate="none"/>
+                  <a:srcRect/>
+                  <a:stretch><a:fillRect/></a:stretch>
+                </pic:blipFill>
+                <pic:spPr bwMode="auto">
+                  <a:xfrm>
+                    <a:off x="0" y="0"/>
+                    <a:ext cx="__START_MAP_CX__" cy="__START_MAP_CY__"/>
+                  </a:xfrm>
+                  <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+                </pic:spPr>
+              </pic:pic>
+            </a:graphicData>
+          </a:graphic>
+        </wp:inline>
+      </w:drawing>
+    </w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:jc w:val="center"/><w:spacing w:before="200"/></w:pPr>
+    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">View of Landing Area (Landing / WP __LAST_WP_NUM__):</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:jc w:val="center"/></w:pPr>
+    <w:r>
+      <w:drawing>
+        <wp:inline distT="0" distB="0" distL="0" distR="0">
+          <wp:extent cx="__END_MAP_CX__" cy="__END_MAP_CY__"/>
+          <wp:effectExtent t="0" r="0" b="0" l="0"/>
+          <wp:docPr id="3" name="End_Map" descr="QGIS Map Landing Area"/>
+          <wp:cNvGraphicFramePr>
+            <a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
+          </wp:cNvGraphicFramePr>
+          <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+            <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+              <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                <pic:nvPicPr>
+                  <pic:cNvPr id="0" name="" descr=""/>
+                  <pic:cNvPicPr>
+                    <a:picLocks noChangeAspect="1" noChangeArrowheads="1"/>
+                  </pic:cNvPicPr>
+                </pic:nvPicPr>
+                <pic:blipFill>
+                  <a:blip r:embed="__END_RID__" cstate="none"/>
+                  <a:srcRect/>
+                  <a:stretch><a:fillRect/></a:stretch>
+                </pic:blipFill>
+                <pic:spPr bwMode="auto">
+                  <a:xfrm>
+                    <a:off x="0" y="0"/>
+                    <a:ext cx="__END_MAP_CX__" cy="__END_MAP_CY__"/>
+                  </a:xfrm>
+                  <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+                </pic:spPr>
+              </pic:pic>
+            </a:graphicData>
+          </a:graphic>
+        </wp:inline>
+      </w:drawing>
+    </w:r>
+  </w:p>"""
+            else:
+                detail_xml = """  <w:p>
     <w:pPr><w:pStyle w:val="berschrift3"/><w:spacing w:before="300" w:after="100"/></w:pPr>
     <w:r><w:t xml:space="preserve">Detailausschnitte Start- und Landebereich (ca. 500x500m)</w:t></w:r>
   </w:p>
@@ -1299,7 +1514,55 @@ class ImporterExporter:
             
         # Build Sora visual widget XML
         if sora_viz_image_path and os.path.exists(sora_viz_image_path):
-            sora_xml = """  <w:p>
+            if is_en:
+                sora_xml = """  <w:p>
+    <w:pPr><w:pStyle w:val="berschrift3"/><w:spacing w:before="300" w:after="100"/></w:pPr>
+    <w:r><w:t xml:space="preserve">Graphical Profile of Safety Volumes</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:r><w:t xml:space="preserve">The following graphic schematically illustrates the geometric nesting and height relations of the calculated safety volumes (Flight Geography, Contingency Volume, and Ground Risk Buffer) in plan view and vertical profile:</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:jc w:val="center"/></w:pPr>
+    <w:r>
+      <w:drawing>
+        <wp:inline distT="0" distB="0" distL="0" distR="0">
+          <wp:extent cx="__SORA_VIZ_CX__" cy="__SORA_VIZ_CY__"/>
+          <wp:effectExtent t="0" r="0" b="0" l="0"/>
+          <wp:docPr id="4" name="Sora_Viz" descr="SORA Volume Profile Visualization"/>
+          <wp:cNvGraphicFramePr>
+            <a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
+          </wp:cNvGraphicFramePr>
+          <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+            <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+              <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                <pic:nvPicPr>
+                  <pic:cNvPr id="0" name="" descr=""/>
+                  <pic:cNvPicPr>
+                    <a:picLocks noChangeAspect="1" noChangeArrowheads="1"/>
+                  </pic:cNvPicPr>
+                </pic:nvPicPr>
+                <pic:blipFill>
+                  <a:blip r:embed="__SORA_RID__" cstate="none"/>
+                  <a:srcRect/>
+                  <a:stretch><a:fillRect/></a:stretch>
+                </pic:blipFill>
+                <pic:spPr bwMode="auto">
+                  <a:xfrm>
+                    <a:off x="0" y="0"/>
+                    <a:ext cx="__SORA_VIZ_CX__" cy="__SORA_VIZ_CY__"/>
+                  </a:xfrm>
+                  <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+                </pic:spPr>
+              </pic:pic>
+            </a:graphicData>
+          </a:graphic>
+        </wp:inline>
+      </w:drawing>
+    </w:r>
+  </w:p>"""
+            else:
+                sora_xml = """  <w:p>
     <w:pPr><w:pStyle w:val="berschrift3"/><w:spacing w:before="300" w:after="100"/></w:pPr>
     <w:r><w:t xml:space="preserve">Grafisches Profil der Sicherheitsvolumina</w:t></w:r>
   </w:p>

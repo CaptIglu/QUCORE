@@ -281,7 +281,7 @@
   },
   "label_stall": {
     "de": "Überziehgeschwindigkeit (stallVelocity)",
-    "en": "Stall Velocity (stallVelocity)"
+    "en": "Stall Speed (stallVelocity)"
   },
   "label_gps_inacc": {
     "de": "GPS Ungenauigkeit (SGPS)",
@@ -369,7 +369,7 @@
   },
   "label_wind": {
     "de": "Max. zulässige Windgeschwindigkeit",
-    "en": "Max. Allowable Wind Velocity"
+    "en": "Max. allowed Wind Speed"
   },
   "label_descent": {
     "de": "Fallschirm Sinkgeschwindigkeit (vZ)",

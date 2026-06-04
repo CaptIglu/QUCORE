@@ -7,8 +7,9 @@ temp_eval.xlsx export-ignore
 *.xlsx export-ignore
 *.pdf export-ignore
 *.docx export-ignore
-# Keep the report template for the plugin SORA export
-report_template.docx -export-ignore
+# Keep the report templates for the plugin SORA export
+report_template_de.docx -export-ignore
+report_template_en.docx -export-ignore
 *.flightplan export-ignore
 *.kml export-ignore
 *.geojson export-ignore

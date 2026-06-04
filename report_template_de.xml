@@ -120,7 +120,7 @@
   </w:p>
   <w:p>
     <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Höhe Fluggebiet H_FG: __H_FG__</w:t></w:r>
+    <w:r><w:t xml:space="preserve">Höhe Fluggeografie (Details siehe Tabelle) H_FG: __H_FG__</w:t></w:r>
   </w:p>
   <w:p>
     <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
@@ -132,7 +132,7 @@
   </w:p>
   <w:p>
     <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Ground risk buffer manoeuver: __GRB_MAN_TEXT__</w:t></w:r>
+    <w:r><w:t xml:space="preserve">Ground risk buffer Manöver: __GRB_MAN_TEXT__</w:t></w:r>
   </w:p>
   <w:p>
     <w:pPr><w:spacing w:before="400"/></w:pPr>
@@ -227,15 +227,15 @@
   </w:p>
   <w:p>
     <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Flight Geography (Halbbreite): __FG_RANGE__</w:t></w:r>
+    <w:r><w:t xml:space="preserve">Flight Geography (Gesamte Breite S_FG): __FG_RANGE__</w:t></w:r>
   </w:p>
   <w:p>
     <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Contingency Volume (Gesamt-Halbbreite): __CV_RANGE__</w:t></w:r>
+    <w:r><w:t xml:space="preserve">Contingency Volume (Radius S_CV+S_FG/2): __CV_RANGE__</w:t></w:r>
   </w:p>
   <w:p>
     <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Ground Risk Buffer (Gesamt-Halbbreite): __GRB_RANGE__</w:t></w:r>
+    <w:r><w:t xml:space="preserve">Ground Risk Buffer (Radius S_GRB+S_CV+S_FG/2): __GRB_RANGE__</w:t></w:r>
   </w:p>
   <w:p>
     <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
