@@ -368,6 +368,7 @@ class ParameterDialog(QDialog):
         self.spin_corridor_width.setRange(1.0, 5000.0)
         self.spin_corridor_width.setValue(self.params["corridorWidth"])
         self.spin_corridor_width.setSuffix(" m")
+        self.spin_corridor_width.setSingleStep(5.0)
         gen_layout.addRow(f"{self.tr('label_corridor_width', 'Standard Flight Geography Breite (W_FG)')} ({default_label}: {w_fg_def:.1f} m):", self.spin_corridor_width)
         
         self.chk_override_w = QCheckBox(self.tr("chk_override_w", "Individuelle Wegpunktbreiten überschreiben"))
@@ -385,6 +386,7 @@ class ParameterDialog(QDialog):
         self.spin_default_h.setRange(0.0, 2000.0)
         self.spin_default_h.setValue(self.params["maxFlightHeight"])
         self.spin_default_h.setSuffix(" m")
+        self.spin_default_h.setSingleStep(5.0)
         gen_layout.addRow(f"{self.tr('label_default_height', 'Standard Flughöhe (h)')} ({default_label}: {h_fg_def:.1f} m):", self.spin_default_h)
         
         self.chk_override_h = QCheckBox(self.tr("chk_override_h", "Individuelle Wegpunkthöhen überschreiben"))
