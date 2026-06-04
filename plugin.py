@@ -1826,8 +1826,12 @@ class DroneCorridorPlanner(object):
                 self.cmb_geom_type.setCurrentIndex(types.index(self.geometry_type))
                 self.cmb_geom_type.blockSignals(False)
                 
-        self.rebuild_and_calculate()
-        self.update_pilot_layer()
+        self.is_loading = True
+        try:
+            self.rebuild_and_calculate()
+            self.update_pilot_layer()
+        finally:
+            self.is_loading = False
 
     def transform_to_wgs84(self, point_canvas):
         """
@@ -1893,10 +1897,28 @@ class DroneCorridorPlanner(object):
     # ----------------------------------------------------
     # BERECHNUNG & LAYER REBUILDS
     # ----------------------------------------------------
+    def clear_population_density_results(self):
+        """
+        Clears previous session or run's population density and ground risk calculations.
+        This is critical to prevent outdated analysis from being exported in the docx report
+        after a route or its buffer geometry changes.
+        """
+        keys_to_clear = [
+            "aa_area_km2", "aa_population", "aa_density",
+            "grb_area_km2", "grb_population", "grb_avg_density",
+            "grb_max_density", "grb_max_raw_value"
+        ]
+        for key in keys_to_clear:
+            if key in self.params:
+                del self.params[key]
+
     def rebuild_and_calculate(self, force_restyle=False):
         """
         Rebuilds waypoints, route, and buffer layers and re-runs the safety calculations.
         """
+        if not getattr(self, 'is_loading', False):
+            self.clear_population_density_results()
+            
         self.initialize_layers(force_restyle=force_restyle)
         
         # Lock geometry type dropdown as soon as waypoints are added

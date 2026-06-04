@@ -21,6 +21,7 @@ class RealMockQgsPointXY:
 qgis_core_mock.QgsPointXY = RealMockQgsPointXY
 sys.modules['qgis'] = qgis_mock
 sys.modules['qgis.core'] = qgis_core_mock
+sys.modules['qgis.gui'] = MagicMock()
 
 # Mock PyQt5 modules with simple mock types so subclasses execute normal python initialization
 qt_widgets = types.ModuleType("QtWidgets")
@@ -83,6 +84,15 @@ class MockQMessageBox(MockQWidget):
     Ok = 1
     Cancel = 2
 qt_widgets.QMessageBox = MockQMessageBox
+qt_widgets.QAction = MockQWidget
+qt_widgets.QFileDialog = MockQWidget
+qt_widgets.QInputDialog = MockQWidget
+qt_widgets.QStyle = MockQWidget
+qt_widgets.QGridLayout = MockQWidget
+qt_widgets.QSpinBox = MockQWidget
+qt_widgets.QTreeWidget = MockQWidget
+qt_widgets.QTreeWidgetItem = MagicMock
+qt_widgets.QColorDialog = MockQWidget
 
 sys.modules['PyQt5.QtWidgets'] = qt_widgets
 
@@ -97,12 +107,16 @@ qt_gui.QBrush = DummyClass
 qt_gui.QFont = DummyClass
 qt_gui.QPolygonF = DummyClass
 qt_gui.QPainterPath = DummyClass
+qt_gui.QIcon = DummyClass
+qt_gui.QDesktopServices = DummyClass
 sys.modules['PyQt5.QtGui'] = qt_gui
 
 qt_core = types.ModuleType("QtCore")
 qt_core.Qt = MagicMock()
 qt_core.QRectF = DummyClass
 qt_core.QPointF = DummyClass
+qt_core.QVariant = DummyClass
+qt_core.QUrl = DummyClass
 sys.modules['PyQt5.QtCore'] = qt_core
 
 
@@ -653,6 +667,40 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         self.assertTrue(callback_mock.called)
         last_call_args = callback_mock.call_args[0][0]
         self.assertEqual(last_call_args["corridorWidth"], 125.0)
+
+    def test_clear_population_density_results(self):
+        """
+        Verify that clear_population_density_results correctly removes population calculation
+        parameters but preserves other plugin settings.
+        """
+        from QUCORE.plugin import DroneCorridorPlanner
+        
+        # Mock class to avoid executing full constructor
+        class MockPlanner(DroneCorridorPlanner):
+            def __init__(self):
+                self.params = {
+                    "aa_area_km2": 10.0,
+                    "aa_population": 500,
+                    "aa_density": 50.0,
+                    "grb_area_km2": 2.0,
+                    "grb_population": 100,
+                    "grb_avg_density": 50.0,
+                    "grb_max_density": 80.0,
+                    "grb_max_raw_value": 0.25,
+                    "maxFlightHeight": 120.0  # Unrelated setting
+                }
+                
+        planner = MockPlanner()
+        planner.clear_population_density_results()
+        
+        # All population density/ground risk results should be cleared
+        for key in ["aa_area_km2", "aa_population", "aa_density", 
+                    "grb_area_km2", "grb_population", "grb_avg_density", 
+                    "grb_max_density", "grb_max_raw_value"]:
+            self.assertNotIn(key, planner.params)
+            
+        # Other settings must be preserved
+        self.assertEqual(planner.params.get("maxFlightHeight"), 120.0)
 
 if __name__ == "__main__":
     unittest.main()
