@@ -76,7 +76,7 @@ class SoraVolumeWidget(QWidget):
             val_str = val_str.replace(".", sep)
             return f"{val_str} {unit}"
             
-        self.r_fg_str = fmt_range(r_fg_list)
+        self.r_fg_str = fmt_range([2.0 * x for x in r_fg_list])
         self.s_cv_str = fmt_range(s_cv_list)
         self.s_grb_str = fmt_range(s_grb_list)
         self.h_fg_str = fmt_range(h_fg_list)
@@ -84,6 +84,24 @@ class SoraVolumeWidget(QWidget):
         
         self.has_data = True
         self.update()
+
+    def draw_horizontal_arrow(self, painter, x1, x2, y, arrow_size=4):
+        painter.drawLine(int(x1), int(y), int(x2), int(y))
+        # Left arrowhead
+        painter.drawLine(int(x1), int(y), int(x1 + arrow_size), int(y - arrow_size))
+        painter.drawLine(int(x1), int(y), int(x1 + arrow_size), int(y + arrow_size))
+        # Right arrowhead
+        painter.drawLine(int(x2), int(y), int(x2 - arrow_size), int(y - arrow_size))
+        painter.drawLine(int(x2), int(y), int(x2 - arrow_size), int(y + arrow_size))
+
+    def draw_vertical_arrow(self, painter, x, y1, y2, arrow_size=4):
+        painter.drawLine(int(x), int(y1), int(x), int(y2))
+        # Top arrowhead
+        painter.drawLine(int(x), int(y1), int(x - arrow_size), int(y1 + arrow_size))
+        painter.drawLine(int(x), int(y1), int(x + arrow_size), int(y1 + arrow_size))
+        # Bottom arrowhead
+        painter.drawLine(int(x), int(y2), int(x - arrow_size), int(y2 - arrow_size))
+        painter.drawLine(int(x), int(y2), int(x + arrow_size), int(y2 - arrow_size))
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -120,12 +138,16 @@ class SoraVolumeWidget(QWidget):
         color_cv = QColor(247, 219, 138)  # #F7DB8A (Contingency Volume)
         color_grb = QColor(209, 94, 124)  # #D15E7C (Ground Risk Buffer)
         
+        # Outlines and arrow pens matching reference
+        box_pen = QPen(QColor(80, 80, 80), 1)
+        arrow_pen = QPen(QColor(44, 44, 44), 1)
+        
         # =====================================================================
         # TOP BLOCK: HORIZONTAL BUFFER LAYERS (DIPUL SCHEMATIC - COMPACT)
         # =====================================================================
         # 1. Ground Risk Buffer ( raspberry pink ) - Outer bounding box (height 80.0)
         grb_rect = QRectF(10, 5, W - 20, 80.0)
-        painter.setPen(Qt.NoPen)
+        painter.setPen(box_pen)
         painter.setBrush(QBrush(color_grb))
         painter.drawRect(grb_rect)
         
@@ -140,11 +162,12 @@ class SoraVolumeWidget(QWidget):
         pad_y_bottom = 6.0
         
         cv_rect = QRectF(10 + pad_x, 5 + pad_y_top, W - 20 - 2 * pad_x, 51.0)
+        painter.setPen(box_pen)
         painter.setBrush(QBrush(color_cv))
         painter.drawRect(cv_rect)
         
-        # Label for CV
-        painter.drawText(QRectF(10 + pad_x + 8, 5 + pad_y_top + 4, W - 20 - 2 * pad_x - 16, 14), 
+        # Label for CV (shifted to the right to make space for the left-aligned arrow)
+        painter.drawText(QRectF(10 + pad_x + 24, 5 + pad_y_top + 4, W - 20 - 2 * pad_x - 32, 14), 
                          Qt.AlignLeft | Qt.AlignVCenter, f"S_CV = {self.s_cv_str}")
                          
         # 3. Flight Geography ( sage green ) - Sits nested inside CV (height 28.0)
@@ -153,6 +176,7 @@ class SoraVolumeWidget(QWidget):
         pad_y2_bottom = 5.0
         
         fg_rect = QRectF(10 + pad_x + pad_x2, 5 + pad_y_top + pad_y2_top, W - 20 - 2 * (pad_x + pad_x2), 28.0)
+        painter.setPen(box_pen)
         painter.setBrush(QBrush(color_fg))
         painter.drawRect(fg_rect)
         
@@ -160,6 +184,15 @@ class SoraVolumeWidget(QWidget):
         painter.drawText(QRectF(10 + pad_x + pad_x2 + 8, 5 + pad_y_top + pad_y2_top + 3, W - 20 - 2 * (pad_x + pad_x2) - 16, 14),
                          Qt.AlignLeft | Qt.AlignVCenter, f"S_FG = {self.r_fg_str}")
                          
+        # Draw horizontal dimension arrows for top section
+        painter.setPen(arrow_pen)
+        # S_GRB arrow (Left padding: from GRB left edge to CV left edge)
+        self.draw_horizontal_arrow(painter, 10, 10 + pad_x, 5 + pad_y_top + 25.5)
+        # S_CV arrow (Middle padding: from CV left edge to FG left edge)
+        self.draw_horizontal_arrow(painter, 10 + pad_x, 10 + pad_x + pad_x2, 5 + pad_y_top + pad_y2_top + 14.0)
+        # S_FG arrow (spanning full width of FG box near bottom)
+        self.draw_horizontal_arrow(painter, 10 + pad_x + pad_x2, W - 10 - pad_x - pad_x2, 5 + pad_y_top + pad_y2_top + 20.0)
+        
         # =====================================================================
         # DIVIDER TEXT: VERTIKAL (NICHT MASSSTÄBLICH)
         # =====================================================================
@@ -189,7 +222,7 @@ class SoraVolumeWidget(QWidget):
         cv_y_start = 101.0
         cv_rect_v = QRectF(10, cv_y_start, W - 20, cv_h_box)
         
-        painter.setPen(Qt.NoPen)
+        painter.setPen(box_pen)
         painter.setBrush(QBrush(color_cv))
         painter.drawRect(cv_rect_v)
         
@@ -201,6 +234,7 @@ class SoraVolumeWidget(QWidget):
         # 2. Flight Geography ( sage green ) - Sits nested and bottom-aligned inside CV
         # Starts exactly 20px below the top of CV
         fg_rect_v = QRectF(10 + pad_x, cv_y_start + 20.0, W - 20 - 2 * pad_x, fg_h_px)
+        painter.setPen(box_pen)
         painter.setBrush(QBrush(color_fg))
         painter.drawRect(fg_rect_v)
         
@@ -208,4 +242,11 @@ class SoraVolumeWidget(QWidget):
         painter.drawText(QRectF(10 + pad_x + 8, cv_y_start + 20.0 + 3, W - 20 - 2 * pad_x - 16, 14), 
                          Qt.AlignLeft | Qt.AlignVCenter, f"H_FG = {self.h_fg_str}")
                          
+        # Draw vertical dimension arrows for bottom section
+        painter.setPen(arrow_pen)
+        # H_FG vertical arrow (inside green box on the right side)
+        self.draw_vertical_arrow(painter, W - 10 - pad_x - 15.0, cv_y_start + 20.0, cv_y_start + 20.0 + fg_h_px)
+        # H_CV vertical arrow (outside green box on the far right padding of yellow box)
+        self.draw_vertical_arrow(painter, W - 21.0, cv_y_start, cv_y_start + cv_h_box)
+        
         painter.end()

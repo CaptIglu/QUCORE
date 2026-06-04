@@ -436,7 +436,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         self.assertEqual(widget.avg_s_grb, 30.0)
         self.assertEqual(widget.avg_h_fg, 100.0)
         self.assertEqual(widget.avg_h_cv, 120.0)
-        self.assertEqual(widget.r_fg_str, "50,0 m")
+        self.assertEqual(widget.r_fg_str, "100,0 m")
         self.assertEqual(widget.s_cv_str, "10,0 m")
         self.assertEqual(widget.s_grb_str, "30,0 m")
         self.assertEqual(widget.h_fg_str, "100,0 m")
@@ -444,7 +444,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         
         # Test range formatting (German locale comma decimal separator)
         widget.update_values([50.0, 100.0], [10.0, 20.0], [30.0, 45.0], [100.0, 100.0], [120.0, 150.0])
-        self.assertEqual(widget.r_fg_str, "50,0–100,0 m")
+        self.assertEqual(widget.r_fg_str, "100,0–200,0 m")
         self.assertEqual(widget.s_cv_str, "10,0–20,0 m")
         self.assertEqual(widget.s_grb_str, "30,0–45,0 m")
         self.assertEqual(widget.h_fg_str, "100,0 m")
