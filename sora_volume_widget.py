@@ -32,11 +32,12 @@ class SoraVolumeWidget(QWidget):
             return self.tr_fn(key, default)
         return default
 
-    def update_values(self, r_fg_list, s_cv_list, s_grb_list, h_fg_list, h_cv_list):
+    def update_values(self, r_fg_list, s_cv_list, s_grb_list, h_fg_list, h_cv_list, geometry_type="Corridor"):
         """
         Updates the values to be drawn. 
         Takes raw lists representing the parameters per waypoint.
         """
+        self.geometry_type = geometry_type
         if not r_fg_list or len(r_fg_list) == 0:
             self.avg_r_fg = 0.0
             self.avg_s_cv = 0.0
@@ -200,9 +201,11 @@ class SoraVolumeWidget(QWidget):
         painter.setBrush(QBrush(color_fg))
         painter.drawRect(fg_rect)
         
-        # Label for FG
-        painter.drawText(QRectF(10 + pad_x + pad_x2 + 8, 5 + pad_y_top + pad_y2_top + 3, W - 20 - 2 * (pad_x + pad_x2) - 16, 14),
-                         Qt.AlignLeft | Qt.AlignVCenter, f"S_FG = {self.r_fg_str}")
+        geom_type = getattr(self, "geometry_type", "Corridor")
+        if geom_type != "Polygon":
+            # Label for FG
+            painter.drawText(QRectF(10 + pad_x + pad_x2 + 8, 5 + pad_y_top + pad_y2_top + 3, W - 20 - 2 * (pad_x + pad_x2) - 16, 14),
+                             Qt.AlignLeft | Qt.AlignVCenter, f"S_FG = {self.r_fg_str}")
                          
         # Draw horizontal dimension arrows for top section
         painter.setPen(arrow_pen)
@@ -211,7 +214,8 @@ class SoraVolumeWidget(QWidget):
         # S_CV arrow (Middle padding: from CV left edge to FG left edge)
         self.draw_horizontal_arrow(painter, 10 + pad_x, 10 + pad_x + pad_x2, 5 + pad_y_top + pad_y2_top + 14.0)
         # S_FG arrow (spanning full width of FG box near bottom)
-        self.draw_horizontal_arrow(painter, 10 + pad_x + pad_x2, W - 10 - pad_x - pad_x2, 5 + pad_y_top + pad_y2_top + 20.0)
+        if geom_type != "Polygon":
+            self.draw_horizontal_arrow(painter, 10 + pad_x + pad_x2, W - 10 - pad_x - pad_x2, 5 + pad_y_top + pad_y2_top + 20.0)
         
         # =====================================================================
         # DIVIDER TEXT: VERTIKAL (NICHT MASSSTÄBLICH)

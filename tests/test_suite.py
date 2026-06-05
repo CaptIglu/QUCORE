@@ -723,6 +723,16 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         widget.setToolTip.assert_called()
         self.assertIn("AMC1", widget.setToolTip.call_args[0][0])
 
+    def test_volume_widget_polygon_mode(self):
+        """
+        Verify that SoraVolumeWidget stores geometry_type and handles Polygon mode correctly.
+        """
+        from QUCORE.sora_volume_widget import SoraVolumeWidget
+        
+        widget = SoraVolumeWidget(tr_fn=lambda key, d: d)
+        widget.update_values([10.0, 10.0], [12.0, 12.0], [8.0, 8.0], [100.0, 100.0], [120.0, 120.0], "Polygon")
+        self.assertEqual(widget.geometry_type, "Polygon")
+
     def test_parameter_dialog_cv_warnings(self):
         """
         Verify that ParameterDialog displays a warning banner if any calculated CV is < 10m.

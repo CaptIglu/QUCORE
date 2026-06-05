@@ -2147,7 +2147,7 @@ class DroneCorridorPlanner(object):
                 f"<i style='color:#999;'>{self.tr('results_no_data', 'Noch keine Wegpunkte gesetzt.')}</i>"
             )
             if hasattr(self, 'sora_viz'):
-                self.sora_viz.update_values([], [], [], [], [])
+                self.sora_viz.update_values([], [], [], [], [], self.geometry_type)
             return
         
         try:
@@ -2167,8 +2167,12 @@ class DroneCorridorPlanner(object):
                 fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
                 
                 params_wp = self.params.copy()
+                params_wp["geometry_type"] = self.geometry_type
                 params_wp["maxVelocity"] = spd
-                params_wp["corridorWidth"] = fg
+                if self.geometry_type == "Circle":
+                    params_wp["corridorWidth"] = 2.0 * fg
+                else:
+                    params_wp["corridorWidth"] = fg
                 
                 r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params_wp)
                 
@@ -2202,13 +2206,13 @@ class DroneCorridorPlanner(object):
             
             self.lbl_results.setText(html)
             if hasattr(self, 'sora_viz'):
-                self.sora_viz.update_values(r_fg_list, s_cv_list, s_grb_list, h_fg_list, h_cv_list)
+                self.sora_viz.update_values(r_fg_list, s_cv_list, s_grb_list, h_fg_list, h_cv_list, self.geometry_type)
         except Exception:
             self.lbl_results.setText(
                 f"<i style='color:#c00;'>{self.tr('results_error', 'Berechnungsfehler')}</i>"
             )
             if hasattr(self, 'sora_viz'):
-                self.sora_viz.update_values([], [], [], [], [])
+                self.sora_viz.update_values([], [], [], [], [], self.geometry_type)
 
     # ----------------------------------------------------
     # DIALOG ACTIONS

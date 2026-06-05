@@ -1033,9 +1033,13 @@ class ImporterExporter:
             
             # Recalculate
             params_wp = params.copy()
+            params_wp["geometry_type"] = geometry_type
             params_wp["maxFlightHeight"] = h
             params_wp["maxVelocity"] = spd
-            params_wp["corridorWidth"] = fg_w
+            if geometry_type == "Circle":
+                params_wp["corridorWidth"] = 2.0 * fg_w
+            else:
+                params_wp["corridorWidth"] = fg_w
             
             r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params_wp)
             s_cv = r_cv - r_fg
