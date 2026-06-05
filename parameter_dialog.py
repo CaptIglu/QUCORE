@@ -457,9 +457,15 @@ class ParameterDialog(QDialog):
         # ----------------------------------------------------
         # BUTTONS
         # ----------------------------------------------------
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel | QDialogButtonBox.RestoreDefaults)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
+        
+        btn_restore = button_box.button(QDialogButtonBox.RestoreDefaults)
+        if btn_restore:
+            btn_restore.clicked.connect(self.restore_defaults)
+            btn_restore.setText(self.tr("msg_restore_defaults_title", "Standardwerte wiederherstellen"))
+            
         main_layout.addWidget(button_box)
         
         # Connect combos to enable/disable widgets accordingly
@@ -516,6 +522,172 @@ class ParameterDialog(QDialog):
             self.spin_corridor_width.setValue(min_width)
             return
         super(ParameterDialog, self).accept()
+
+    def restore_defaults(self):
+        from PyQt5.QtWidgets import QMessageBox
+        title = self.tr("msg_restore_defaults_title", "Standardwerte wiederherstellen")
+        text = self.tr("msg_restore_defaults_text", "Möchten Sie wirklich alle Parameter auf die Standardwerte aus der config.json zurücksetzen?")
+        reply = QMessageBox.question(self, title, text, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            # Recreate baseline default parameter dictionary
+            baseline_defaults = {
+                "uas_type": "FixedWing",
+                "altimetry": "GPS",
+                "maxOpsSpeedV0": 30.0,
+                "maxCommandableSpeedVmax": 30.0,
+                "maxCharacteristicDimension": 3.6,
+                "maxRollAngle": 30.0,
+                "maxPitchAngle": 30.0,
+                "glideRatioDenominator": 10.0,
+                "maxWindVelocity": 3.0,
+                "stallVelocity": 10.0,
+                "gpsInaccuracy": 3.0,
+                "positionError": 3.0,
+                "mapError": 1.0,
+                "reactionTime": 1.0,
+                "altitudeErrorGps": 4.0,
+                "altitudeErrorBarometric": 1.0,
+                "corridorWidth": 50.0,
+                "maxFlightHeight": 100.0,
+                "groundRiskBufferMethod": "Simplified",
+                "lateralContingencyManoeuvreType": "Default",
+                "verticalContingencyManoeuvreType": "Default",
+                "parachuteOpeningTimeLateral": 2.0,
+                "parachuteOpeningTimeVertical": 2.0,
+                "parachuteOpeningTimeGRB": 2.0,
+                "parachuteDescentRate": 2.0,
+                "additionalErrorLateral": 0.0,
+                "additionalErrorVertical": 0.0
+            }
+            
+            # Apply config defaults to baseline params
+            defaults = baseline_defaults.copy()
+            if self.config_defaults:
+                defaults.update(self.config_defaults)
+                
+            # Block signals temporarily to prevent redundant calculations during reset
+            self.combo_uas_type.blockSignals(True)
+            self.combo_altimetry.blockSignals(True)
+            self.combo_lat_man.blockSignals(True)
+            self.combo_vert_man.blockSignals(True)
+            self.combo_grb_method.blockSignals(True)
+            
+            self.spin_v0.blockSignals(True)
+            self.spin_vmax.blockSignals(True)
+            self.spin_cd.blockSignals(True)
+            self.spin_stall.blockSignals(True)
+            
+            self.spin_gps_inacc.blockSignals(True)
+            self.spin_pos_err.blockSignals(True)
+            self.spin_map_err.blockSignals(True)
+            self.spin_t_rz.blockSignals(True)
+            self.spin_alt_gps.blockSignals(True)
+            self.spin_alt_baro.blockSignals(True)
+            self.spin_add_horiz.blockSignals(True)
+            self.spin_add_vert.blockSignals(True)
+            
+            self.spin_roll_angle.blockSignals(True)
+            self.spin_pitch_angle.blockSignals(True)
+            self.spin_para_lat.blockSignals(True)
+            self.spin_para_vert.blockSignals(True)
+            
+            self.spin_glide.blockSignals(True)
+            self.spin_para_grb.blockSignals(True)
+            self.spin_wind.blockSignals(True)
+            self.spin_descent.blockSignals(True)
+            
+            self.spin_corridor_width.blockSignals(True)
+            self.spin_default_h.blockSignals(True)
+            
+            try:
+                # Apply defaults
+                uas_type = defaults.get("uas_type", "FixedWing")
+                self.combo_uas_type.setCurrentIndex(1 if uas_type == "Multikopter" else 0)
+                
+                altimetry = defaults.get("altimetry", "GPS")
+                self.combo_altimetry.setCurrentIndex(1 if altimetry in ["Baro", "barometrisch"] else 0)
+                
+                lat_man = defaults.get("lateralContingencyManoeuvreType", "Default")
+                self.combo_lat_man.setCurrentIndex(1 if lat_man in ["Parachute", "Auslösen des Fallschirms"] else 0)
+                
+                vert_man = defaults.get("verticalContingencyManoeuvreType", "Default")
+                self.combo_vert_man.setCurrentIndex(1 if vert_man in ["Parachute", "Auslösen des Fallschirms"] else 0)
+                
+                grb_method = defaults.get("groundRiskBufferMethod", "Simplified")
+                m_map = {
+                    "Simplified": 0, "Vereinfachter Ansatz (1:1 Regel)": 0,
+                    "Ballistic": 1, "Ballistischer Ansatz": 1,
+                    "Glide": 2, "Antrieb wird ausgeschaltet mit Gleitflug": 2,
+                    "Parachute": 3, "Terminierung mit Auslösen des Fallschirms": 3
+                }
+                self.combo_grb_method.setCurrentIndex(m_map.get(grb_method, 0))
+                
+                self.spin_v0.setValue(defaults.get("maxOpsSpeedV0", 30.0))
+                self.spin_vmax.setValue(defaults.get("maxCommandableSpeedVmax", 30.0))
+                self.spin_cd.setValue(defaults.get("maxCharacteristicDimension", 3.6))
+                self.spin_stall.setValue(defaults.get("stallVelocity", 10.0))
+                
+                self.spin_gps_inacc.setValue(defaults.get("gpsInaccuracy", 3.0))
+                self.spin_pos_err.setValue(defaults.get("positionError", 3.0))
+                self.spin_map_err.setValue(defaults.get("mapError", 1.0))
+                self.spin_t_rz.setValue(defaults.get("reactionTime", 1.0))
+                self.spin_alt_gps.setValue(defaults.get("altitudeErrorGps", 4.0))
+                self.spin_alt_baro.setValue(defaults.get("altitudeErrorBarometric", 1.0))
+                self.spin_add_horiz.setValue(defaults.get("additionalErrorLateral", 0.0))
+                self.spin_add_vert.setValue(defaults.get("additionalErrorVertical", 0.0))
+                
+                self.spin_roll_angle.setValue(defaults.get("maxRollAngle", 30.0))
+                self.spin_pitch_angle.setValue(defaults.get("maxPitchAngle", 30.0))
+                self.spin_para_lat.setValue(defaults.get("parachuteOpeningTimeLateral", 2.0))
+                self.spin_para_vert.setValue(defaults.get("parachuteOpeningTimeVertical", 2.0))
+                
+                self.spin_glide.setValue(defaults.get("glideRatioDenominator", 10.0))
+                self.spin_para_grb.setValue(defaults.get("parachuteOpeningTimeGRB", 2.0))
+                self.spin_wind.setValue(defaults.get("maxWindVelocity", 3.0))
+                self.spin_descent.setValue(defaults.get("parachuteDescentRate", 2.0))
+                
+                self.spin_corridor_width.setValue(defaults.get("corridorWidth", 50.0))
+                self.spin_default_h.setValue(defaults.get("maxFlightHeight", 100.0))
+            finally:
+                # Unblock signals
+                self.combo_uas_type.blockSignals(False)
+                self.combo_altimetry.blockSignals(False)
+                self.combo_lat_man.blockSignals(False)
+                self.combo_vert_man.blockSignals(False)
+                self.combo_grb_method.blockSignals(False)
+                
+                self.spin_v0.blockSignals(False)
+                self.spin_vmax.blockSignals(False)
+                self.spin_cd.blockSignals(False)
+                self.spin_stall.blockSignals(False)
+                
+                self.spin_gps_inacc.blockSignals(False)
+                self.spin_pos_err.blockSignals(False)
+                self.spin_map_err.blockSignals(False)
+                self.spin_t_rz.blockSignals(False)
+                self.spin_alt_gps.blockSignals(False)
+                self.spin_alt_baro.blockSignals(False)
+                self.spin_add_horiz.blockSignals(False)
+                self.spin_add_vert.blockSignals(False)
+                
+                self.spin_roll_angle.blockSignals(False)
+                self.spin_pitch_angle.blockSignals(False)
+                self.spin_para_lat.blockSignals(False)
+                self.spin_para_vert.blockSignals(False)
+                
+                self.spin_glide.blockSignals(False)
+                self.spin_para_grb.blockSignals(False)
+                self.spin_wind.blockSignals(False)
+                self.spin_descent.blockSignals(False)
+                
+                self.spin_corridor_width.blockSignals(False)
+                self.spin_default_h.blockSignals(False)
+                
+            # Trigger updates
+            self.on_uas_changed()
+            self.on_grb_changed()
+            self.on_vert_man_changed()
+            self.on_value_changed()
 
     def on_uas_changed(self):
         self.on_lat_man_changed()

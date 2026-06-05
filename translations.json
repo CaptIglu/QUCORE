@@ -1126,5 +1126,13 @@
   "msg_cv_warning_banner": {
     "de": "⚠️ <b>Hinweis zum Contingency Volume (CV):</b><br>In mindestens einem Abschnitt beträgt die berechnete Pufferbreite (s_cv) weniger als 10,0 m. Nach EASA SORA (AMC1 zu Artikel 11) wird eine Mindestbreite von 10 Metern empfohlen. Bitte begründen Sie den geringeren Puffer betrieblich in Ihrem ConOps.",
     "en": "⚠️ <b>Contingency Volume (CV) Note:</b><br>In at least one segment, the calculated buffer width (s_cv) is less than 10.0 m. According to EASA SORA (AMC1 to Article 11), a minimum width of 10 meters is recommended. Please justify the smaller buffer operationally in your ConOps."
+  },
+  "msg_restore_defaults_title": {
+    "de": "Standardwerte wiederherstellen",
+    "en": "Restore Default Values"
+  },
+  "msg_restore_defaults_text": {
+    "de": "Möchten Sie wirklich alle Parameter auf die Standardwerte aus der config.json zurücksetzen?",
+    "en": "Do you really want to reset all parameters to the default values from config.json?"
   }
 }
