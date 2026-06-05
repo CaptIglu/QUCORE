@@ -203,12 +203,6 @@ class ParameterDialog(QDialog):
         self.spin_v0.setValue(self.params.get("maxOpsSpeedV0", 30.0))
         self.spin_v0.setSuffix(" m/s")
         uas_layout.addRow(f"{self.tr('label_v0', 'Max. Betriebsgeschwindigkeit (v0)')} ({default_label}: {v0_def:.1f} m/s):", self.spin_v0)
-
-        self.spin_vmax = QDoubleSpinBox()
-        self.configure_spinbox(self.spin_vmax, "maxCommandableSpeedVmax", 0.1, 200.0, 1.0, 1)
-        self.spin_vmax.setValue(self.params.get("maxCommandableSpeedVmax", 30.0))
-        self.spin_vmax.setSuffix(" m/s")
-        uas_layout.addRow(f"{self.tr('label_v_max', 'Max. kommandierbare Geschwindigkeit (v_max)')} ({default_label}: {vmax_def:.1f} m/s):", self.spin_vmax)
         
         self.chk_override_v = QCheckBox(self.tr("chk_override_v", "Individuelle Wegpunktgeschwindigkeiten überschreiben"))
         self.chk_override_v.setStyleSheet("color: #d97706; font-weight: bold;")
@@ -220,6 +214,12 @@ class ParameterDialog(QDialog):
         
         if self.has_custom_v:
             self.spin_v0.setEnabled(False)
+
+        self.spin_vmax = QDoubleSpinBox()
+        self.configure_spinbox(self.spin_vmax, "maxCommandableSpeedVmax", 0.1, 200.0, 1.0, 1)
+        self.spin_vmax.setValue(self.params.get("maxCommandableSpeedVmax", 30.0))
+        self.spin_vmax.setSuffix(" m/s")
+        uas_layout.addRow(f"{self.tr('label_v_max', 'Max. kommandierbare Geschwindigkeit (v_max)')} ({default_label}: {vmax_def:.1f} m/s):", self.spin_vmax)
         
         self.spin_cd = QDoubleSpinBox()
         self.configure_spinbox(self.spin_cd, "maxCharacteristicDimension", 0.01, 100.0, 0.1, 2)
