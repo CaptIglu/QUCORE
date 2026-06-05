@@ -13,11 +13,12 @@ from PyQt5.QtWidgets import (
     QDialogButtonBox,
     QLabel,
     QApplication,
-    QHeaderView
+    QHeaderView,
+    QCheckBox
 )
 
 class AltitudeTableDialog(QDialog):
-    def __init__(self, parent=None, waypoints=None, params=None, on_change_callback=None, geometry_type="Corridor"):
+    def __init__(self, parent=None, waypoints=None, params=None, on_change_callback=None, geometry_type="Corridor", waypoints_layer=None, canvas=None):
         super(AltitudeTableDialog, self).__init__(parent)
         self.resize(980, 450) # increased width to fit all 8 columns beautifully
         self.setModal(True)
@@ -27,6 +28,9 @@ class AltitudeTableDialog(QDialog):
         self.params = params if params is not None else {}
         self.on_change_callback = on_change_callback
         self.geometry_type = geometry_type
+        self.waypoints_layer = waypoints_layer
+        self.canvas = canvas
+        self.labels_active = False
         
         # Load translations
         self.tr_strings = {}
@@ -56,7 +60,6 @@ class AltitudeTableDialog(QDialog):
         
         # Checkbox & warning label layout for Polygon mode
         if self.geometry_type == "Polygon":
-            from PyQt5.QtWidgets import QCheckBox
             
             # Checkbox
             self.chk_variable_polygon = QCheckBox(self.tr("chk_variable_polygon_buffers", "Variable Pufferung der Grenzsegmente erlauben (Expertenmodus)"))
@@ -155,6 +158,13 @@ class AltitudeTableDialog(QDialog):
         self.update_table_editable_states()
         
         layout.addWidget(self.table)
+        
+        # Checkbox for showing waypoint numbers on map
+        self.chk_show_wp_nums = QCheckBox(self.tr("chk_show_wp_nums", "Wegpunkt-Nummern auf Karte anzeigen"))
+        self.chk_show_wp_nums.setChecked(False)
+        self.chk_show_wp_nums.toggled.connect(self.toggle_waypoint_numbers)
+        self.chk_show_wp_nums.setEnabled(self.waypoints_layer is not None)
+        layout.addWidget(self.chk_show_wp_nums)
         
         # Bottom Layout with Copy Button and OK/Cancel Button Box
         lay_buttons = QHBoxLayout()
@@ -507,3 +517,66 @@ class AltitudeTableDialog(QDialog):
                     
             updated_params.append((lon_val, lat_val, alt_val, spd_val, fg_val))
         return updated_params
+
+    def toggle_waypoint_numbers(self, checked):
+        if not self.waypoints_layer:
+            return
+            
+        self.labels_active = checked
+        
+        if checked:
+            from qgis.core import Qgis, QgsPalLayerSettings, QgsVectorLayerSimpleLabeling, QgsTextFormat, QgsTextBufferSettings
+            
+            settings = QgsPalLayerSettings()
+            settings.fieldName = '"index" + 1'
+            settings.isExpression = True
+            
+            # Configure text format
+            text_format = QgsTextFormat()
+            text_format.setSize(10)
+            text_format.setColor(QColor(0, 0, 0)) # Black text
+            
+            # Add white buffer for legibility
+            buffer_settings = QgsTextBufferSettings()
+            buffer_settings.setEnabled(True)
+            buffer_settings.setSize(1.5)
+            buffer_settings.setColor(QColor(255, 255, 255))
+            text_format.setBuffer(buffer_settings)
+            
+            settings.setFormat(text_format)
+            
+            # Set placement to AroundPoint
+            settings.placement = Qgis.LabelPlacement.AroundPoint
+            
+            labeling = QgsVectorLayerSimpleLabeling(settings)
+            self.waypoints_layer.setLabeling(labeling)
+            self.waypoints_layer.setLabelsEnabled(True)
+        else:
+            self.waypoints_layer.setLabelsEnabled(False)
+            
+        self.waypoints_layer.triggerRepaint()
+        if self.canvas:
+            self.canvas.refresh()
+
+    def cleanup_labels(self):
+        if getattr(self, "labels_active", False) and self.waypoints_layer:
+            try:
+                self.waypoints_layer.setLabelsEnabled(False)
+                self.waypoints_layer.triggerRepaint()
+                if self.canvas:
+                    self.canvas.refresh()
+            except Exception:
+                pass
+            self.labels_active = False
+
+    def accept(self):
+        self.cleanup_labels()
+        super(AltitudeTableDialog, self).accept()
+
+    def reject(self):
+        self.cleanup_labels()
+        super(AltitudeTableDialog, self).reject()
+
+    def closeEvent(self, event):
+        self.cleanup_labels()
+        super(AltitudeTableDialog, self).closeEvent(event)

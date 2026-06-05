@@ -2432,7 +2432,15 @@ class DroneCorridorPlanner(object):
                 self.waypoints[idx] = (lon, lat, new_alt, new_spd, new_fg)
             self.rebuild_and_calculate()
             
-        dialog = AltitudeTableDialog(self.gui, self.waypoints, self.params, on_change_callback=on_waypoint_edited, geometry_type=self.geometry_type)
+        dialog = AltitudeTableDialog(
+            self.gui, 
+            self.waypoints, 
+            self.params, 
+            on_change_callback=on_waypoint_edited, 
+            geometry_type=self.geometry_type,
+            waypoints_layer=self.lyr_waypoints,
+            canvas=self.canvas
+        )
         if dialog.exec_() == QDialog.Accepted:
             # Commit changes and add to undo stack
             self.undo_stack.append(list(original_waypoints))

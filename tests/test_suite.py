@@ -123,9 +123,49 @@ qt_widgets.QPushButton = MockQWidget
 qt_widgets.QDialogButtonBox = MockQWidget
 qt_widgets.QCheckBox = MockQWidget
 qt_widgets.QApplication = MagicMock
-qt_widgets.QHeaderView = MagicMock
-qt_widgets.QTableWidget = MockQWidget
-qt_widgets.QTableWidgetItem = MagicMock
+class MockQHeaderView:
+    Stretch = 1
+qt_widgets.QHeaderView = MockQHeaderView
+class MockQTableWidgetItemClass:
+    def __init__(self, text=""):
+        self._text = text
+        self._flags = 0
+    def flags(self):
+        return self._flags
+    def setFlags(self, flags):
+        self._flags = flags
+    def setTextAlignment(self, align):
+        pass
+    def setBackground(self, brush):
+        pass
+    def text(self):
+        return self._text
+    def setText(self, text):
+        self._text = text
+
+class MockQTableWidget(MockQWidget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._items = {}
+        self._cols = 0
+        self._rows = 0
+    def setColumnCount(self, count):
+        self._cols = count
+    def setRowCount(self, count):
+        self._rows = count
+    def columnCount(self):
+        return self._cols
+    def rowCount(self):
+        return self._rows
+    def setItem(self, row, col, item):
+        self._items[(row, col)] = item
+    def item(self, row, col):
+        return self._items.get((row, col))
+    def columnWidth(self, col):
+        return 100
+
+qt_widgets.QTableWidget = MockQTableWidget
+qt_widgets.QTableWidgetItem = MockQTableWidgetItemClass
 class MockQMessageBox(MockQWidget):
     Yes = 16384
     No = 65536
@@ -979,6 +1019,53 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         # Because uniform uses the maximum speed (40.0 m/s) and height (150.0 m) uniformly,
         # the uniform buffer should have a larger area than the variable buffer.
         self.assertTrue(grb_u.area() > grb_v.area())
+
+    def test_altitude_table_dialog_show_waypoint_numbers(self):
+        """
+        Verify that toggling the chk_show_wp_nums checkbox in AltitudeTableDialog
+        enables/disables labeling on the waypoints layer and refreshes the canvas.
+        """
+        from QUCORE.altitude_table_dialog import AltitudeTableDialog
+        from unittest.mock import MagicMock
+        
+        waypoints = [
+            (8.751481, 53.841847, 100.0, 30.0, 50.0),
+            (8.336079, 54.006354, 110.0, 25.0, 60.0)
+        ]
+        
+        mock_layer = MagicMock()
+        mock_canvas = MagicMock()
+        
+        dialog = AltitudeTableDialog(None, waypoints, self.base_params, waypoints_layer=mock_layer, canvas=mock_canvas)
+        
+        # Initially labeling is not active
+        self.assertFalse(dialog.labels_active)
+        
+        # Toggle checkbox to True (checked)
+        dialog.toggle_waypoint_numbers(True)
+        self.assertTrue(dialog.labels_active)
+        mock_layer.setLabeling.assert_called_once()
+        mock_layer.setLabelsEnabled.assert_called_with(True)
+        mock_layer.triggerRepaint.assert_called_once()
+        mock_canvas.refresh.assert_called_once()
+        
+        # Toggle checkbox to False (unchecked)
+        mock_layer.reset_mock()
+        mock_canvas.reset_mock()
+        dialog.toggle_waypoint_numbers(False)
+        self.assertFalse(dialog.labels_active)
+        mock_layer.setLabelsEnabled.assert_called_with(False)
+        mock_layer.triggerRepaint.assert_called_once()
+        mock_canvas.refresh.assert_called_once()
+        
+        # Test dialog acceptance triggers cleanup
+        dialog.toggle_waypoint_numbers(True)
+        mock_layer.reset_mock()
+        mock_canvas.reset_mock()
+        dialog.accept()
+        mock_layer.setLabelsEnabled.assert_called_with(False)
+        mock_layer.triggerRepaint.assert_called_once()
+        mock_canvas.refresh.assert_called_once()
 
 if __name__ == "__main__":
     unittest.main()

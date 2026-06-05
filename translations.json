@@ -1270,5 +1270,9 @@
     "lbl_polygon_uniform_warning": {
         "de": "Hinweis: Da die variable Pufferung deaktiviert ist, werden für alle Segmente einheitlich die Maximalwerte aller Wegpunkte (Flughöhe, Geschwindigkeit, Breite) für die Berechnung verwendet.",
         "en": "Note: Since variable buffering is disabled, the maximum values of all waypoints (altitude, speed, width) are used uniformly for the calculation of all segments."
+    },
+    "chk_show_wp_nums": {
+        "de": "Wegpunkt-Nummern auf Karte anzeigen",
+        "en": "Show waypoint numbers on map"
     }
 }

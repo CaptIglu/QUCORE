@@ -1,8 +1,8 @@
-# QUCORE – QGIS UAS Corridor Outlining & Routing Engine
+# QUCORE – Flexible Drohnenflugplanung von FG, CV & GRB in QGIS
 
 🇩🇪 **Deutsch** | 🇬🇧 [**English Version**](#english-version)
 
-**QUCORE** ist ein professionelles, SORA-konformes QGIS-Plugin zur interaktiven Planung von UAS-Flugkorridoren. Es berechnet dynamisch und in Echtzeit die **Flight Geography (FG)**, das **Contingency Volume (CV)** und den **Ground Risk Buffer (GRB)** basierend auf offiziellen Leitlinien der EASA und des LBA.
+**QUCORE** (<u>Q</u>GIS <u>U</u>AS <u>C</u>orridor <u>O</u>utlining & <u>R</u>outing <u>E</u>ngine) ist ein professionelles, SORA-konformes QGIS-Plugin zur interaktiven Planung von UAS-Flugkorridoren. Es berechnet dynamisch und in Echtzeit die **Flight Geography (FG)**, das **Contingency Volume (CV)** und den **Ground Risk Buffer (GRB)** basierend auf offiziellen Leitlinien der EASA und des LBA.
 
 ![QUCORE Icon](icon.png)
 
@@ -46,9 +46,9 @@ Die Software wird ohne Mängelgewähr ("As-Is") zur Verfügung gestellt. Der Aut
 ---
 
 <a id="english-version"></a>
-# QUCORE – QGIS UAS Corridor Outlining & Routing Engine (English)
+# QUCORE – QGIS variable drone flight planning of FG, CV & GRB (English)
 
-**QUCORE** is a professional, SORA-compliant QGIS plugin for interactive planning of UAS flight corridors. It calculates the **Flight Geography (FG)**, the **Contingency Volume (CV)**, and the **Ground Risk Buffer (GRB)** dynamically and in real time based on official EASA and LBA guidelines.
+**QUCORE** (<u>Q</u>GIS <u>U</u>AS <u>C</u>orridor <u>O</u>utlining & <u>R</u>outing <u>E</u>ngine) is a professional, SORA-compliant QGIS plugin for interactive planning of UAS flight corridors. It calculates the **Flight Geography (FG)**, the **Contingency Volume (CV)**, and the **Ground Risk Buffer (GRB)** dynamically and in real time based on official EASA and LBA guidelines.
 
 ## Installation
 
