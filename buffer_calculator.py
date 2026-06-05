@@ -278,26 +278,6 @@ class BufferCalculator:
             if len(parsed_wpts) < 3:
                 return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
                 
-            # Calculate uniform s_cv and s_grb using the first waypoint's parameters
-            first_lon, first_lat, h, spd, fg = parsed_wpts[0]
-            params_wp = params.copy()
-            params_wp["geometry_type"] = "Polygon"
-            params_wp["maxOpsSpeedV0"] = spd
-            params_wp["maxVelocity"] = spd
-            params_wp["corridorWidth"] = fg
-            
-            r_fg_tmp, r_cv_tmp, r_grb_tmp, _h_cv = cls.calculate_buffer_widths(h, params_wp)
-            s_cv = r_cv_tmp - r_fg_tmp
-            s_grb = r_grb_tmp - r_cv_tmp
-            
-            # Calculate Adjacent Area width: S_AGA = max(5000, min(35000, 180 * vmax))
-            vmax = float(params.get("maxCommandableSpeedVmax", params.get("maxVelocityVmax", params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))))
-            s_aga = 180.0 * vmax
-            if s_aga < 5000.0:
-                s_aga = 5000.0
-            elif s_aga > 35000.0:
-                s_aga = 35000.0
-                
             try:
                 # Use native UTM zone of the polygon's midpoint to eliminate any scale distortion
                 lons = [w[0] for w in parsed_wpts]
@@ -322,20 +302,111 @@ class BufferCalculator:
                 # Create outer ring (closed)
                 ring = list(utm_pts)
                 ring.append(utm_pts[0])
-                fg_geom = QgsGeometry.fromPolygonXY([ring])
-                
+                fg_polygon_utm = QgsGeometry.fromPolygonXY([ring])
                 # Check and enforce validity of input polygon first to handle self-crossing paths
-                if fg_geom and not fg_geom.isGeosValid():
-                    fg_geom = fg_geom.makeValid()
+                if fg_polygon_utm and not fg_polygon_utm.isGeosValid():
+                    # Return empty geometries to flag invalid self-intersecting state
+                    return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
                 
-                cv_geom = fg_geom.buffer(s_cv, BUFFER_SEGMENTS)
-                grb_geom = cv_geom.buffer(s_grb, BUFFER_SEGMENTS)
-                aga_geom = cv_geom.buffer(s_aga, BUFFER_SEGMENTS)
+                fg_polygon_wgs = QgsGeometry(fg_polygon_utm)
+                fg_polygon_wgs.transform(inverse_transform)
                 
-                # Project back to WGS 84
-                fg_geom.transform(inverse_transform)
-                cv_geom.transform(inverse_transform)
-                grb_geom.transform(inverse_transform)
+                # Calculate Adjacent Area width: S_AGA = max(5000, min(35000, 180 * vmax))
+                vmax = float(params.get("maxCommandableSpeedVmax", params.get("maxVelocityVmax", params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))))
+                s_aga = 180.0 * vmax
+                if s_aga < 5000.0:
+                    s_aga = 5000.0
+                elif s_aga > 35000.0:
+                    s_aga = 35000.0
+                
+                # Check if expert mode variable buffering is enabled
+                if params.get("variable_polygon_buffers", False):
+                    # Segment-specific variable buffering (Expert Mode)
+                    radii = []
+                    for i, (lon, lat, h, spd, fg) in enumerate(parsed_wpts):
+                        params_wp = params.copy()
+                        params_wp["geometry_type"] = "Polygon"
+                        params_wp["maxOpsSpeedV0"] = spd
+                        params_wp["maxVelocity"] = spd
+                        params_wp["corridorWidth"] = fg
+                        
+                        r_fg, r_cv, r_grb, _h_cv = cls.calculate_buffer_widths(h, params_wp)
+                        radii.append((r_fg, r_cv, r_grb, _h_cv))
+                        
+                    fg_capsules = []
+                    cv_capsules = []
+                    grb_capsules = []
+                    
+                    n = len(parsed_wpts)
+                    for i in range(n):
+                        next_idx = (i + 1) % n
+                        lon_a, lat_a, h_a, spd_a, fg_a = parsed_wpts[i]
+                        lon_b, lat_b, h_b, spd_b, fg_b = parsed_wpts[next_idx]
+                        
+                        r_fg_a, r_cv_a, r_grb_a, _ = radii[i]
+                        r_fg_b, r_cv_b, r_grb_b, _ = radii[next_idx]
+                        
+                        seg_utm_epsg = get_utm_epsg(lon_a, lat_a)
+                        seg_dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{seg_utm_epsg}")
+                        
+                        seg_transform = QgsCoordinateTransform(src_crs, seg_dest_crs, project)
+                        seg_inverse_transform = QgsCoordinateTransform(seg_dest_crs, src_crs, project)
+                        
+                        pt_a_utm = seg_transform.transform(QgsPointXY(lon_a, lat_a))
+                        pt_b_utm = seg_transform.transform(QgsPointXY(lon_b, lat_b))
+                        
+                        c_fg_a = QgsGeometry.fromPointXY(pt_a_utm).buffer(r_fg_a, BUFFER_SEGMENTS)
+                        c_fg_b = QgsGeometry.fromPointXY(pt_b_utm).buffer(r_fg_b, BUFFER_SEGMENTS)
+                        fg_capsule = c_fg_a.combine(c_fg_b).convexHull()
+                        fg_capsule.transform(seg_inverse_transform)
+                        fg_capsules.append(fg_capsule)
+                        
+                        c_cv_a = QgsGeometry.fromPointXY(pt_a_utm).buffer(r_cv_a, BUFFER_SEGMENTS)
+                        c_cv_b = QgsGeometry.fromPointXY(pt_b_utm).buffer(r_cv_b, BUFFER_SEGMENTS)
+                        cv_capsule = c_cv_a.combine(c_cv_b).convexHull()
+                        cv_capsule.transform(seg_inverse_transform)
+                        cv_capsules.append(cv_capsule)
+                        
+                        c_grb_a = QgsGeometry.fromPointXY(pt_a_utm).buffer(r_grb_a, BUFFER_SEGMENTS)
+                        c_grb_b = QgsGeometry.fromPointXY(pt_b_utm).buffer(r_grb_b, BUFFER_SEGMENTS)
+                        grb_capsule = c_grb_a.combine(c_grb_b).convexHull()
+                        grb_capsule.transform(seg_inverse_transform)
+                        grb_capsules.append(grb_capsule)
+                        
+                    fg_geom = fg_polygon_wgs.combine(QgsGeometry.unaryUnion(fg_capsules))
+                    cv_geom = fg_polygon_wgs.combine(QgsGeometry.unaryUnion(cv_capsules))
+                    grb_geom = fg_polygon_wgs.combine(QgsGeometry.unaryUnion(grb_capsules))
+                else:
+                    # Uniform constant buffering (Default Mode) - Use maximum values for safety
+                    max_h = max(w[2] for w in parsed_wpts)
+                    max_spd = max(w[3] for w in parsed_wpts)
+                    max_fg = max(w[4] for w in parsed_wpts)
+                    
+                    params_wp = params.copy()
+                    params_wp["geometry_type"] = "Polygon"
+                    params_wp["maxOpsSpeedV0"] = max_spd
+                    params_wp["maxVelocity"] = max_spd
+                    params_wp["corridorWidth"] = max_fg
+                    
+                    r_fg_tmp, r_cv_tmp, r_grb_tmp, _h_cv = cls.calculate_buffer_widths(max_h, params_wp)
+                    s_cv = r_cv_tmp - r_fg_tmp
+                    s_grb = r_grb_tmp - r_cv_tmp
+                    
+                    cv_geom_utm = fg_polygon_utm.buffer(s_cv, BUFFER_SEGMENTS)
+                    grb_geom_utm = cv_geom_utm.buffer(s_grb, BUFFER_SEGMENTS)
+                    
+                    cv_geom = cv_geom_utm
+                    cv_geom.transform(inverse_transform)
+                    
+                    grb_geom = grb_geom_utm
+                    grb_geom.transform(inverse_transform)
+                    
+                    fg_geom = fg_polygon_wgs
+                
+                # Generate Adjacent Area buffer around CV
+                cv_clone = QgsGeometry(cv_geom)
+                cv_clone.transform(transform)
+                aga_geom = cv_clone.buffer(s_aga, BUFFER_SEGMENTS)
                 aga_geom.transform(inverse_transform)
                 
                 # Enforce validity of final projected outputs
@@ -350,6 +421,8 @@ class BufferCalculator:
                 
                 return fg_geom, cv_geom, grb_geom, aga_geom
             except Exception as e:
+                import traceback
+                traceback.print_exc()
                 from qgis.core import QgsMessageLog, Qgis
                 QgsMessageLog.logMessage(f"Fehler bei Polygon-Geometrieberechnung: {e}", "QUCORE", Qgis.Critical)
                 return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()

@@ -9,6 +9,52 @@ import types
 qgis_mock = MagicMock()
 qgis_core_mock = MagicMock()
 
+class RealMockQgsGeometry:
+    is_valid_mock_geom = True
+    def __init__(self, *args, **kwargs):
+        if len(args) == 0:
+            self.empty = kwargs.get('empty', True)
+        else:
+            first_arg = args[0]
+            if isinstance(first_arg, bool):
+                self.empty = first_arg
+            elif type(first_arg).__name__ == "RealMockQgsGeometry":
+                self.empty = first_arg.empty
+            else:
+                self.empty = False
+        self._area = 100.0
+    def isEmpty(self):
+        return self.empty
+    def isGeosValid(self):
+        return RealMockQgsGeometry.is_valid_mock_geom
+    def area(self):
+        return self._area
+    def combine(self, other):
+        res = RealMockQgsGeometry(empty=False)
+        res._area = self._area + getattr(other, '_area', 0.0)
+        return res
+    def buffer(self, *args):
+        res = RealMockQgsGeometry(empty=False)
+        if args:
+            try:
+                res._area = 1000.0 * float(args[0])
+            except (ValueError, TypeError):
+                pass
+        return res
+    def convexHull(self):
+        return self
+    def transform(self, *args):
+        pass
+    @staticmethod
+    def fromPolygonXY(*args):
+        return RealMockQgsGeometry(empty=False)
+    @staticmethod
+    def fromPointXY(*args):
+        return RealMockQgsGeometry(empty=False)
+    @staticmethod
+    def unaryUnion(*args):
+        return RealMockQgsGeometry(empty=False)
+
 class RealMockQgsPointXY:
     def __init__(self, x=0.0, y=0.0):
         self._x = x
@@ -19,6 +65,7 @@ class RealMockQgsPointXY:
         return float(self._y)
 
 qgis_core_mock.QgsPointXY = RealMockQgsPointXY
+qgis_core_mock.QgsGeometry = RealMockQgsGeometry
 sys.modules['qgis'] = qgis_mock
 sys.modules['qgis.core'] = qgis_core_mock
 sys.modules['qgis.gui'] = MagicMock()
@@ -30,6 +77,7 @@ class MockQWidget:
     Cancel = 2
     Yes = 16384
     No = 65536
+    RestoreDefaults = 3
     
     def __init__(self, parent=None, *args, **kwargs):
         self._val = 100.0
@@ -873,6 +921,64 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         with patch('QUCORE.parameter_dialog.QDialog.accept') as mock_accept:
             dialog.accept()
             mock_accept.assert_called_once()
+
+    def test_polygon_self_intersection(self):
+        """
+        Verify that generate_buffers returns empty geometries if the polygon self-intersects.
+        """
+        import sys
+        geom_class = sys.modules['qgis.core'].QgsGeometry
+        geom_class.is_valid_mock_geom = False
+        
+        try:
+            # Self-intersecting hourglass-shaped polygon
+            waypoints = [
+                (0.0, 0.0, 100.0, 30.0, 50.0),
+                (1.0, 1.0, 100.0, 30.0, 50.0),
+                (1.0, 0.0, 100.0, 30.0, 50.0),
+                (0.0, 1.0, 100.0, 30.0, 50.0)
+            ]
+            params = self.base_params.copy()
+            
+            fg_geom, cv_geom, grb_geom, aga_geom = BufferCalculator.generate_buffers(waypoints, params, "Polygon")
+            self.assertTrue(fg_geom.isEmpty())
+            self.assertTrue(cv_geom.isEmpty())
+            self.assertTrue(grb_geom.isEmpty())
+        finally:
+            geom_class.is_valid_mock_geom = True
+
+    def test_polygon_variable_buffering(self):
+        """
+        Verify that variable segment-based buffering is executed when variable_polygon_buffers is True.
+        """
+        # Simple triangle polygon
+        waypoints = [
+            (0.0, 0.0, 50.0, 10.0, 30.0),      # low parameters
+            (0.0, 0.1, 150.0, 40.0, 100.0),    # high parameters
+            (0.1, 0.0, 100.0, 25.0, 60.0)      # medium parameters
+        ]
+        
+        # Test case 1: Variable buffering disabled (uses max parameters uniformly)
+        params_uniform = self.base_params.copy()
+        params_uniform["variable_polygon_buffers"] = False
+        
+        fg_u, cv_u, grb_u, aga_u = BufferCalculator.generate_buffers(waypoints, params_uniform, "Polygon")
+        self.assertFalse(fg_u.isEmpty())
+        self.assertFalse(cv_u.isEmpty())
+        self.assertFalse(grb_u.isEmpty())
+        
+        # Test case 2: Variable buffering enabled (applies local segment-based parameters)
+        params_variable = self.base_params.copy()
+        params_variable["variable_polygon_buffers"] = True
+        
+        fg_v, cv_v, grb_v, aga_v = BufferCalculator.generate_buffers(waypoints, params_variable, "Polygon")
+        self.assertFalse(fg_v.isEmpty())
+        self.assertFalse(cv_v.isEmpty())
+        self.assertFalse(grb_v.isEmpty())
+        
+        # Because uniform uses the maximum speed (40.0 m/s) and height (150.0 m) uniformly,
+        # the uniform buffer should have a larger area than the variable buffer.
+        self.assertTrue(grb_u.area() > grb_v.area())
 
 if __name__ == "__main__":
     unittest.main()

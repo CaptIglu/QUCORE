@@ -552,8 +552,8 @@
         "en": "v0 (Velocity) (m/s)"
     },
     "col_fg": {
-        "de": "W_FG (Breite) (m)",
-        "en": "W_FG (Width) (m)"
+        "de": "S_FG (Breite) (m)",
+        "en": "S_FG (Width) (m)"
     },
     "btn_apply_all": {
         "de": "Auf alle anwenden",
@@ -620,12 +620,12 @@
         "en": "Position (Lat, Lon)"
     },
     "col_cv": {
-        "de": "CV Radius (m)",
-        "en": "CV Radius (m)"
+        "de": "S_CV (Breite) (m)",
+        "en": "S_CV (width) (m)"
     },
     "col_grb": {
-        "de": "GRB Radius (m)",
-        "en": "GRB Radius (m)"
+        "de": "S_GRB (Breite) (m)",
+        "en": "S_GRB (width) (m)"
     },
     "col_hfg": {
         "de": "h_FG (m)",
@@ -1242,5 +1242,33 @@
     "dialog_color_picker_title": {
         "de": "Farbe wählen",
         "en": "Select Color"
+    },
+    "chk_variable_polygon_buffers": {
+        "de": "Variable Pufferung der Grenzsegmente erlauben (Expertenmodus)",
+        "en": "Allow variable buffering of boundary segments (Expert Mode)"
+    },
+    "variable_polygon_buffers_warning_title": {
+        "de": "Sicherheitsrelevanter Hinweis",
+        "en": "Safety Warning"
+    },
+    "variable_polygon_buffers_warning_text": {
+        "de": "Die segmentweise Pufferung im Polygon-Modus ist nur flugsicherheitstechnisch zulässig, wenn sichergestellt ist, dass die Drohne im inneren Flugbereich physisch/flugtaktisch nicht die höheren Geschwindigkeiten oder Höhen aus anderen Segmenten aufbauen und in Richtung der schmaleren Puffer driften kann (z. B. bei engen Einflugschläuchen).\n\nFür freie Flächen wird dringend empfohlen, den einheitlichen Puffer basierend auf den Maximalwerten zu nutzen.",
+        "en": "Segment-specific buffering in Polygon Mode is only safe if the UAS is physically or operationally restricted to the lower speed/altitude values in those segments (e.g. narrow transit corridors).\n\nFor open areas, it is strongly recommended to use a uniform buffer based on the maximum parameters."
+    },
+    "status_self_intersecting_polygon": {
+        "de": "Fehler: Selbstschneidendes Polygon ist keine gültige Geometrie",
+        "en": "Error: Self-intersecting polygon is not a valid geometry"
+    },
+    "msg_self_intersecting_polygon_title": {
+        "de": "Ungültige Geometrie",
+        "en": "Invalid Geometry"
+    },
+    "msg_self_intersecting_polygon_text": {
+        "de": "Die aktuelle Flugplanung kann nicht exportiert/berechnet werden, da das Polygon selbstschneidend ist. Bitte korrigieren Sie die Stützpunkte auf der Karte.",
+        "en": "The current flight planning cannot be exported/calculated because the polygon is self-intersecting. Please correct the vertices on the map."
+    },
+    "lbl_polygon_uniform_warning": {
+        "de": "Hinweis: Da die variable Pufferung deaktiviert ist, werden für alle Segmente einheitlich die Maximalwerte aller Wegpunkte (Flughöhe, Geschwindigkeit, Breite) für die Berechnung verwendet.",
+        "en": "Note: Since variable buffering is disabled, the maximum values of all waypoints (altitude, speed, width) are used uniformly for the calculation of all segments."
     }
 }

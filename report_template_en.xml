@@ -215,10 +215,7 @@
     <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Additional distance (vertical): __ADD_VERT__ m</w:t></w:r>
   </w:p>
-  <w:p>
-    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Calculation increment: __STEP_SIZE__ m</w:t></w:r>
-  </w:p>
+
   <w:p>
     <w:pPr>
       <w:pStyle w:val="berschrift3"/>
@@ -235,11 +232,11 @@
   </w:p>
   <w:p>
     <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Contingency Volume (Radius S_CV+S_FG/2): __CV_RANGE__</w:t></w:r>
+    <w:r><w:t xml:space="preserve">Contingency Volume (S_CV): __CV_RANGE__</w:t></w:r>
   </w:p>
   <w:p>
     <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
-    <w:r><w:t xml:space="preserve">Ground Risk Buffer (Radius S_GRB+S_CV+S_FG/2): __GRB_RANGE__</w:t></w:r>
+    <w:r><w:t xml:space="preserve">Ground Risk Buffer (S_GRB): __GRB_RANGE__</w:t></w:r>
   </w:p>
   <w:p>
     <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>

@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (
 )
 
 class AltitudeTableDialog(QDialog):
-    def __init__(self, parent=None, waypoints=None, params=None, on_change_callback=None):
+    def __init__(self, parent=None, waypoints=None, params=None, on_change_callback=None, geometry_type="Corridor"):
         super(AltitudeTableDialog, self).__init__(parent)
         self.resize(980, 450) # increased width to fit all 8 columns beautifully
         self.setModal(True)
@@ -26,6 +26,7 @@ class AltitudeTableDialog(QDialog):
         self.waypoints = waypoints if waypoints is not None else []
         self.params = params if params is not None else {}
         self.on_change_callback = on_change_callback
+        self.geometry_type = geometry_type
         
         # Load translations
         self.tr_strings = {}
@@ -53,6 +54,32 @@ class AltitudeTableDialog(QDialog):
         label.setWordWrap(True)
         layout.addWidget(label)
         
+        # Checkbox & warning label layout for Polygon mode
+        if self.geometry_type == "Polygon":
+            from PyQt5.QtWidgets import QCheckBox
+            
+            # Checkbox
+            self.chk_variable_polygon = QCheckBox(self.tr("chk_variable_polygon_buffers", "Variable Pufferung der Grenzsegmente erlauben (Expertenmodus)"))
+            self.chk_variable_polygon.setChecked(self.params.get("variable_polygon_buffers", False))
+            self.chk_variable_polygon.toggled.connect(self.on_variable_polygon_toggled)
+            layout.addWidget(self.chk_variable_polygon)
+            
+            # Warning label
+            self.lbl_polygon_uniform_warning = QLabel(
+                self.tr("lbl_polygon_uniform_warning", "Hinweis: Da die variable Pufferung deaktiviert ist, werden für alle Segmente einheitlich die Maximalwerte aller Wegpunkte (Flughöhe, Geschwindigkeit, Breite) für die Berechnung verwendet.")
+            )
+            self.lbl_polygon_uniform_warning.setWordWrap(True)
+            self.lbl_polygon_uniform_warning.setStyleSheet(
+                "background-color: #fffbeb; "
+                "color: #b45309; "
+                "border: 1px solid #fcd34d; "
+                "border-radius: 4px; "
+                "padding: 8px; "
+                "font-weight: bold;"
+            )
+            self.lbl_polygon_uniform_warning.setVisible(not self.chk_variable_polygon.isChecked())
+            layout.addWidget(self.lbl_polygon_uniform_warning)
+        
         # Table Widget
         self.table = QTableWidget()
         self.table.setColumnCount(8)
@@ -61,12 +88,14 @@ class AltitudeTableDialog(QDialog):
             self.tr("col_pos", "Position (Lat, Lon)"),
             self.tr("col_alt", "h_FG (Flughöhe) (m)"), 
             self.tr("col_spd", "v0 (Geschwindigkeit) (m/s)"), 
-            self.tr("col_fg", "W_FG (Breite) (m)"), 
-            self.tr("col_cv", "CV Radius (m)"), 
-            self.tr("col_grb", "GRB Radius (m)"),
+            self.tr("col_fg", "S_FG (Breite) (m)"), 
+            self.tr("col_cv", "S_CV (Breite) (m)"), 
+            self.tr("col_grb", "S_GRB (Breite) (m)"),
             self.tr("col_hcv", "h_CV (m)")
         ])
         self.table.setRowCount(len(self.waypoints))
+        if self.geometry_type == "Polygon":
+            self.table.setColumnHidden(4, True)
         
         # Populate table
         bg_color = QColor(240, 240, 240)
@@ -123,6 +152,8 @@ class AltitudeTableDialog(QDialog):
         # Stretch the coordinate column (col 1) to absorb any remaining space beautifully
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         
+        self.update_table_editable_states()
+        
         layout.addWidget(self.table)
         
         # Bottom Layout with Copy Button and OK/Cancel Button Box
@@ -144,6 +175,61 @@ class AltitudeTableDialog(QDialog):
         lay_buttons.addWidget(button_box)
         
         layout.addLayout(lay_buttons)
+
+    def update_table_editable_states(self):
+        is_polygon = (self.geometry_type == "Polygon")
+        is_variable = self.params.get("variable_polygon_buffers", False)
+        
+        # Determine if h_FG (col 2) and v0 (col 3) should be editable
+        should_edit = not is_polygon or is_variable
+        
+        bg_color = QColor(240, 240, 240) if not should_edit else QColor(255, 255, 255)
+        
+        self.table.blockSignals(True)
+        for r in range(self.table.rowCount()):
+            # Column 2 (Altitude)
+            item_alt = self.table.item(r, 2)
+            if item_alt:
+                if should_edit:
+                    item_alt.setFlags(item_alt.flags() | Qt.ItemIsEditable)
+                else:
+                    item_alt.setFlags(item_alt.flags() & ~Qt.ItemIsEditable)
+                item_alt.setBackground(QBrush(bg_color))
+                
+            # Column 3 (Speed)
+            item_spd = self.table.item(r, 3)
+            if item_spd:
+                if should_edit:
+                    item_spd.setFlags(item_spd.flags() | Qt.ItemIsEditable)
+                else:
+                    item_spd.setFlags(item_spd.flags() & ~Qt.ItemIsEditable)
+                item_spd.setBackground(QBrush(bg_color))
+        self.table.blockSignals(False)
+
+    def on_variable_polygon_toggled(self, checked):
+        self.params["variable_polygon_buffers"] = checked
+        if hasattr(self, 'lbl_polygon_uniform_warning'):
+            self.lbl_polygon_uniform_warning.setVisible(not checked)
+            
+        if checked:
+            from PyQt5.QtWidgets import QMessageBox
+            QMessageBox.warning(
+                self,
+                self.tr("variable_polygon_buffers_warning_title", "Sicherheitsrelevanter Hinweis"),
+                self.tr(
+                    "variable_polygon_buffers_warning_text",
+                    "Die segmentweise Pufferung im Polygon-Modus ist nur flugsicherheitstechnisch zulässig, "
+                    "wenn sichergestellt ist, dass die Drohne im inneren Flugbereich physisch/flugtaktisch nicht "
+                    "die höheren Geschwindigkeiten oder Höhen aus anderen Segmenten aufbauen und in Richtung der "
+                    "schmaleren Puffer driften kann (z. B. bei engen Einflugschläuchen).\n\n"
+                    "Für freie Flächen wird dringend empfohlen, den einheitlichen Puffer basierend auf den Maximalwerten zu nutzen."
+                )
+            )
+            
+        self.update_table_editable_states()
+            
+        if self.on_change_callback is not None:
+            self.on_change_callback()
 
     def delete_selected_waypoint(self):
         """
@@ -208,6 +294,9 @@ class AltitudeTableDialog(QDialog):
         from .buffer_calculator import BufferCalculator
         r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params_wp)
         
+        s_cv = r_cv - r_fg
+        s_grb = r_grb - r_cv
+        
         bg_color = QColor(240, 240, 240)
         
         # Update CV and GRB columns with grey background
@@ -218,7 +307,7 @@ class AltitudeTableDialog(QDialog):
             item_cv.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             item_cv.setBackground(QBrush(bg_color))
             self.table.setItem(row, 5, item_cv)
-        item_cv.setText(f"{r_cv:.1f}")
+        item_cv.setText(f"{s_cv:.1f}")
         
         item_grb = self.table.item(row, 6)
         if not item_grb:
@@ -227,7 +316,7 @@ class AltitudeTableDialog(QDialog):
             item_grb.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             item_grb.setBackground(QBrush(bg_color))
             self.table.setItem(row, 6, item_grb)
-        item_grb.setText(f"{r_grb:.1f}")
+        item_grb.setText(f"{s_grb:.1f}")
         
         # Update h_CV column with grey background (read-only)
         item_hcv = self.table.item(row, 7)

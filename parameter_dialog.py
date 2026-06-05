@@ -436,6 +436,8 @@ class ParameterDialog(QDialog):
         self.chk_override_h.setVisible(self.has_custom_h)
         self.chk_override_h.toggled.connect(self.on_override_h_toggled)
         gen_layout.addRow("", self.chk_override_h)
+
+
         
         if self.has_custom_h:
             self.spin_default_h.setEnabled(False)
@@ -598,6 +600,7 @@ class ParameterDialog(QDialog):
             
             self.spin_corridor_width.blockSignals(True)
             self.spin_default_h.blockSignals(True)
+
             
             try:
                 # Apply defaults
@@ -648,6 +651,7 @@ class ParameterDialog(QDialog):
                 
                 self.spin_corridor_width.setValue(defaults.get("corridorWidth", 50.0))
                 self.spin_default_h.setValue(defaults.get("maxFlightHeight", 100.0))
+
             finally:
                 # Unblock signals
                 self.combo_uas_type.blockSignals(False)
@@ -682,6 +686,7 @@ class ParameterDialog(QDialog):
                 
                 self.spin_corridor_width.blockSignals(False)
                 self.spin_default_h.blockSignals(False)
+
                 
             # Trigger updates
             self.on_uas_changed()
@@ -769,7 +774,8 @@ class ParameterDialog(QDialog):
             "additionalErrorVertical": self.spin_add_vert.value(),
             "override_heights": self.chk_override_h.isChecked() if (hasattr(self, 'chk_override_h') and self.has_custom_h) else True,
             "override_widths": self.chk_override_w.isChecked() if (hasattr(self, 'chk_override_w') and self.has_custom_w) else True,
-            "override_speeds": self.chk_override_v.isChecked() if (hasattr(self, 'chk_override_v') and self.has_custom_v) else True
+            "override_speeds": self.chk_override_v.isChecked() if (hasattr(self, 'chk_override_v') and self.has_custom_v) else True,
+            "variable_polygon_buffers": self.params.get("variable_polygon_buffers", False)
         }
 
     def on_override_h_toggled(self, checked):
@@ -807,6 +813,8 @@ class ParameterDialog(QDialog):
                 fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
                 self.waypoints[idx] = (lon, lat, alt, new_v, fg)
             self.on_value_changed()
+
+
 
     def has_individual_heights(self):
         if not self.waypoints:

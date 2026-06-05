@@ -1955,7 +1955,7 @@ class DroneCorridorPlanner(object):
         if hasattr(self, 'spn_circle_radius'):
             self.spn_circle_radius.setVisible(show_circle)
         if hasattr(self, 'btn_alt'):
-            self.btn_alt.setEnabled(self.geometry_type == "Corridor")
+            self.btn_alt.setEnabled(self.geometry_type in ["Corridor", "Polygon"])
         
         # 1. Update waypoints point layer
         self.lyr_waypoints.dataProvider().truncate()
@@ -1996,6 +1996,42 @@ class DroneCorridorPlanner(object):
         self.lyr_grb.dataProvider().truncate()
         if self.lyr_aga:
             self.lyr_aga.dataProvider().truncate()
+
+        # Check if polygon is self-intersecting
+        is_polygon_invalid = False
+        if self.geometry_type == "Polygon" and len(self.waypoints) >= 3:
+            pts_wgs = [QgsPointXY(w[0], w[1]) for w in self.waypoints]
+            pts_wgs.append(pts_wgs[0])
+            poly_test = QgsGeometry.fromPolygonXY([pts_wgs])
+            if poly_test and not poly_test.isGeosValid():
+                is_polygon_invalid = True
+                
+        if is_polygon_invalid:
+            self.was_invalid = True
+            self.lbl_status.setText(self.tr("status_self_intersecting_polygon", "Fehler: Selbstschneidendes Polygon ist keine gültige Geometrie"))
+            self.lbl_status.setStyleSheet("color: red; font-weight: bold;")
+            
+            f_fg = QgsFeature(self.lyr_fg.fields())
+            f_fg.setGeometry(poly_test)
+            self.lyr_fg.dataProvider().addFeatures([f_fg])
+            self.lyr_fg.updateExtents()
+            self.lyr_fg.triggerRepaint()
+            
+            self.style_polygon_layer(self.lyr_fg, "239,87,87,30", "239,87,87,255", 2.0)
+            
+            # Re-trigger repaint for other layers (to clear them)
+            self.lyr_cv.triggerRepaint()
+            self.lyr_grb.triggerRepaint()
+            if self.lyr_aga:
+                self.lyr_aga.triggerRepaint()
+                
+            self.canvas.refresh()
+            return
+        else:
+            if getattr(self, 'was_invalid', False):
+                self.was_invalid = False
+                self.lbl_status.setStyleSheet("") # reset status style
+                self.initialize_layers(force_restyle=True)
         
         if self.waypoints:
             calc_params = self.params.copy()
@@ -2387,6 +2423,7 @@ class DroneCorridorPlanner(object):
             return
             
         original_waypoints = list(self.waypoints)
+        original_params = dict(self.params)
         
         def on_waypoint_edited():
             updated_params = dialog.get_waypoint_params()
@@ -2395,7 +2432,7 @@ class DroneCorridorPlanner(object):
                 self.waypoints[idx] = (lon, lat, new_alt, new_spd, new_fg)
             self.rebuild_and_calculate()
             
-        dialog = AltitudeTableDialog(self.gui, self.waypoints, self.params, on_change_callback=on_waypoint_edited)
+        dialog = AltitudeTableDialog(self.gui, self.waypoints, self.params, on_change_callback=on_waypoint_edited, geometry_type=self.geometry_type)
         if dialog.exec_() == QDialog.Accepted:
             # Commit changes and add to undo stack
             self.undo_stack.append(list(original_waypoints))
@@ -2404,8 +2441,10 @@ class DroneCorridorPlanner(object):
             # Already updated on the map, but a final calculation ensures everything is clean
             self.rebuild_and_calculate()
         else:
-            # Revert to original waypoints on cancel
+            # Revert to original waypoints and parameters on cancel
             self.waypoints = original_waypoints
+            self.params.clear()
+            self.params.update(original_params)
             self.rebuild_and_calculate()
 
     def reset_planning(self):
@@ -2735,6 +2774,26 @@ class DroneCorridorPlanner(object):
 
         return True, None
 
+    def check_geometry_validity(self):
+        """
+        Checks if the current geometry is a valid (non-self-intersecting) polygon.
+        If self-intersecting, displays a warning dialog and returns False.
+        """
+        if self.geometry_type == "Polygon" and len(self.waypoints) >= 3:
+            from qgis.core import QgsPointXY, QgsGeometry
+            pts_wgs = [QgsPointXY(w[0], w[1]) for w in self.waypoints]
+            pts_wgs.append(pts_wgs[0])
+            poly_test = QgsGeometry.fromPolygonXY([pts_wgs])
+            if poly_test and not poly_test.isGeosValid():
+                from PyQt5.QtWidgets import QMessageBox
+                QMessageBox.warning(
+                    self.gui,
+                    self.tr("msg_self_intersecting_polygon_title", "Ungültige Geometrie"),
+                    self.tr("msg_self_intersecting_polygon_text", "Die aktuelle Flugplanung kann nicht exportiert/berechnet werden, da das Polygon selbstschneidend ist. Bitte korrigieren Sie die Stützpunkte auf der Karte.")
+                )
+                return False
+        return True
+
     def save_as_persistent_layer(self):
         """
         Saves all current planning layers into a single GeoPackage file,
@@ -2750,6 +2809,9 @@ class DroneCorridorPlanner(object):
                 self.tr("msg_export_error_title", "Export Fehler"),
                 self.tr("msg_export_no_wp_text", "Es gibt keine Wegpunkte zum Exportieren.")
             )
+            return
+            
+        if not self.check_geometry_validity():
             return
 
         from PyQt5.QtCore import QDate
@@ -3036,6 +3098,9 @@ class DroneCorridorPlanner(object):
             )
             return
             
+        if not self.check_geometry_validity():
+            return
+            
         from PyQt5.QtCore import QDate
         from qgis.core import QgsSettings
         settings = QgsSettings()
@@ -3229,6 +3294,9 @@ class DroneCorridorPlanner(object):
                 self.tr("msg_export_error_title", "Export Fehler"), 
                 self.tr("msg_export_no_wp_text", "Es gibt keine Wegpunkte zum Exportieren.")
             )
+            return
+            
+        if not self.check_geometry_validity():
             return
             
         from PyQt5.QtCore import QDate

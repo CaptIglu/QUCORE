@@ -1048,21 +1048,33 @@ class ImporterExporter:
         add_vert = params.get("additionalErrorVertical", 0.0)
         
         # 3. Build dynamic table & Calculate min/max ranges
-        headers = [
-            "WP",
-            "Position (Lat, Lon)",
-            "h_FG (m)",
-            "v0 (m/s)",
-            "W_FG (m)",
-            "CV Rad (m)",
-            "GRB Rad (m)",
-            "h_CV (m)"
-        ]
+        is_poly = (geometry_type == "Polygon")
+        if is_poly:
+            headers = [
+                "WP",
+                "Position (Lat, Lon)",
+                "h_FG (m)",
+                "v0 (m/s)",
+                "S_CV (m)",
+                "S_GRB (m)",
+                "h_CV (m)"
+            ]
+        else:
+            headers = [
+                "WP",
+                "Position (Lat, Lon)",
+                "h_FG (m)",
+                "v0 (m/s)",
+                "S_FG (m)",
+                "S_CV (m)",
+                "S_GRB (m)",
+                "h_CV (m)"
+            ]
         
         rows = []
         fg_widths = []
-        cv_radii = []
-        grb_radii = []
+        cv_widths = []
+        grb_widths = []
         h_cvs = []
         
         has_narrow_cv = False
@@ -1086,24 +1098,36 @@ class ImporterExporter:
             
             r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params_wp)
             s_cv = r_cv - r_fg
+            s_grb = r_grb - r_cv
             if s_cv < 9.99:
                 has_narrow_cv = True
             
             fg_widths.append(fg_w)
-            cv_radii.append(r_cv)
-            grb_radii.append(r_grb)
+            cv_widths.append(s_cv)
+            grb_widths.append(s_grb)
             h_cvs.append(h_cv)
             
-            rows.append([
-                idx_str,
-                lat_lon_str,
-                f"{h:.1f}",
-                f"{spd:.1f}",
-                f"{fg_w:.1f}",
-                f"{r_cv:.1f}",
-                f"{r_grb:.1f}",
-                f"{h_cv:.1f}"
-            ])
+            if is_poly:
+                rows.append([
+                    idx_str,
+                    lat_lon_str,
+                    f"{h:.1f}",
+                    f"{spd:.1f}",
+                    f"{s_cv:.1f}",
+                    f"{s_grb:.1f}",
+                    f"{h_cv:.1f}"
+                ])
+            else:
+                rows.append([
+                    idx_str,
+                    lat_lon_str,
+                    f"{h:.1f}",
+                    f"{spd:.1f}",
+                    f"{fg_w:.1f}",
+                    f"{s_cv:.1f}",
+                    f"{s_grb:.1f}",
+                    f"{h_cv:.1f}"
+                ])
             
         table_xml = ImporterExporter.make_docx_table(headers, rows)
         
@@ -1123,8 +1147,8 @@ class ImporterExporter:
                     return f"{min_v:.1f} {unit} bis {max_v:.1f} {unit}".replace('.', ',')
                 
         fg_range = get_range_str(fg_widths)
-        cv_range = get_range_str(cv_radii)
-        grb_range = get_range_str(grb_radii)
+        cv_range = get_range_str(cv_widths)
+        grb_range = get_range_str(grb_widths)
         h_cv_range = get_range_str(h_cvs)
         
         # 4. Generate dynamic document.xml using placeholder replacements
@@ -1229,8 +1253,7 @@ class ImporterExporter:
         xml_content = xml_content.replace("__ALT_GPS__", f"{alt_gps:.1f}")
         xml_content = xml_content.replace("__ADD_HORIZ__", f"{add_horiz:.1f}")
         xml_content = xml_content.replace("__ADD_VERT__", f"{add_vert:.1f}")
-        step_size = params.get("stepSize", 50.0)
-        xml_content = xml_content.replace("__STEP_SIZE__", f"{step_size:.1f}")
+
         
         xml_content = xml_content.replace("__FG_RANGE__", fg_range)
         xml_content = xml_content.replace("__CV_RANGE__", cv_range)
