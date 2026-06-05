@@ -171,6 +171,9 @@ class MockQMessageBox(MockQWidget):
     No = 65536
     Ok = 1
     Cancel = 2
+    @staticmethod
+    def question(*args, **kwargs):
+        return 65536
 qt_widgets.QMessageBox = MockQMessageBox
 qt_widgets.QAction = MockQWidget
 qt_widgets.QFileDialog = MockQWidget
@@ -179,7 +182,18 @@ qt_widgets.QStyle = MockQWidget
 qt_widgets.QGridLayout = MockQWidget
 qt_widgets.QSpinBox = MockQWidget
 qt_widgets.QTreeWidget = MockQWidget
-qt_widgets.QTreeWidgetItem = MagicMock
+class MockQTreeWidgetItem:
+    def __init__(self, *args, **kwargs):
+        pass
+    def setText(self, col, text):
+        pass
+    def setExpanded(self, expanded):
+        pass
+    def font(self, col):
+        return MagicMock()
+    def setFont(self, col, font):
+        pass
+qt_widgets.QTreeWidgetItem = MockQTreeWidgetItem
 qt_widgets.QColorDialog = MockQWidget
 
 sys.modules['PyQt5.QtWidgets'] = qt_widgets
@@ -1066,6 +1080,58 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         mock_layer.setLabelsEnabled.assert_called_with(False)
         mock_layer.triggerRepaint.assert_called_once()
         mock_canvas.refresh.assert_called_once()
+
+    def test_advanced_settings_dialog_restore_defaults(self):
+        """
+        Verify that AdvancedSettingsDialog can restore all parameters back to defaults
+        upon calling restore_defaults() and updates all style parameters and the tree.
+        """
+        from QUCORE.advanced_settings_dialog import AdvancedSettingsDialog
+        from unittest.mock import MagicMock, patch
+        import tempfile
+        import json
+        
+        # Create a temp config file
+        temp_dir = tempfile.gettempdir()
+        temp_config_path = os.path.join(temp_dir, "config.json")
+        default_config = {
+            "stepSize": 50.0,
+            "corridorWidth": 50.0,
+            "linewidth_route": 1.0,
+            "color_route": "#50505a"
+        }
+        
+        with open(temp_config_path, "w", encoding="utf-8") as f:
+            json.dump(default_config, f)
+            
+        try:
+            current_params = {
+                "stepSize": 120.0,
+                "corridorWidth": 80.0,
+                "linewidth_route": 3.0,
+                "color_route": "#ff0000"
+            }
+            
+            dialog = AdvancedSettingsDialog(None, temp_config_path, current_step_size=120.0, current_params=current_params)
+            
+            # Verify initial values are updated with current params
+            self.assertEqual(dialog.spin_step.value(), 120.0)
+            self.assertEqual(dialog.spin_lw_route.value(), 3.0)
+            
+            # Patch QMessageBox.question to return QMessageBox.Yes to confirm restoration
+            from PyQt5.QtWidgets import QMessageBox
+            with patch.object(QMessageBox, 'question', return_value=QMessageBox.Yes):
+                dialog.restore_defaults()
+                
+            # Verify values have been reset to defaults from config.json
+            self.assertEqual(dialog.spin_step.value(), 50.0)
+            self.assertEqual(dialog.spin_lw_route.value(), 1.0)
+            self.assertEqual(dialog.get_all_params()["corridorWidth"], 50.0)
+            self.assertEqual(dialog.get_all_params()["stepSize"], 50.0)
+            
+        finally:
+            if os.path.exists(temp_config_path):
+                os.remove(temp_config_path)
 
 if __name__ == "__main__":
     unittest.main()

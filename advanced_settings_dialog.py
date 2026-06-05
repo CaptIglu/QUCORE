@@ -249,10 +249,20 @@ class AdvancedSettingsDialog(QDialog):
         
         self.populate_defaults_tree()
         
+        # Layout for actions
+        lay_actions = QHBoxLayout()
+        
+        # Restore Defaults Button
+        self.btn_restore = QPushButton(self.tr("msg_restore_defaults_title", "Standardwerte wiederherstellen"))
+        self.btn_restore.clicked.connect(self.restore_defaults)
+        lay_actions.addWidget(self.btn_restore)
+        
         # Open Config File Button
         btn_open_config = QPushButton(self.tr("btn_open_config", "Konfigurationsdatei (config.json) öffnen..."))
         btn_open_config.clicked.connect(self.open_config_file)
-        lay_def.addWidget(btn_open_config)
+        lay_actions.addWidget(btn_open_config)
+        
+        lay_def.addLayout(lay_actions)
         
         # Add tabs in the specified order:
         # 1. Darstellung
@@ -392,6 +402,55 @@ class AdvancedSettingsDialog(QDialog):
                 self.tr("msg_config_not_found_text", "Die Konfigurationsdatei config.json konnte nicht im Plugin-Ordner gefunden werden.")
             )
 
+    def restore_defaults(self):
+        title = self.tr("msg_restore_defaults_title", "Standardwerte wiederherstellen")
+        text = self.tr("msg_restore_defaults_text", "Möchten Sie wirklich alle Parameter auf die Standardwerte aus der config.json zurücksetzen?")
+        reply = QMessageBox.question(self, title, text, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            fresh_config = {}
+            if self.config_path and os.path.exists(self.config_path):
+                try:
+                    with open(self.config_path, 'r', encoding='utf-8') as f:
+                        fresh_config = json.load(f)
+                except Exception:
+                    pass
+            
+            if not fresh_config:
+                return
+                
+            self.config_params = fresh_config
+            
+            # Update step size spinbox
+            self.spin_step.setValue(self.config_params.get("stepSize", 50.0))
+            
+            # Update representation parameters in UI
+            self.spin_lw_route.setValue(self.config_params.get("linewidth_route", 1.0))
+            self.update_color_button(self.btn_col_route, self.config_params.get("color_route", "#50505a"))
+            
+            self.spin_lw_fg.setValue(self.config_params.get("linewidth_fg", 1.0))
+            self.update_color_button(self.btn_col_fg, self.config_params.get("color_fg", "#397c59"))
+            self.spin_op_fg.setValue(self.config_params.get("opacity_fg", 15))
+            
+            self.spin_lw_cv.setValue(self.config_params.get("linewidth_cv", 1.0))
+            self.update_color_button(self.btn_col_cv, self.config_params.get("color_cv", "#f7bb3d"))
+            self.spin_op_cv.setValue(self.config_params.get("opacity_cv", 15))
+            
+            self.spin_lw_grb.setValue(self.config_params.get("linewidth_grb", 1.0))
+            self.update_color_button(self.btn_col_grb, self.config_params.get("color_grb", "#eb5757"))
+            self.spin_op_grb.setValue(self.config_params.get("opacity_grb", 15))
+            
+            self.spin_lw_aga.setValue(self.config_params.get("linewidth_adjacentarea", 1.0))
+            self.update_color_button(self.btn_col_aga, self.config_params.get("color_adjacentarea", "#2980b9"))
+            self.spin_op_aga.setValue(self.config_params.get("opacity_adjacentarea", 0))
+            
+            self.spin_lw_vlos.setValue(self.config_params.get("linewidth_vlos", 0.8))
+            self.update_color_button(self.btn_col_vlos, self.config_params.get("color_vlos", "#2d9cdb"))
+            self.spin_op_vlos.setValue(self.config_params.get("opacity_vlos", 0))
+            
+            # Refresh the Tree widget
+            self.tree.clear()
+            self.populate_defaults_tree()
+
     def get_step_size(self):
         return self.spin_step.value()
 
@@ -459,3 +518,9 @@ class AdvancedSettingsDialog(QDialog):
             "opacity_adjacentarea": self.spin_op_aga.value(),
             "opacity_vlos": self.spin_op_vlos.value()
         }
+
+    def get_all_params(self):
+        params = dict(self.config_params)
+        params["stepSize"] = self.get_step_size()
+        params.update(self.get_style_params())
+        return params

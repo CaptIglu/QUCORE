@@ -2324,8 +2324,7 @@ class DroneCorridorPlanner(object):
         dialog = AdvancedSettingsDialog(self.gui, self.config_path, self.params.get("stepSize", 50.0), current_params=self.params)
         if dialog.exec_() == QDialog.Accepted:
             self.push_undo()
-            self.params["stepSize"] = dialog.get_step_size()
-            self.params.update(dialog.get_style_params())
+            self.params.update(dialog.get_all_params())
             self.rebuild_and_calculate(force_restyle=True)
 
     def open_vlos_calculator(self):

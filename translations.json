@@ -396,16 +396,16 @@
         "en": "The Flight Geography width ({width:.1f} m) must be at least 3 times the Characteristic Dimension of the UAS (CD = {cd:.1f} m, 3x CD = {min_width:.1f} m).\nThe width was automatically adjusted to {min_width:.1f} m."
     },
     "dialog_adv_settings_title": {
-        "de": "Erweiterte Einstellungen & Standardwerte",
-        "en": "Advanced Settings & Default Values"
+        "de": "Erweiterte Einstellungen",
+        "en": "Advanced Settings"
     },
     "tab_style": {
         "de": "Darstellung",
         "en": "Representation"
     },
     "tab_defaults": {
-        "de": "Standardwerte (LBA-Leitfaden)",
-        "en": "Default Values (LBA Guidelines)"
+        "de": "Parameterübersicht",
+        "en": "Parameter Overview"
     },
     "step_size": {
         "de": "Interpolations-Schrittweite (für GRB):",
@@ -456,8 +456,8 @@
         "en": "VLOS Range (Pilot Position):"
     },
     "defaults_info": {
-        "de": "<b>Hinweis:</b> Die folgenden Parameter stellen die Standardwerte gemäß dem LBA-Leitfaden dar. Diese Liste ist schreibgeschützt. Um diese Werte dauerhaft anzupassen, bearbeiten Sie bitte die <code>config.json</code>-Datei über den Button unten.",
-        "en": "<b>Note:</b> The following parameters represent the default values according to the LBA guidelines. This list is read-only. To permanently adjust these values, please edit the <code>config.json</code> file using the button below."
+        "de": "<b>Hinweis:</b> Dies ist eine Übersicht über die aktuellen Berechnungs- und Darstellungsparameter dieser Planung. Die Werte können hier nicht direkt bearbeitet werden. Um sie auf die in der config.json definierten Standardwerte zurückzusetzen, nutzen Sie bitte den Button 'Standardwerte wiederherstellen' unten.",
+        "en": "<b>Note:</b> This is an overview of the current calculation and representation parameters of this planning session. The values cannot be edited directly here. To reset them to the default values defined in config.json, please use the 'Restore Default Values' button below."
     },
     "btn_open_config": {
         "de": "Konfigurationsdatei (config.json) öffnen...",
