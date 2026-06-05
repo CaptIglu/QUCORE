@@ -39,6 +39,18 @@ class AdvancedSettingsDialog(QDialog):
             except Exception:
                 pass
                 
+        # Load config_limits.json for dynamic min/max/step/decimals of spinboxes
+        self.config_limits = {}
+        if self.config_path:
+            plugin_dir = os.path.dirname(self.config_path)
+            limits_path = os.path.join(plugin_dir, "config_limits.json")
+            if os.path.exists(limits_path):
+                try:
+                    with open(limits_path, 'r', encoding='utf-8') as f:
+                        self.config_limits = json.load(f)
+                except Exception:
+                    pass
+
         # Apply current in-memory parameters to reflect the active session
         if current_params:
             self.config_params.update(current_params)
@@ -55,6 +67,18 @@ class AdvancedSettingsDialog(QDialog):
                 pass
                 
         self.init_ui()
+
+    def configure_spinbox(self, spinbox, param_key, default_min, default_max, default_step=1.0, default_decimals=2):
+        limits = self.config_limits.get(param_key, {})
+        s_min = limits.get("min", default_min)
+        s_max = limits.get("max", default_max)
+        s_step = limits.get("step", default_step)
+        s_dec = limits.get("decimals", default_decimals)
+        
+        if hasattr(spinbox, "setDecimals"):
+            spinbox.setDecimals(s_dec)
+        spinbox.setRange(s_min, s_max)
+        spinbox.setSingleStep(s_step)
 
     def tr(self, key, default=""):
         lang = self.config_params.get("language", "de")
@@ -77,11 +101,9 @@ class AdvancedSettingsDialog(QDialog):
         form_gen.setSpacing(15)
         
         self.spin_step = QDoubleSpinBox()
-        self.spin_step.setRange(1.0, 1000.0)
+        self.configure_spinbox(self.spin_step, "stepSize", 1.0, 1000.0, 5.0, 1)
         self.spin_step.setValue(self.step_size)
         self.spin_step.setSuffix(" m")
-        self.spin_step.setDecimals(1)
-        self.spin_step.setSingleStep(5.0)
         
         desc_label = QLabel(self.tr("step_desc", "Die Schrittweite legt fest, in welchen Abständen entlang der Route Zwischenwerte interpoliert und berechnet werden. Ein kleinerer Wert erhöht die Genauigkeit und Krümmungssicherheit des Ground Risk Buffers (ballistischer Ansatz), erzeugt jedoch mehr Geometrie-Stützpunkte."))
         desc_label.setWordWrap(True)
@@ -127,8 +149,7 @@ class AdvancedSettingsDialog(QDialog):
         
         # 1. Route
         self.spin_lw_route = QDoubleSpinBox()
-        self.spin_lw_route.setRange(0.1, 10.0)
-        self.spin_lw_route.setSingleStep(0.1)
+        self.configure_spinbox(self.spin_lw_route, "linewidth_route", 0.1, 10.0, 0.1, 2)
         self.spin_lw_route.setSuffix(" mm")
         self.spin_lw_route.setValue(self.config_params.get("linewidth_route", 1.0))
         self.btn_col_route = QPushButton()
@@ -137,70 +158,65 @@ class AdvancedSettingsDialog(QDialog):
         
         # 2. FG
         self.spin_lw_fg = QDoubleSpinBox()
-        self.spin_lw_fg.setRange(0.1, 10.0)
-        self.spin_lw_fg.setSingleStep(0.1)
+        self.configure_spinbox(self.spin_lw_fg, "linewidth_fg", 0.1, 10.0, 0.1, 2)
         self.spin_lw_fg.setSuffix(" mm")
         self.spin_lw_fg.setValue(self.config_params.get("linewidth_fg", 1.0))
         self.btn_col_fg = QPushButton()
         self.update_color_button(self.btn_col_fg, self.config_params.get("color_fg", "#397c59"))
         self.spin_op_fg = QSpinBox()
-        self.spin_op_fg.setRange(0, 100)
+        self.configure_spinbox(self.spin_op_fg, "opacity_fg", 0, 100, 1)
         self.spin_op_fg.setSuffix(" %")
         self.spin_op_fg.setValue(self.config_params.get("opacity_fg", 15))
         self.create_layer_row(form_style, self.tr("lyr_fg", "Flight Geography (FG):"), self.spin_lw_fg, self.btn_col_fg, self.spin_op_fg)
         
         # 3. CV
         self.spin_lw_cv = QDoubleSpinBox()
-        self.spin_lw_cv.setRange(0.1, 10.0)
-        self.spin_lw_cv.setSingleStep(0.1)
+        self.configure_spinbox(self.spin_lw_cv, "linewidth_cv", 0.1, 10.0, 0.1, 2)
         self.spin_lw_cv.setSuffix(" mm")
         self.spin_lw_cv.setValue(self.config_params.get("linewidth_cv", 1.0))
         self.btn_col_cv = QPushButton()
         self.update_color_button(self.btn_col_cv, self.config_params.get("color_cv", "#f7bb3d"))
         self.spin_op_cv = QSpinBox()
-        self.spin_op_cv.setRange(0, 100)
+        self.configure_spinbox(self.spin_op_cv, "opacity_cv", 0, 100, 1)
         self.spin_op_cv.setSuffix(" %")
         self.spin_op_cv.setValue(self.config_params.get("opacity_cv", 15))
         self.create_layer_row(form_style, self.tr("lyr_cv", "Contingency Volume (CV):"), self.spin_lw_cv, self.btn_col_cv, self.spin_op_cv)
         
         # 4. GRB
         self.spin_lw_grb = QDoubleSpinBox()
-        self.spin_lw_grb.setRange(0.1, 10.0)
-        self.spin_lw_grb.setSingleStep(0.1)
+        self.configure_spinbox(self.spin_lw_grb, "linewidth_grb", 0.1, 10.0, 0.1, 2)
         self.spin_lw_grb.setSuffix(" mm")
         self.spin_lw_grb.setValue(self.config_params.get("linewidth_grb", 1.0))
         self.btn_col_grb = QPushButton()
         self.update_color_button(self.btn_col_grb, self.config_params.get("color_grb", "#eb5757"))
         self.spin_op_grb = QSpinBox()
-        self.spin_op_grb.setRange(0, 100)
+        self.configure_spinbox(self.spin_op_grb, "opacity_grb", 0, 100, 1)
         self.spin_op_grb.setSuffix(" %")
         self.spin_op_grb.setValue(self.config_params.get("opacity_grb", 15))
         self.create_layer_row(form_style, self.tr("lyr_grb", "Ground Risk Buffer (GRB):"), self.spin_lw_grb, self.btn_col_grb, self.spin_op_grb)
         
         # 5. AA
         self.spin_lw_aga = QDoubleSpinBox()
-        self.spin_lw_aga.setRange(0.1, 10.0)
-        self.spin_lw_aga.setSingleStep(0.1)
+        self.configure_spinbox(self.spin_lw_aga, "linewidth_adjacentarea", 0.1, 10.0, 0.1, 2)
         self.spin_lw_aga.setSuffix(" mm")
         self.spin_lw_aga.setValue(self.config_params.get("linewidth_adjacentarea", 1.0))
         self.btn_col_aga = QPushButton()
         self.update_color_button(self.btn_col_aga, self.config_params.get("color_adjacentarea", "#2980b9"))
         self.spin_op_aga = QSpinBox()
-        self.spin_op_aga.setRange(0, 100)
+        self.configure_spinbox(self.spin_op_aga, "opacity_adjacentarea", 0, 100, 1)
         self.spin_op_aga.setSuffix(" %")
         self.spin_op_aga.setValue(self.config_params.get("opacity_adjacentarea", 0))
         self.create_layer_row(form_style, self.tr("lyr_aa", "Adjacent Area (AA):"), self.spin_lw_aga, self.btn_col_aga, self.spin_op_aga)
         
         # 6. VLOS
         self.spin_lw_vlos = QDoubleSpinBox()
-        self.spin_lw_vlos.setRange(0.1, 10.0)
-        self.spin_lw_vlos.setSingleStep(0.1)
+        self.configure_spinbox(self.spin_lw_vlos, "linewidth_vlos", 0.1, 10.0, 0.1, 2)
         self.spin_lw_vlos.setSuffix(" mm")
         self.spin_lw_vlos.setValue(self.config_params.get("linewidth_vlos", 0.8))
         self.btn_col_vlos = QPushButton()
         self.update_color_button(self.btn_col_vlos, self.config_params.get("color_vlos", "#2d9cdb"))
         self.spin_op_vlos = QSpinBox()
-        self.spin_op_vlos.setRange(0, 100)
+        self.configure_spinbox(self.spin_op_vlos, "opacity_vlos", 0, 100, 1)
         self.spin_op_vlos.setSuffix(" %")
         self.spin_op_vlos.setValue(self.config_params.get("opacity_vlos", 0))
         self.create_layer_row(form_style, self.tr("lyr_vlos", "VLOS-Reichweite (Pilotenposition):"), self.spin_lw_vlos, self.btn_col_vlos, self.spin_op_vlos)
