@@ -1134,5 +1134,45 @@
   "msg_restore_defaults_text": {
     "de": "Möchten Sie wirklich alle Parameter auf die Standardwerte aus der config.json zurücksetzen?",
     "en": "Do you really want to reset all parameters to the default values from config.json?"
+  },
+  "empty_grb_geometry": {
+    "de": "GRB-Geometrie ist leer",
+    "en": "GRB geometry is empty"
+  },
+  "btn_calculating": {
+    "de": "Berechnung läuft...",
+    "en": "Calculation in progress..."
+  },
+  "raw_value": {
+    "de": "Rohwert",
+    "en": "Raw value"
+  },
+  "people_per_cell": {
+    "de": "Personen/Zelle",
+    "en": "People/cell"
+  },
+  "msg_help_not_found_title": {
+    "de": "Hilfe nicht gefunden",
+    "en": "Help Not Found"
+  },
+  "msg_help_not_found_text": {
+    "de": "Die Hilfedatei 'instructions.html' konnte im Plugin-Ordner nicht gefunden werden.",
+    "en": "The help file 'instructions.html' could not be found in the plugin folder."
+  },
+  "error_gpkg_no_state": {
+    "de": "Die GPKG-Datei enthält keine gespeicherte Planung (qucore_state fehlt oder leer).",
+    "en": "The GPKG file does not contain a saved planning (qucore_state is missing or empty)."
+  },
+  "error_gpkg_no_features": {
+    "de": "Die GPKG-Datei enthält keine Features im Wegpunkte-Layer.",
+    "en": "The GPKG file does not contain features in the waypoints layer."
+  },
+  "error_gpkg_no_state_field": {
+    "de": "Der Wegpunkte-Layer in der GPKG-Datei enthält kein qucore_state-Feld.",
+    "en": "The waypoints layer in the GPKG file does not contain a qucore_state field."
+  },
+  "error_gpkg_load_failed": {
+    "de": "Der Wegpunkte-Layer konnte nicht aus der GeoPackage-Datei geladen werden.",
+    "en": "The waypoints layer could not be loaded from the GeoPackage file."
   }
 }

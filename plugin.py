@@ -1414,8 +1414,8 @@ class DroneCorridorPlanner(object):
         else:
             QMessageBox.warning(
                 self.gui if self.gui else self.iface.mainWindow(),
-                "Hilfe nicht gefunden",
-                "Die Hilfedatei 'instructions.html' konnte im Plugin-Ordner nicht gefunden werden."
+                self.tr("msg_help_not_found_title", "Hilfe nicht gefunden"),
+                self.tr("msg_help_not_found_text", "Die Hilfedatei 'instructions.html' konnte im Plugin-Ordner nicht gefunden werden.")
             )
 
     def open_about_dialog(self):
@@ -2985,13 +2985,13 @@ class DroneCorridorPlanner(object):
                                 self.deserialize_state(str(state_json))
                                 imported_geom_type = self.geometry_type
                             else:
-                                raise ValueError("Die GPKG-Datei enthält keine gespeicherte Planung (qucore_state fehlt oder leer).")
+                                raise ValueError(self.tr("error_gpkg_no_state", "Die GPKG-Datei enthält keine gespeicherte Planung (qucore_state fehlt oder leer)."))
                         else:
-                            raise ValueError("Die GPKG-Datei enthält keine Features im Wegpunkte-Layer.")
+                            raise ValueError(self.tr("error_gpkg_no_features", "Die GPKG-Datei enthält keine Features im Wegpunkte-Layer."))
                     else:
-                        raise ValueError("Der Wegpunkte-Layer in der GPKG-Datei enthält kein qucore_state-Feld.")
+                        raise ValueError(self.tr("error_gpkg_no_state_field", "Der Wegpunkte-Layer in der GPKG-Datei enthält kein qucore_state-Feld."))
                 else:
-                    raise ValueError("Der Wegpunkte-Layer konnte nicht aus der GeoPackage-Datei geladen werden.")
+                    raise ValueError(self.tr("error_gpkg_load_failed", "Der Wegpunkte-Layer konnte nicht aus der GeoPackage-Datei geladen werden."))
             else:
                 # KML
                 waypoints, pilot_pos, geom_type = ImporterExporter.import_kml(file_path)
