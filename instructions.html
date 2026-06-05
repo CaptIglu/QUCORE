@@ -429,7 +429,7 @@
                     <td>Globale maximale Betriebsgeschwindigkeit ($v_0$)</td>
                 </tr>
                 <tr>
-                    <td>Flight Geography Breite ($W_{FG}$)</td>
+                    <td>Flight Geography Breite ($S_{FG}$)</td>
                     <td><code>fg_width</code>, <code>width</code>, <code>breite</code>, <code>w_fg</code>, <code>w</code></td>
                     <td>Globale Standard Flight Geography Breite ($50\text{ m}$)</td>
                 </tr>
@@ -442,40 +442,40 @@
         <p>Die Puffer werden in einem lokalen UTM-Koordinatensystem (metrisch) hochpräzise berechnet. Dabei werden die folgenden mathematischen Formeln zur Ermittlung der Schutzbereiche (Flight Geography, Contingency Volume und Ground Risk Buffer) verwendet:</p>
         
         <h3>9.1. Flight Geography (FG)</h3>
-        <p>Die Flight Geography bildet den innersten Kern des Flugbereichs. Der Radius bzw. die halbe Breite $R_{FG}$ bestimmt sich aus der eingestellten Korridorbreite $W_{FG}$ (<code>corridorWidth</code> bzw. wegeweiser <code>fg_width</code>):</p>
-        <p>$$R_{FG} = \frac{W_{FG}}{2}$$</p>
+        <p>Die Flight Geography bildet den innersten Kern des Flugbereichs. Der Radius bzw. die halbe Breite $R_{FG}$ bestimmt sich aus der eingestellten Korridorbreite $S_{FG}$ (<code>corridorWidth</code> bzw. wegeweiser <code>fg_width</code>):</p>
+        <p>$$R_{FG} = \frac{S_{FG}}{2}$$</p>
         <div class="alert alert-tip">
             <b>🛡️ Sicherheitsregel (3x CD-Regel)</b><br>
-            Aus Sicherheitsgründen wird die Flight Geography automatisch nach unten hin auf das Dreifache der charakteristischen Dimension des UAS ($3 \cdot CD$) begrenzt. Es gilt stets: $W_{FG} \ge 3 \cdot CD$ (bzw. $R_{FG} \ge 1.5 \cdot CD$ und für den Kreis-Modus $R_{FG} \ge 3 \cdot CD$).
+            Aus Sicherheitsgründen wird die Flight Geography automatisch nach unten hin auf das Dreifache der charakteristischen Dimension des UAS ($3 \cdot CD$) begrenzt. Es gilt stets: $S_{FG} \ge 3 \cdot CD$ (bzw. $R_{FG} \ge 1.5 \cdot CD$ und für den Kreis-Modus $R_{FG} \ge 3 \cdot CD$).
         </div>
 
         <h3>9.2. Contingency Volume (CV) – Lateral</h3>
         <p>Das Contingency Volume umschließt die Flight Geography und fängt Abweichungen vom geplanten Flugweg ab. Der Gesamt-Radius $R_{CV}$ ab der Flugweg-Mittelachse beträgt:</p>
-        <p>$$R_{CV} = R_{FG} + s_{cv}$$</p>
-        <p>Der laterale CV-Sicherheitszuschlag $s_{cv}$ berechnet sich wie folgt:</p>
-        <p>$$s_{cv} = S_{GPS} + S_{Pos} + S_{K} + s_{rz} + s_{cm} + s_{add, horiz}$$</p>
+        <p>$$R_{CV} = R_{FG} + S_{CV}$$</p>
+        <p>Der laterale CV-Sicherheitszuschlag $S_{CV}$ berechnet sich wie folgt:</p>
+        <p>$$S_{CV} = S_{GPS} + S_{Pos} + S_{K} + S_{RZ} + S_{CM} + s_{add, horiz}$$</p>
         <p>Dabei sind:</p>
         <ul>
             <li><b>$S_{GPS}$</b>: Horizontale GPS-Ungenauigkeit (<code>gpsInaccuracy</code>)</li>
             <li><b>$S_{Pos}$</b>: Positions-Haltefehler des Autopiloten (<code>positionError</code>)</li>
             <li><b>$S_{K}$</b>: Kartografischer Fehler der Hintergrundkarte (<code>mapError</code>)</li>
-            <li><b>$s_{rz}$</b>: Reaktionsweg des Piloten während der Reaktionszeit $t_{rz}$ (<code>reactionTime</code>) bei maximaler Betriebsgeschwindigkeit $v_0$ (<code>maxVelocity</code> / <code>maxOpsSpeedV0</code>):
-                $$s_{rz} = v_0 \cdot t_{rz}$$
+            <li><b>$S_{RZ}$</b>: Reaktionsweg des Piloten während der Reaktionszeit $t_{rz}$ (<code>reactionTime</code>) bei maximaler Betriebsgeschwindigkeit $v_0$ (<code>maxVelocity</code> / <code>maxOpsSpeedV0</code>):
+                $$S_{RZ} = v_0 \cdot t_{rz}$$
             </li>
-            <li><b>$s_{cm}$</b>: Lateraler Manöverweg (Contingency Manoeuvre), abhängig vom gewählten lateralen Manövertyp (<code>lateralContingencyManoeuvreType</code>):
+            <li><b>$S_{CM}$</b>: Lateraler Manöverweg (Contingency Manoeuvre), abhängig vom gewählten lateralen Manövertyp (<code>lateralContingencyManoeuvreType</code>):
                 <ul>
                     <li><b>Standard / Default (Kurve / Anhalten)</b>:
                         <ul>
                             <li><i>Multikopter</i>: Bremsmanöver über Nickwinkel ($\Theta$ / <code>maxPitchAngle</code>):
-                                $$s_{cm} = \frac{0.5 \cdot v_0^2}{g \cdot \tan(\Theta)}$$
+                                $$S_{CM} = \frac{0.5 \cdot v_0^2}{g \cdot \tan(\Theta)}$$
                             </li>
                             <li><i>Fixed-Wing (Flächenflieger)</i>: Ausweichkurve über Rollwinkel ($\Phi$ / <code>maxRollAngle</code>):
-                                $$s_{cm} = \frac{v_0^2}{g \cdot \tan(\Phi)}$$
+                                $$S_{CM} = \frac{v_0^2}{g \cdot \tan(\Phi)}$$
                             </li>
                         </ul>
                     </li>
                     <li><b>Fallschirm (Notfall-Fallschirm / Parachute)</b>: Lateraler Driftweg während der Fallschirm-Öffnungszeit ($t_{para, lat}$ / <code>parachuteOpeningTimeLateral</code>):
-                        $$s_{cm} = v_0 \cdot t_{para, lat}$$
+                        $$S_{CM} = v_0 \cdot t_{para, lat}$$
                     </li>
                 </ul>
             </li>
@@ -484,7 +484,7 @@
 
         <h3>9.3. Contingency Volume (CV) – Vertikal</h3>
         <p>Die vertikale Obergrenze des Contingency Volumes ($H_{CV}$) definiert die maximale absolute Höhe über Grund (AGL), bis zu der sich das UAS im Notfall bewegen darf. Sie ist die physikalische Bezugshöhe für die Berechnung des Ground Risk Buffers:</p>
-        <p>$$H_{CV} = h + h_{\Delta} + h_{rz} + h_{cm} + h_{add, vert}$$</p>
+        <p>$$H_{CV} = h + h_{\Delta} + H_{RZ} + H_{CM} + h_{add, vert}$$</p>
         <p>Dabei sind:</p>
         <ul>
             <li><b>$h$</b>: Geplante Flughöhe des Wegpunktes (<code>altitude</code> / <code>height</code> / <code>maxFlightHeight</code>)</li>
@@ -494,23 +494,23 @@
                     <li><i>Baro</i>: $h_{\Delta} = \text{altitudeErrorBarometric}$</li>
                 </ul>
             </li>
-            <li><b>$h_{rz}$</b>: Vertikaler Reaktionsweg während der Reaktionszeit:
-                $$h_{rz} = 0.7 \cdot v_0 \cdot t_{rz}$$
+            <li><b>$H_{RZ}$</b>: Vertikaler Reaktionsweg während der Reaktionszeit:
+                $$H_{RZ} = 0.7 \cdot v_0 \cdot t_{rz}$$
             </li>
-            <li><b>$h_{cm}$</b>: Vertikale Manöverhöhe (Contingency Manoeuvre), abhängig vom gewählten vertikalen Manövertyp (<code>verticalContingencyManoeuvreType</code>):
+            <li><b>$H_{CM}$</b>: Vertikale Manöverhöhe (Contingency Manoeuvre), abhängig vom gewählten vertikalen Manövertyp (<code>verticalContingencyManoeuvreType</code>):
                 <ul>
                     <li><b>Standard / Default (Steigflug)</b>:
                         <ul>
                             <li><i>Multikopter</i> (Kinetische Energie zu potenzieller Energie):
-                                $$h_{cm} = \frac{0.5 \cdot v_0^2}{g}$$
+                                $$H_{CM} = \frac{0.5 \cdot v_0^2}{g}$$
                             </li>
                             <li><i>Fixed-Wing (Flächenflieger)</i> (45-Grad Steigflug auf Kreisbahn):
-                                $$h_{cm} = \frac{0.3 \cdot v_0^2}{g}$$
+                                $$H_{CM} = \frac{0.3 \cdot v_0^2}{g}$$
                             </li>
                         </ul>
                     </li>
                     <li><b>Fallschirm (Notfall-Fallschirm / Parachute)</b>: Höhenverlust während der Fallschirm-Öffnungszeit ($t_{para, vert}$ / <code>parachuteOpeningTimeVertical</code>):
-                        $$h_{cm} = 0.7 \cdot v_0 \cdot t_{para, vert}$$
+                        $$H_{CM} = 0.7 \cdot v_0 \cdot t_{para, vert}$$
                     </li>
                 </ul>
             </li>
@@ -583,7 +583,7 @@
                     <td><code>corridorWidth</code></td>
                     <td>Float</td>
                     <td><code>50.0</code></td>
-                    <td>Standard Flight Geography Breite ($W_{FG}$) in Metern.</td>
+                    <td>Standard Flight Geography Breite ($S_{FG}$) in Metern.</td>
                 </tr>
                 <tr>
                     <td><code>maxFlightHeight</code></td>

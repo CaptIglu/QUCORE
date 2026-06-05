@@ -1818,6 +1818,13 @@ class DroneCorridorPlanner(object):
         self.geometry_type = state.get("geometry_type", "Corridor")
         self.params.update(state.get("params", {}))
         
+        # Sync language menu checkmarks and apply translations immediately
+        lang = self.params.get("language", "de")
+        if hasattr(self, 'lang_de_action') and hasattr(self, 'lang_en_action'):
+            self.lang_de_action.setChecked(lang == "de")
+            self.lang_en_action.setChecked(lang == "en")
+        self.apply_translations()
+        
         # Clear undo/redo stacks when re-activating a saved state
         self.undo_stack.clear()
         self.redo_stack.clear()
