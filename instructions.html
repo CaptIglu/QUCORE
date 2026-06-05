@@ -222,7 +222,7 @@
                 <li><a href="#maths">9. Mathematische Grundlagen</a></li>
                 <li><a href="#json_config">10. JSON-Konfiguration & Schreibschutz</a></li>
                 <li><a href="#bilingual">11. Bilinguale Sprachauswahl (Language Selection)</a></li>
-                <li><a href="#decoupling">12. Decoupling von Darstellung & LBA-Standardwerten</a></li>
+                <li><a href="#decoupling">12. Entkopplung von Darstellung &amp; Parameterübersicht</a></li>
                 <li><a href="#vlos">13. VLOS-Sichtbarkeitsanzeige (ALOS / DLOS)</a></li>
                 <li><a href="#bestpractice">14. Best Practice für den Planungs-Workflow</a></li>
                 <li><a href="#popdensity">15. Bevölkerungsdichte-Berechnung (SORA Step #8)</a></li>
@@ -439,21 +439,112 @@
 
         <!-- 9. MATHS -->
         <h2 id="maths">📐 9. Mathematische Grundlagen</h2>
-        <p>Die Puffer werden in einem lokalen UTM-Koordinatensystem (metrisch) hochpräzise berechnet:</p>
+        <p>Die Puffer werden in einem lokalen UTM-Koordinatensystem (metrisch) hochpräzise berechnet. Dabei werden die folgenden mathematischen Formeln zur Ermittlung der Schutzbereiche (Flight Geography, Contingency Volume und Ground Risk Buffer) verwendet:</p>
         
-        <h3>Contingency Volume (CV)</h3>
-        <p>$$R_{CV} = R_{FG} + S_{CV}$$</p>
-        <p>$$S_{CV} = \text{gpsInaccuracy} + \text{positionError} + \text{mapError} + (v_0 \times t_{RZ}) + S_{CM} + S_{\text{add, horiz}}$$</p>
-        
-        <h3>Ground Risk Buffer (GRB)</h3>
-        <p>$$R_{GRB} = R_{CV} + S_{GRB}$$</p>
+        <h3>9.1. Flight Geography (FG)</h3>
+        <p>Die Flight Geography bildet den innersten Kern des Flugbereichs. Der Radius bzw. die halbe Breite $R_{FG}$ bestimmt sich aus der eingestellten Korridorbreite $W_{FG}$ (<code>corridorWidth</code> bzw. wegeweiser <code>fg_width</code>):</p>
+        <p>$$R_{FG} = \frac{W_{FG}}{2}$$</p>
+        <div class="alert alert-tip">
+            <b>🛡️ Sicherheitsregel (3x CD-Regel)</b><br>
+            Aus Sicherheitsgründen wird die Flight Geography automatisch nach unten hin auf das Dreifache der charakteristischen Dimension des UAS ($3 \cdot CD$) begrenzt. Es gilt stets: $W_{FG} \ge 3 \cdot CD$ (bzw. $R_{FG} \ge 1.5 \cdot CD$ und für den Kreis-Modus $R_{FG} \ge 3 \cdot CD$).
+        </div>
+
+        <h3>9.2. Contingency Volume (CV) – Lateral</h3>
+        <p>Das Contingency Volume umschließt die Flight Geography und fängt Abweichungen vom geplanten Flugweg ab. Der Gesamt-Radius $R_{CV}$ ab der Flugweg-Mittelachse beträgt:</p>
+        <p>$$R_{CV} = R_{FG} + s_{cv}$$</p>
+        <p>Der laterale CV-Sicherheitszuschlag $s_{cv}$ berechnet sich wie folgt:</p>
+        <p>$$s_{cv} = S_{GPS} + S_{Pos} + S_{K} + s_{rz} + s_{cm} + s_{add, horiz}$$</p>
+        <p>Dabei sind:</p>
         <ul>
-            <li><b>Simplified (1:1 Regel)</b>: $S_{GRB} = H_{CV} + 0.5 \cdot CD$</li>
-            <li><b>Ballistic Method</b>: $S_{GRB} = v_0 \cdot \sqrt{\frac{2 \cdot H_{CV}}{g}} + 0.5 \cdot CD$</li>
-            <li><b>Glide Method</b>: $S_{GRB} = H_{CV} \cdot \text{glideRatioDenominator}$</li>
-            <li><b>Parachute Method</b>: $S_{GRB} = v_0 \cdot t_{\text{para}} + v_{\text{wind}} \cdot \left(\frac{H_{CV}}{v_{\text{descent}}}\right)$</li>
+            <li><b>$S_{GPS}$</b>: Horizontale GPS-Ungenauigkeit (<code>gpsInaccuracy</code>)</li>
+            <li><b>$S_{Pos}$</b>: Positions-Haltefehler des Autopiloten (<code>positionError</code>)</li>
+            <li><b>$S_{K}$</b>: Kartografischer Fehler der Hintergrundkarte (<code>mapError</code>)</li>
+            <li><b>$s_{rz}$</b>: Reaktionsweg des Piloten während der Reaktionszeit $t_{rz}$ (<code>reactionTime</code>) bei maximaler Betriebsgeschwindigkeit $v_0$ (<code>maxVelocity</code> / <code>maxOpsSpeedV0</code>):
+                $$s_{rz} = v_0 \cdot t_{rz}$$
+            </li>
+            <li><b>$s_{cm}$</b>: Lateraler Manöverweg (Contingency Manoeuvre), abhängig vom gewählten lateralen Manövertyp (<code>lateralContingencyManoeuvreType</code>):
+                <ul>
+                    <li><b>Standard / Default (Kurve / Anhalten)</b>:
+                        <ul>
+                            <li><i>Multikopter</i>: Bremsmanöver über Nickwinkel ($\Theta$ / <code>maxPitchAngle</code>):
+                                $$s_{cm} = \frac{0.5 \cdot v_0^2}{g \cdot \tan(\Theta)}$$
+                            </li>
+                            <li><i>Fixed-Wing (Flächenflieger)</i>: Ausweichkurve über Rollwinkel ($\Phi$ / <code>maxRollAngle</code>):
+                                $$s_{cm} = \frac{v_0^2}{g \cdot \tan(\Phi)}$$
+                            </li>
+                        </ul>
+                    </li>
+                    <li><b>Fallschirm (Notfall-Fallschirm / Parachute)</b>: Lateraler Driftweg während der Fallschirm-Öffnungszeit ($t_{para, lat}$ / <code>parachuteOpeningTimeLateral</code>):
+                        $$s_{cm} = v_0 \cdot t_{para, lat}$$
+                    </li>
+                </ul>
+            </li>
+            <li><b>$s_{add, horiz}$</b>: Zusätzlicher horizontaler Sicherheitszuschlag (<code>additionalErrorLateral</code>)</li>
         </ul>
-        <p>$$H_{CV} = h + h_{\text{delta}} + (0.7 \cdot v_0 \cdot t_{RZ}) + H_{CM} + H_{\text{add, vert}}$$</p>
+
+        <h3>9.3. Contingency Volume (CV) – Vertikal</h3>
+        <p>Die vertikale Obergrenze des Contingency Volumes ($H_{CV}$) definiert die maximale absolute Höhe über Grund (AGL), bis zu der sich das UAS im Notfall bewegen darf. Sie ist die physikalische Bezugshöhe für die Berechnung des Ground Risk Buffers:</p>
+        <p>$$H_{CV} = h + h_{\Delta} + h_{rz} + h_{cm} + h_{add, vert}$$</p>
+        <p>Dabei sind:</p>
+        <ul>
+            <li><b>$h$</b>: Geplante Flughöhe des Wegpunktes (<code>altitude</code> / <code>height</code> / <code>maxFlightHeight</code>)</li>
+            <li><b>$h_{\Delta}$</b>: Altimetriefehler (Höhenmessfehler), abhängig von der gewählten Höhenmessmethode (<code>altimetry</code>):
+                <ul>
+                    <li><i>GPS</i>: $h_{\Delta} = \text{altitudeErrorGps}$</li>
+                    <li><i>Baro</i>: $h_{\Delta} = \text{altitudeErrorBarometric}$</li>
+                </ul>
+            </li>
+            <li><b>$h_{rz}$</b>: Vertikaler Reaktionsweg während der Reaktionszeit:
+                $$h_{rz} = 0.7 \cdot v_0 \cdot t_{rz}$$
+            </li>
+            <li><b>$h_{cm}$</b>: Vertikale Manöverhöhe (Contingency Manoeuvre), abhängig vom gewählten vertikalen Manövertyp (<code>verticalContingencyManoeuvreType</code>):
+                <ul>
+                    <li><b>Standard / Default (Steigflug)</b>:
+                        <ul>
+                            <li><i>Multikopter</i> (Kinetische Energie zu potenzieller Energie):
+                                $$h_{cm} = \frac{0.5 \cdot v_0^2}{g}$$
+                            </li>
+                            <li><i>Fixed-Wing (Flächenflieger)</i> (45-Grad Steigflug auf Kreisbahn):
+                                $$h_{cm} = \frac{0.3 \cdot v_0^2}{g}$$
+                            </li>
+                        </ul>
+                    </li>
+                    <li><b>Fallschirm (Notfall-Fallschirm / Parachute)</b>: Höhenverlust während der Fallschirm-Öffnungszeit ($t_{para, vert}$ / <code>parachuteOpeningTimeVertical</code>):
+                        $$h_{cm} = 0.7 \cdot v_0 \cdot t_{para, vert}$$
+                    </li>
+                </ul>
+            </li>
+            <li><b>$h_{add, vert}$</b>: Zusätzlicher vertikaler Sicherheitszuschlag (<code>additionalErrorVertical</code>)</li>
+        </ul>
+
+        <h3>9.4. Ground Risk Buffer (GRB)</h3>
+        <p>Der Ground Risk Buffer umschließt das Contingency Volume und stellt sicher, dass im Falle eines Kontrollverlusts (Fly-Away / Absturz) das UAS mit hoher Wahrscheinlichkeit innerhalb des Puffers auf dem Boden aufschlägt. Der Gesamt-Radius $R_{GRB}$ ab der Flugweg-Mittelachse beträgt:</p>
+        <p>$$R_{GRB} = R_{CV} + s_{grb}$$</p>
+        <p>Der GRB-Abstand $s_{grb}$ ab der CV-Grenze wird über eine der vier folgenden Methoden (<code>groundRiskBufferMethod</code>) berechnet:</p>
+        <ul>
+            <li><b>Vereinfachter Ansatz (1:1 Regel / Simplified)</b>:
+                <p>$$s_{grb} = H_{CV} + 0.5 \cdot CD$$</p>
+                Hierbei wird vereinfacht angenommen, dass die maximale Abweichung am Boden der maximalen Höhe $H_{CV}$ plus dem halben Radius des UAS ($0.5 \cdot CD$) entspricht.
+            </li>
+            <li><b>Ballistischer Ansatz (Ballistic)</b>:
+                <p>$$s_{grb} = v_0 \cdot \sqrt{\frac{2 \cdot H_{CV}}{g}} + 0.5 \cdot CD$$</p>
+                Dieser Ansatz berechnet die Wurfweite eines horizontal fliegenden Objekts im freien Fall aus der Höhe $H_{CV}$ bei der Anfangsgeschwindigkeit $v_0$ (unter Vernachlässigung des Luftwiderstands). $g = 9.81\text{ m/s}^2$ ist die Erdbeschleunigung.
+            </li>
+            <li><b>Antrieb wird ausgeschaltet mit Gleitflug (Glide)</b>:
+                <p>$$s_{grb} = H_{CV} \cdot E$$</p>
+                Für Flächenflieger, die bei Triebwerksausfall in den Gleitflug übergehen. $E$ entspricht der Gleitzahl (Nenner der Gleitzahl, z. B. 10 für ein 10:1 Gleitverhältnis, konfiguriert als <code>glideRatioDenominator</code>).
+            </li>
+            <li><b>Terminierung mit Auslösen des Fallschirms (Parachute)</b>:
+                <p>$$s_{grb} = v_0 \cdot t_{para, grb} + v_{wind} \cdot \left(\frac{H_{CV}}{v_{z}}\right)$$</p>
+                Dieser Ansatz berechnet den Driftweg bei Fallschirmauslösung. Dabei sind:
+                <ul>
+                    <li>$t_{para, grb}$: Fallschirm-Öffnungszeit für die GRB-Berechnung (<code>parachuteOpeningTimeGRB</code>)</li>
+                    <li>$v_{wind}$: Maximale zulässige Betriebs-Windgeschwindigkeit (<code>maxWindVelocity</code>)</li>
+                    <li>$v_{z}$: Vertikale Sinkgeschwindigkeit am geöffneten Fallschirm (<code>parachuteDescentRate</code>)</li>
+                </ul>
+            </li>
+        </ul>
+        <p>In allen Formeln stellt <b>$CD$</b> die charakteristische Dimension des UAS (<code>maxCharacteristicDimension</code>) dar.</p>
         
         <!-- 10. JSON CONFIGURATION -->
         <h2 id="json_config">⚙️ 10. JSON-Konfiguration (config.json) &amp; Schreibschutz</h2>
@@ -798,12 +889,12 @@
         </ul>
 
         <!-- 12. DECOUPLING -->
-        <h2 id="decoupling">🎨 12. Decoupling von Darstellung &amp; LBA-Standardwerten</h2>
-        <p>Um die Benutzeroberfläche übersichtlicher und logisch konsistenter zu gestalten, wurden die <b>grafischen Darstellungseigenschaften</b> vollständig von den <b>physikalischen Berechnungs-Standardwerten</b> entkoppelt:</p>
+        <h2 id="decoupling">🎨 12. Entkopplung von Darstellung &amp; Parameterübersicht</h2>
+        <p>Um die Benutzeroberfläche übersichtlicher und logisch konsistenter zu gestalten, wurden die <b>grafischen Darstellungseigenschaften</b> vollständig von den <b>physikalischen Berechnungs-Parametern</b> entkoppelt:</p>
         <ul>
             <li><b>Eigener Reiter "Darstellung"</b>: Alle ästhetischen Einstellungen wie Linienstärken (Linewidths in Millimetern), Farben (über eine komfortable Farbauswahl) und Deckkräfte (Opazitäten) für Flugweg, Flight Geography, Contingency Volume, Ground Risk Buffer und Adjacent Area befinden sich jetzt exklusiv im dedizierten Reiter <b>Darstellung</b> der erweiterten Einstellungen.</li>
-            <li><b>Bereinigte LBA-Richtlinien-Standardwerte</b>: Der schreibgeschützte Baum im Reiter <b>Standardwerte (LBA-Leitfaden)</b> zeigt ausschließlich die offiziellen physikalisch-technischen Standardwerte gemäß den gesetzlichen Richtlinien (z. B. UAS-Eigenschaften, Sensorungenauigkeiten, Reaktionszeiten und globale Korridormaße).</li>
-            <li><b>Sicherheit und Klarheit</b>: Diese strikte Trennung verhindert, dass rein visuelle Layout-Einstellungen fälschlicherweise als Teil der behördlich vorgegebenen Berechnungs-Standardwerte interpretiert werden.</li>
+            <li><b>Parameterübersicht &amp; Standardwerte wiederherstellen</b>: Der Reiter <b>Parameterübersicht</b> zeigt übersichtlich die aktuell wirksamen Parametereinstellungen (z. B. UAS-Spezifikationen, Sensorungenauigkeiten, Reaktionszeiten und globale Korridormaße). Die Werte können hier nicht direkt bearbeitet werden (sie sind schreibgeschützt, um unbeabsichtigte Fehleingaben zu vermeiden). Möchten Sie temporär geänderte Sitzungsparameter auf die in der Konfigurationsdatei <code>config.json</code> hinterlegten Standardwerte zurücksetzen, nutzen Sie einfach den Button <b>Standardwerte wiederherstellen</b> unten am Fensterrand.</li>
+            <li><b>Sicherheit und Klarheit</b>: Diese strikte Trennung verhindert, dass rein visuelle Layout-Einstellungen fälschlicherweise als Teil der wirksamen Berechnungs-Parameter interpretiert werden.</li>
         </ul>
 
         <!-- 13. VLOS-SICHTBARKEIT -->
