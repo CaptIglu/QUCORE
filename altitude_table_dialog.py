@@ -200,6 +200,7 @@ class AltitudeTableDialog(QDialog):
             
         # Local copy of params
         params_wp = self.params.copy()
+        params_wp["maxOpsSpeedV0"] = spd
         params_wp["maxVelocity"] = spd
         params_wp["corridorWidth"] = fg
         
@@ -270,7 +271,7 @@ class AltitudeTableDialog(QDialog):
             # Validation for Speed (col 3)
             elif col == 3:
                 item_spd = self.table.item(row, col)
-                max_vel = float(self.params.get("maxVelocity", 30.0))
+                max_vel = float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
                 if item_spd:
                     try:
                         spd_val = float(item_spd.text().replace(',', '.'))

@@ -28,6 +28,12 @@ class ImporterExporter:
                 
             waypoints = [tuple(wp) for wp in qucore_state.get("waypoints", [])]
             params = qucore_state.get("params", {})
+            # Legacy migrations
+            if "maxVelocity" in params and "maxOpsSpeedV0" not in params:
+                params["maxOpsSpeedV0"] = params["maxVelocity"]
+            if "maxVelocityVmax" in params or "maxCommandSpeedVmax" in params or "maxCommandableSpeedVmax" not in params:
+                if "maxCommandableSpeedVmax" not in params:
+                    params["maxCommandableSpeedVmax"] = params.get("maxVelocityVmax", params.get("maxCommandSpeedVmax", params.get("maxOpsSpeedV0", 30.0)))
             geom_type = qucore_state.get("geometry_type", "Corridor")
             width = float(params.get("corridorWidth", 50.0))
             max_height = float(params.get("maxFlightHeight", 100.0))
@@ -61,8 +67,15 @@ class ImporterExporter:
         for k, v in uas.items():
             if k == "type":
                 params["uas_type"] = v
+            elif k == "maxVelocity":
+                params["maxOpsSpeedV0"] = v
+                params["maxVelocity"] = v # legacy fallback
             else:
                 params[k] = v
+        
+        # Populate maxCommandableSpeedVmax if missing
+        if "maxCommandableSpeedVmax" not in params:
+            params["maxCommandableSpeedVmax"] = params.get("maxOpsSpeedV0", 30.0)
                 
         # Settings
         params["groundRiskBufferMethod"] = settings.get("groundRiskBufferMethod", "Simplified")
@@ -73,7 +86,7 @@ class ImporterExporter:
         params["maxFlightHeight"] = max_height
         
         # 4. Waypoints with loaded maxFlightHeight and maxVelocity
-        max_velocity = float(params.get("maxVelocity", 30.0))
+        max_velocity = float(params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))
         waypoints = []
         
         if geom_type == "Circle":
@@ -650,7 +663,8 @@ class ImporterExporter:
                     
         params = {
             "maxFlightHeight": max_height,
-            "maxVelocity": 30.0,
+            "maxOpsSpeedV0": 30.0,
+            "maxCommandableSpeedVmax": 30.0,
             "corridorWidth": 50.0
         }
         
@@ -911,7 +925,8 @@ class ImporterExporter:
             altimetry = params.get("altimetry", "GPS")
             altimetry_str = "GPS-basiert" if altimetry == "GPS" else "Barometrisch"
         
-        v0 = params.get("maxVelocity", 30.0)
+        v0 = params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0))
+        vmax = params.get("maxCommandableSpeedVmax", params.get("maxVelocityVmax", params.get("maxCommandSpeedVmax", v0)))
         v_wind = params.get("maxWindVelocity", 10.0)
         cd = params.get("maxCharacteristicDimension", 1.5)
         
@@ -1028,13 +1043,14 @@ class ImporterExporter:
             idx_str = f"WP {i+1}"
             lat_lon_str = f"{wp[1]:.5f}, {wp[0]:.5f}"
             h = wp[2] if len(wp) > 2 else float(params.get("maxFlightHeight", 100.0))
-            spd = wp[3] if len(wp) > 3 else float(params.get("maxVelocity", 30.0))
+            spd = wp[3] if len(wp) > 3 else float(params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))
             fg_w = wp[4] if len(wp) > 4 else float(params.get("corridorWidth", 50.0))
             
             # Recalculate
             params_wp = params.copy()
             params_wp["geometry_type"] = geometry_type
             params_wp["maxFlightHeight"] = h
+            params_wp["maxOpsSpeedV0"] = spd
             params_wp["maxVelocity"] = spd
             if geometry_type == "Circle":
                 params_wp["corridorWidth"] = 2.0 * fg_w
@@ -1157,6 +1173,12 @@ class ImporterExporter:
         xml_content = xml_content.replace("__VERT_MAN_TEXT__", vert_man_text)
         xml_content = xml_content.replace("__GRB_MAN_TEXT__", grb_man_text)
         
+        v0_str = f"{v0:.1f}"
+        vmax_str = f"{vmax:.1f}"
+        if not is_en:
+            v0_str = v0_str.replace('.', ',')
+            vmax_str = vmax_str.replace('.', ',')
+            
         xml_content = xml_content.replace("__NAME__", name)
         xml_content = xml_content.replace("__DATE__", date_str)
         xml_content = xml_content.replace("__CENTER_COORDS__", center_str)
@@ -1164,7 +1186,8 @@ class ImporterExporter:
         xml_content = xml_content.replace("__COMMENT__", comment_str)
         xml_content = xml_content.replace("__UAS_TYPE__", uas_type_str)
         xml_content = xml_content.replace("__ALTIMETRY__", altimetry_str)
-        xml_content = xml_content.replace("__V0__", f"{v0:.1f}")
+        xml_content = xml_content.replace("__V0__", v0_str)
+        xml_content = xml_content.replace("__VMAX__", vmax_str)
         xml_content = xml_content.replace("__V_WIND__", f"{v_wind:.1f}")
         xml_content = xml_content.replace("__CD__", f"{cd:.2f}")
         xml_content = xml_content.replace("__SPEC_FIELDS__", uas_spec_fields_str)
@@ -1875,7 +1898,7 @@ class ImporterExporter:
         # 3. Waypoint Features
         for i, wp in enumerate(waypoints):
             h = wp[2] if len(wp) > 2 else float(params.get("maxFlightHeight", 100.0))
-            spd = wp[3] if len(wp) > 3 else float(params.get("maxVelocity", 30.0))
+            spd = wp[3] if len(wp) > 3 else float(params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))
             fg_w = wp[4] if len(wp) > 4 else float(params.get("corridorWidth", 50.0))
             
             features.append({

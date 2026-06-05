@@ -152,6 +152,10 @@
   </w:p>
   <w:p>
     <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:r><w:t xml:space="preserve">Max. kommandierbare Geschwindigkeit (v_max): __VMAX__ m/s</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Maximale erlaubte Windgeschwindigkeit (v_wind): __V_WIND__ m/s</w:t></w:r>
   </w:p>
   <w:p>

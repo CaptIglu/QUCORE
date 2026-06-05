@@ -769,5 +769,110 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         dialog.check_cv_warnings()
         dialog.lbl_cv_warning.setVisible.assert_called_with(False)
 
+    def test_velocity_parameter_separation_and_migration(self):
+        """
+        Verify that:
+        1. ParameterDialog migrates legacy keys to maxOpsSpeedV0 and maxCommandableSpeedVmax.
+        2. calculate_buffer_widths is driven by maxOpsSpeedV0 and not maxCommandableSpeedVmax.
+        """
+        from QUCORE.parameter_dialog import ParameterDialog
+        
+        # Test migration 1: maxVelocity -> maxOpsSpeedV0
+        legacy_params = {
+            "maxVelocity": 12.3
+        }
+        dialog = ParameterDialog(None, legacy_params, [])
+        self.assertEqual(dialog.params["maxOpsSpeedV0"], 12.3)
+        self.assertEqual(dialog.params["maxCommandableSpeedVmax"], 12.3) # Fallback to maxOpsSpeedV0
+        
+        # Test migration 2: maxVelocityVmax -> maxCommandableSpeedVmax
+        legacy_params_2 = {
+            "maxVelocity": 12.3,
+            "maxVelocityVmax": 45.6
+        }
+        dialog_2 = ParameterDialog(None, legacy_params_2, [])
+        self.assertEqual(dialog_2.params["maxOpsSpeedV0"], 12.3)
+        self.assertEqual(dialog_2.params["maxCommandableSpeedVmax"], 45.6)
+        
+        # Test migration 3: maxCommandSpeedVmax -> maxCommandableSpeedVmax
+        legacy_params_3 = {
+            "maxVelocity": 10.0,
+            "maxCommandSpeedVmax": 25.0
+        }
+        dialog_3 = ParameterDialog(None, legacy_params_3, [])
+        self.assertEqual(dialog_3.params["maxOpsSpeedV0"], 10.0)
+        self.assertEqual(dialog_3.params["maxCommandableSpeedVmax"], 25.0)
+
+        # Test calculation separation
+        params = self.base_params.copy()
+        params.update({
+            "uas_type": "Multikopter",
+            "maxOpsSpeedV0": 10.0,
+            "maxCommandableSpeedVmax": 25.0
+        })
+        
+        # Calculate widths with v0=10.0, vmax=25.0
+        r_fg_1, r_cv_1, r_grb_1, h_cv_1 = BufferCalculator.calculate_buffer_widths(100.0, params)
+        
+        # Change maxCommandableSpeedVmax to 40.0. This should NOT change FG, CV or GRB widths.
+        params_high_vmax = params.copy()
+        params_high_vmax["maxCommandableSpeedVmax"] = 40.0
+        r_fg_2, r_cv_2, r_grb_2, h_cv_2 = BufferCalculator.calculate_buffer_widths(100.0, params_high_vmax)
+        
+        self.assertEqual(r_fg_1, r_fg_2)
+        self.assertEqual(r_cv_1, r_cv_2)
+        self.assertEqual(r_grb_1, r_grb_2)
+        
+        # Change maxOpsSpeedV0 to 20.0. This should increase CV/GRB width.
+        params_high_v0 = params.copy()
+        params_high_v0["maxOpsSpeedV0"] = 20.0
+        r_fg_3, r_cv_3, r_grb_3, h_cv_3 = BufferCalculator.calculate_buffer_widths(100.0, params_high_v0)
+        
+        self.assertTrue(r_cv_3 > r_cv_1)
+
+        # Test real-time spinbox synchronization (v0 <= vmax)
+        dialog.spin_vmax.setValue(50.0)
+        dialog.spin_v0.setValue(40.0)
+        self.assertEqual(dialog.spin_v0.value(), 40.0)
+        self.assertEqual(dialog.spin_vmax.value(), 50.0)
+        
+        # 1. Setting v0 higher than vmax should push vmax up to match
+        dialog.spin_v0.setValue(60.0)
+        dialog.sender = lambda: dialog.spin_v0
+        dialog.on_value_changed()
+        self.assertEqual(dialog.spin_vmax.value(), 60.0)
+        
+        # 2. Setting vmax lower than v0 should pull v0 down to match
+        dialog.spin_vmax.setValue(35.0)
+        dialog.sender = lambda: dialog.spin_vmax
+        dialog.on_value_changed()
+        self.assertEqual(dialog.spin_v0.value(), 35.0)
+
+        # Test speed validation check safety net (v0 > vmax)
+        from PyQt5.QtWidgets import QMessageBox
+        from unittest.mock import MagicMock, patch
+        
+        QMessageBox.warning = MagicMock()
+        
+        # Force unequal values using blockSignals
+        dialog.spin_v0.blockSignals(True)
+        dialog.spin_vmax.blockSignals(True)
+        dialog.spin_v0.setValue(40.0)
+        dialog.spin_vmax.setValue(30.0)
+        dialog.spin_v0.blockSignals(False)
+        dialog.spin_vmax.blockSignals(False)
+        
+        dialog.accept()
+        QMessageBox.warning.assert_called_once()
+        self.assertIn("v0", QMessageBox.warning.call_args[0][2])
+            
+        # Reset to valid and it should accept
+        dialog.spin_v0.setValue(30.0)
+        dialog.spin_vmax.setValue(30.0)
+        
+        with patch('QUCORE.parameter_dialog.QDialog.accept') as mock_accept:
+            dialog.accept()
+            mock_accept.assert_called_once()
+
 if __name__ == "__main__":
     unittest.main()

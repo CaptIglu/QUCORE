@@ -45,7 +45,8 @@ class ParameterDialog(QDialog):
         self.params = {
             "uas_type": "FixedWing",
             "altimetry": "GPS",
-            "maxVelocity": 30.0,
+            "maxOpsSpeedV0": 30.0,
+            "maxCommandableSpeedVmax": 30.0,
             "maxCharacteristicDimension": 3.6,
             "maxRollAngle": 30.0,
             "maxPitchAngle": 30.0,
@@ -77,7 +78,23 @@ class ParameterDialog(QDialog):
 
         # Override with current parameters if provided
         if current_params:
-            self.params.update(current_params)
+            migrated_params = current_params.copy()
+            if "maxVelocity" in migrated_params:
+                if "maxOpsSpeedV0" not in migrated_params:
+                    migrated_params["maxOpsSpeedV0"] = migrated_params["maxVelocity"]
+                if "maxVelocityVmax" not in migrated_params and "maxCommandSpeedVmax" not in migrated_params and "maxCommandableSpeedVmax" not in migrated_params:
+                    migrated_params["maxCommandableSpeedVmax"] = migrated_params["maxVelocity"]
+
+            if ("maxVelocityVmax" in migrated_params or "maxCommandSpeedVmax" in migrated_params) and "maxCommandableSpeedVmax" not in migrated_params:
+                migrated_params["maxCommandableSpeedVmax"] = migrated_params.get("maxVelocityVmax", migrated_params.get("maxCommandSpeedVmax"))
+
+            if "maxOpsSpeedV0" in migrated_params and "maxCommandableSpeedVmax" not in migrated_params:
+                migrated_params["maxCommandableSpeedVmax"] = migrated_params["maxOpsSpeedV0"]
+
+            self.params.update(migrated_params)
+
+        if "maxCommandableSpeedVmax" not in self.params:
+            self.params["maxCommandableSpeedVmax"] = self.params.get("maxOpsSpeedV0", 30.0)
 
         # Load translations
         self.tr_strings = {}
@@ -100,7 +117,8 @@ class ParameterDialog(QDialog):
         main_layout = QVBoxLayout(self)
 
         # Get defaults from config_defaults with robust fallbacks
-        v0_def = self.config_defaults.get("maxVelocity", 30.0)
+        v0_def = self.config_defaults.get("maxOpsSpeedV0", self.config_defaults.get("maxVelocity", 30.0))
+        vmax_def = self.config_defaults.get("maxCommandableSpeedVmax", self.config_defaults.get("maxVelocityVmax", v0_def))
         cd_def = self.config_defaults.get("maxCharacteristicDimension", 3.6)
         stall_def = self.config_defaults.get("stallVelocity", 10.0)
         gps_def = self.config_defaults.get("gpsInaccuracy", 3.0)
@@ -160,9 +178,15 @@ class ParameterDialog(QDialog):
         
         self.spin_v0 = QDoubleSpinBox()
         self.spin_v0.setRange(0.1, 200.0)
-        self.spin_v0.setValue(self.params["maxVelocity"])
+        self.spin_v0.setValue(self.params.get("maxOpsSpeedV0", 30.0))
         self.spin_v0.setSuffix(" m/s")
         uas_layout.addRow(f"{self.tr('label_v0', 'Max. Betriebsgeschwindigkeit (v0)')} ({default_label}: {v0_def:.1f} m/s):", self.spin_v0)
+
+        self.spin_vmax = QDoubleSpinBox()
+        self.spin_vmax.setRange(0.1, 200.0)
+        self.spin_vmax.setValue(self.params.get("maxCommandableSpeedVmax", 30.0))
+        self.spin_vmax.setSuffix(" m/s")
+        uas_layout.addRow(f"{self.tr('label_v_max', 'Max. kommandierbare Geschwindigkeit (v_max)')} ({default_label}: {vmax_def:.1f} m/s):", self.spin_vmax)
         
         self.chk_override_v = QCheckBox(self.tr("chk_override_v", "Individuelle Wegpunktgeschwindigkeiten überschreiben"))
         self.chk_override_v.setStyleSheet("color: #d97706; font-weight: bold;")
@@ -441,7 +465,7 @@ class ParameterDialog(QDialog):
             widget.currentIndexChanged.connect(self.on_value_changed)
             
         for widget in [
-            self.spin_v0, self.spin_cd, self.spin_stall, self.spin_gps_inacc, 
+            self.spin_v0, self.spin_vmax, self.spin_cd, self.spin_stall, self.spin_gps_inacc, 
             self.spin_pos_err, self.spin_map_err, self.spin_t_rz, self.spin_alt_gps, 
             self.spin_alt_baro, self.spin_add_horiz, self.spin_add_vert, 
             self.spin_roll_angle, self.spin_pitch_angle, self.spin_para_lat, 
@@ -455,6 +479,16 @@ class ParameterDialog(QDialog):
         self.check_cv_warnings()
 
     def accept(self):
+        # Enforce that max operational speed (v0) is not greater than max commandable speed (v_max)
+        v0 = self.spin_v0.value()
+        vmax = self.spin_vmax.value()
+        if v0 > vmax:
+            from PyQt5.QtWidgets import QMessageBox
+            title = self.tr("msg_speed_ops_vs_cmd_title", "Ungültige Geschwindigkeitseinstellung")
+            text = self.tr("msg_speed_ops_vs_cmd_text", "Die maximale Betriebsgeschwindigkeit (v0 = {v0:.1f} m/s) darf nicht größer sein als die maximale kommandierbare Geschwindigkeit (v_max = {vmax:.1f} m/s).\nBitte korrigieren Sie die Werte.").format(v0=v0, vmax=vmax)
+            QMessageBox.warning(self, title, text)
+            return
+
         cd = self.spin_cd.value()
         width = self.spin_corridor_width.value()
         min_width = 3.0 * cd
@@ -519,7 +553,9 @@ class ParameterDialog(QDialog):
         return {
             "uas_type": uas_type,
             "altimetry": altimetry,
-            "maxVelocity": self.spin_v0.value(),
+            "maxOpsSpeedV0": self.spin_v0.value(),
+            "maxCommandableSpeedVmax": self.spin_vmax.value(),
+            "maxVelocity": self.spin_v0.value(), # legacy fallback
             "maxCharacteristicDimension": self.spin_cd.value(),
             "maxRollAngle": self.spin_roll_angle.value(),
             "maxPitchAngle": self.spin_pitch_angle.value(),
@@ -555,7 +591,7 @@ class ParameterDialog(QDialog):
             for idx in range(len(self.waypoints)):
                 w = self.waypoints[idx]
                 lon, lat = w[0], w[1]
-                spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
+                spd = w[3] if len(w) > 3 else float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
                 fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
                 self.waypoints[idx] = (lon, lat, new_h, spd, fg)
             self.on_value_changed()
@@ -568,7 +604,7 @@ class ParameterDialog(QDialog):
                 w = self.waypoints[idx]
                 lon, lat = w[0], w[1]
                 alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
-                spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
+                spd = w[3] if len(w) > 3 else float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
                 self.waypoints[idx] = (lon, lat, alt, spd, new_w)
             self.on_value_changed()
 
@@ -599,7 +635,7 @@ class ParameterDialog(QDialog):
     def has_individual_speeds(self):
         if not self.waypoints:
             return False
-        standard = self.params.get("maxVelocity", 30.0)
+        standard = self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0))
         return any(len(w) > 3 and abs(w[3] - standard) > 1e-3 for w in self.waypoints)
 
     def reject(self):
@@ -610,6 +646,23 @@ class ParameterDialog(QDialog):
         super(ParameterDialog, self).reject()
 
     def on_value_changed(self):
+        # Enforce v0 <= vmax dynamic adjustment
+        v0 = self.spin_v0.value()
+        vmax = self.spin_vmax.value()
+        sender = self.sender()
+        if sender == self.spin_vmax:
+            # If vmax decreased below v0, push v0 down
+            if vmax < v0:
+                self.spin_v0.blockSignals(True)
+                self.spin_v0.setValue(vmax)
+                self.spin_v0.blockSignals(False)
+        else:
+            # For spin_v0 or other changes, if v0 exceeds vmax, push vmax up
+            if v0 > vmax:
+                self.spin_vmax.blockSignals(True)
+                self.spin_vmax.setValue(v0)
+                self.spin_vmax.blockSignals(False)
+
         self.check_cv_warnings()
         if hasattr(self, 'on_change_callback') and self.on_change_callback:
             self.on_change_callback(self.get_parameters())
@@ -631,10 +684,11 @@ class ParameterDialog(QDialog):
         else:
             for w in self.waypoints:
                 h = w[2] if len(w) > 2 else params.get("maxFlightHeight", 100.0)
-                spd = w[3] if len(w) > 3 else params.get("maxVelocity", 30.0)
+                spd = w[3] if len(w) > 3 else params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0))
                 fg = w[4] if len(w) > 4 else params.get("corridorWidth", 50.0)
                 
                 params_wp = params.copy()
+                params_wp["maxOpsSpeedV0"] = spd
                 params_wp["maxVelocity"] = spd
                 params_wp["corridorWidth"] = fg
                 

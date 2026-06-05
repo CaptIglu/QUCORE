@@ -199,8 +199,8 @@ class WaypointMapTool(QgsMapTool):
                     alt1 = w1[2] if len(w1) > 2 else float(self.plugin.params.get("maxFlightHeight", 100.0))
                     alt2 = w2[2] if len(w2) > 2 else float(self.plugin.params.get("maxFlightHeight", 100.0))
                     
-                    spd1 = w1[3] if len(w1) > 3 else float(self.plugin.params.get("maxVelocity", 30.0))
-                    spd2 = w2[3] if len(w2) > 3 else float(self.plugin.params.get("maxVelocity", 30.0))
+                    spd1 = w1[3] if len(w1) > 3 else float(self.plugin.params.get("maxOpsSpeedV0", self.plugin.params.get("maxVelocity", 30.0)))
+                    spd2 = w2[3] if len(w2) > 3 else float(self.plugin.params.get("maxOpsSpeedV0", self.plugin.params.get("maxVelocity", 30.0)))
                     
                     fg1 = w1[4] if len(w1) > 4 else float(self.plugin.params.get("corridorWidth", 50.0))
                     fg2 = w2[4] if len(w2) > 4 else float(self.plugin.params.get("corridorWidth", 50.0))
@@ -229,7 +229,7 @@ class WaypointMapTool(QgsMapTool):
                     # Not close to any existing waypoint -> add a new waypoint
                     pt_wgs = self.plugin.transform_to_wgs84(e.mapPoint())
                     def_alt = float(self.plugin.params.get("maxFlightHeight", 100.0))
-                    def_spd = float(self.plugin.params.get("maxVelocity", 30.0))
+                    def_spd = float(self.plugin.params.get("maxOpsSpeedV0", self.plugin.params.get("maxVelocity", 30.0)))
                     
                     if self.plugin.geometry_type == "Circle":
                         def_fg = self.plugin.spn_circle_radius.value()
@@ -251,7 +251,7 @@ class WaypointMapTool(QgsMapTool):
             pt_wgs = self.plugin.transform_to_wgs84(e.mapPoint())
             w = self.plugin.waypoints[self.dragging_idx]
             alt = w[2] if len(w) > 2 else float(self.plugin.params.get("maxFlightHeight", 100.0))
-            spd = w[3] if len(w) > 3 else float(self.plugin.params.get("maxVelocity", 30.0))
+            spd = w[3] if len(w) > 3 else float(self.plugin.params.get("maxOpsSpeedV0", self.plugin.params.get("maxVelocity", 30.0)))
             fg = w[4] if len(w) > 4 else float(self.plugin.params.get("corridorWidth", 50.0))
             
             self.plugin.waypoints[self.dragging_idx] = (pt_wgs.x(), pt_wgs.y(), alt, spd, fg)
@@ -1282,7 +1282,7 @@ class DroneCorridorPlanner(object):
                         if geom and not geom.isEmpty():
                             pt = geom.asPoint()
                             alt_val = get_attr_safe(f, "altitude", float(self.params.get("maxFlightHeight", 100.0)))
-                            spd_val = get_attr_safe(f, "speed", float(self.params.get("maxVelocity", 30.0)))
+                            spd_val = get_attr_safe(f, "speed", float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0))))
                             fg_val = get_attr_safe(f, "fg_width", float(self.params.get("corridorWidth", 50.0)))
                             loaded_wps.append((pt.x(), pt.y(), alt_val, spd_val, fg_val))
                     if loaded_wps:
@@ -1462,7 +1462,7 @@ class DroneCorridorPlanner(object):
             self.push_undo()
             w = self.waypoints[0]
             alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
-            spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
+            spd = w[3] if len(w) > 3 else float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
             self.waypoints[0] = (w[0], w[1], alt, spd, val)
             self.rebuild_and_calculate()
 
@@ -1938,7 +1938,7 @@ class DroneCorridorPlanner(object):
                 if rad < min_radius:
                     rad = min_radius
                     alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
-                    spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
+                    spd = w[3] if len(w) > 3 else float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
                     self.waypoints[0] = (w[0], w[1], alt, spd, rad)
                 # Sync spinbox value without triggering recursive events
                 self.spn_circle_radius.blockSignals(True)
@@ -1958,7 +1958,7 @@ class DroneCorridorPlanner(object):
         for idx, w in enumerate(self.waypoints):
             lon, lat = w[0], w[1]
             alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
-            spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
+            spd = w[3] if len(w) > 3 else float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
             fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
             
             f = QgsFeature(self.lyr_waypoints.fields())
@@ -2163,11 +2163,12 @@ class DroneCorridorPlanner(object):
             
             for w in self.waypoints:
                 h = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
-                spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
+                spd = w[3] if len(w) > 3 else float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
                 fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
                 
                 params_wp = self.params.copy()
                 params_wp["geometry_type"] = self.geometry_type
+                params_wp["maxOpsSpeedV0"] = spd
                 params_wp["maxVelocity"] = spd
                 if self.geometry_type == "Circle":
                     params_wp["corridorWidth"] = 2.0 * fg
@@ -2238,13 +2239,13 @@ class DroneCorridorPlanner(object):
 
     def on_parameter_dialog_changed(self, new_params):
         old_h = self.params.get("maxFlightHeight", 100.0)
-        old_v0 = self.params.get("maxVelocity", 30.0)
+        old_v0 = self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0))
         old_w = self.params.get("corridorWidth", 50.0)
         
         self.params.update(new_params)
         
         new_h = self.params.get("maxFlightHeight", 100.0)
-        new_v0 = self.params.get("maxVelocity", 30.0)
+        new_v0 = self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0))
         new_w = self.params.get("corridorWidth", 50.0)
         new_cd = self.params.get("maxCharacteristicDimension", 3.6)
         min_fg = 3.0 * new_cd
@@ -2302,7 +2303,7 @@ class DroneCorridorPlanner(object):
             for idx in range(len(self.waypoints)):
                 w = self.waypoints[idx]
                 alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
-                spd = w[3] if len(w) > 3 else float(self.params.get("maxVelocity", 30.0))
+                spd = w[3] if len(w) > 3 else float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
                 fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
                 if fg < min_fg:
                     fg = min_fg
@@ -2501,7 +2502,7 @@ class DroneCorridorPlanner(object):
             transform = QgsCoordinateTransform(src_crs, dest_crs, QgsProject.instance())
 
             default_alt = float(self.params.get("maxFlightHeight", 100.0))
-            default_spd = float(self.params.get("maxVelocity", 30.0))
+            default_spd = float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
             default_fg = float(self.params.get("corridorWidth", 50.0))
 
             raw_waypoints = []
@@ -3171,7 +3172,7 @@ class DroneCorridorPlanner(object):
             
         # Display unified PyQt5 ExportSettingsDialog
         default_h = float(self.params.get("maxFlightHeight", 100.0))
-        default_spd = float(self.params.get("maxVelocity", 30.0))
+        default_spd = float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
         default_fg = float(self.params.get("corridorWidth", 50.0))
         
         # If there are waypoints, we pre-populate using the most frequently occurring (mode/cruise) values

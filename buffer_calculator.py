@@ -45,7 +45,7 @@ class BufferCalculator:
         altimetry = params.get("altimetry", "GPS") # "GPS" or "Baro"
         
         # Enforce positive bounds to avoid singularities or negative scaling
-        v0 = max(0.1, float(params.get("maxVelocity", 30.0)))
+        v0 = max(0.1, float(params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0))))
         CD = max(0.1, float(params.get("maxCharacteristicDimension", 3.6)))
         
         gps_inaccuracy = max(0.0, float(params.get("gpsInaccuracy", 3.0)))
@@ -173,7 +173,7 @@ class BufferCalculator:
         # Parse waypoints to robust format, clamp coordinates, and filter out coincident duplicates
         parsed_wpts = []
         def_h = max(1.0, float(params.get("maxFlightHeight", 100.0)))
-        def_spd = max(0.1, float(params.get("maxVelocity", 30.0)))
+        def_spd = max(0.1, float(params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0))))
         def_fg = max(0.1, float(params.get("corridorWidth", 50.0)))
         
         for w in waypoints:
@@ -221,13 +221,15 @@ class BufferCalculator:
             # Local parameters copy with the waypoint speed and FG width (radius)
             params_wp = params.copy()
             params_wp["geometry_type"] = "Circle"
+            params_wp["maxOpsSpeedV0"] = spd
             params_wp["maxVelocity"] = spd
             params_wp["corridorWidth"] = 2.0 * radius # so calculate_buffer_widths returns r_fg = radius
             
             r_fg, r_cv, r_grb, _h_cv = cls.calculate_buffer_widths(h, params_wp)
             
-            # Calculate Adjacent Area width: S_AGA = max(5000, min(35000, 180 * spd))
-            s_aga = 180.0 * spd
+            # Calculate Adjacent Area width: S_AGA = max(5000, min(35000, 180 * vmax))
+            vmax = float(params.get("maxCommandableSpeedVmax", params.get("maxVelocityVmax", params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))))
+            s_aga = 180.0 * vmax
             if s_aga < 5000.0:
                 s_aga = 5000.0
             elif s_aga > 35000.0:
@@ -280,6 +282,7 @@ class BufferCalculator:
             first_lon, first_lat, h, spd, fg = parsed_wpts[0]
             params_wp = params.copy()
             params_wp["geometry_type"] = "Polygon"
+            params_wp["maxOpsSpeedV0"] = spd
             params_wp["maxVelocity"] = spd
             params_wp["corridorWidth"] = fg
             
@@ -287,8 +290,9 @@ class BufferCalculator:
             s_cv = r_cv_tmp - r_fg_tmp
             s_grb = r_grb_tmp - r_cv_tmp
             
-            # Calculate Adjacent Area width: S_AGA = max(5000, min(35000, 180 * spd))
-            s_aga = 180.0 * spd
+            # Calculate Adjacent Area width: S_AGA = max(5000, min(35000, 180 * vmax))
+            vmax = float(params.get("maxCommandableSpeedVmax", params.get("maxVelocityVmax", params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))))
+            s_aga = 180.0 * vmax
             if s_aga < 5000.0:
                 s_aga = 5000.0
             elif s_aga > 35000.0:
@@ -356,6 +360,7 @@ class BufferCalculator:
             for i, (lon, lat, h, spd, fg) in enumerate(parsed_wpts):
                 params_wp = params.copy()
                 params_wp["geometry_type"] = "Corridor"
+                params_wp["maxOpsSpeedV0"] = spd
                 params_wp["maxVelocity"] = spd
                 params_wp["corridorWidth"] = fg
                 
@@ -374,7 +379,8 @@ class BufferCalculator:
                 lon, lat, h, spd, radius = parsed_wpts[0]
                 r_fg, r_cv, r_grb, _h_cv = radii[0]
                 
-                s_aga = 180.0 * spd
+                vmax = float(params.get("maxCommandableSpeedVmax", params.get("maxVelocityVmax", params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))))
+                s_aga = 180.0 * vmax
                 if s_aga < 5000.0:
                     s_aga = 5000.0
                 elif s_aga > 35000.0:
@@ -461,9 +467,9 @@ class BufferCalculator:
             if not fg_capsules:
                 return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
                 
-            # Determine Adjacent Area width S_AGA based on max speed across all waypoints
-            v0_max = max([w[3] for w in parsed_wpts])
-            s_aga = 180.0 * v0_max
+            # Determine Adjacent Area width S_AGA based on max commandable speed
+            vmax = float(params.get("maxCommandableSpeedVmax", params.get("maxVelocityVmax", params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))))
+            s_aga = 180.0 * vmax
             if s_aga < 5000.0:
                 s_aga = 5000.0
             elif s_aga > 35000.0:

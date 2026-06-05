@@ -275,6 +275,10 @@
     "de": "Max. Betriebsgeschwindigkeit (v0)",
     "en": "Max. Operating Velocity (v0)"
   },
+  "label_v_max": {
+    "de": "Max. kommandierbare Geschwindigkeit (v_max)",
+    "en": "Max. Commandable Velocity (v_max)"
+  },
   "label_cd": {
     "de": "Charakteristische Dimension (CD)",
     "en": "Characteristic Dimension (CD)"
@@ -646,6 +650,14 @@
   "msg_speed_limit_text": {
     "de": "Die eingegebene Geschwindigkeit ({spd_val:.1f} m/s) darf die maximale Betriebsgeschwindigkeit des UAS ({max_vel:.1f} m/s) nicht überschreiten.\nDer Wert wurde automatisch auf {max_vel:.1f} m/s zurückgesetzt.",
     "en": "The entered velocity ({spd_val:.1f} m/s) must not exceed the maximum operating velocity of the UAS ({max_vel:.1f} m/s).\nThe value was automatically reset to {max_vel:.1f} m/s."
+  },
+  "msg_speed_ops_vs_cmd_title": {
+    "de": "Ungültige Geschwindigkeitseinstellung",
+    "en": "Invalid Velocity Setting"
+  },
+  "msg_speed_ops_vs_cmd_text": {
+    "de": "Die maximale Betriebsgeschwindigkeit (v0 = {v0:.1f} m/s) darf nicht größer sein als die maximale kommandierbare Geschwindigkeit (v_max = {vmax:.1f} m/s).\nBitte korrigieren Sie die Werte.",
+    "en": "The maximum operational speed (v0 = {v0:.1f} m/s) must not exceed the maximum commandable speed (v_max = {vmax:.1f} m/s).\nPlease correct the values."
   },
   "msg_fg_limit_title": {
     "de": "Flight Geography Breite zu gering",

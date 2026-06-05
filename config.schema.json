@@ -30,10 +30,15 @@
       "enum": ["GPS", "Baro"],
       "description": "Altitude measurement method. Allowed: GPS (GPS-basiert), Baro (barometrisch)."
     },
-    "maxVelocity": {
+    "maxOpsSpeedV0": {
       "type": "number",
       "minimum": 0.1,
       "description": "Maximum operational speed (v0) in m/s."
+    },
+    "maxCommandableSpeedVmax": {
+      "type": "number",
+      "minimum": 0.1,
+      "description": "Maximum possible commandable airspeed (v_max) in m/s, as defined by the UAS designer."
     },
     "maxCharacteristicDimension": {
       "type": "number",
@@ -270,7 +275,8 @@
     "stepSize",
     "uas_type",
     "altimetry",
-    "maxVelocity",
+    "maxOpsSpeedV0",
+    "maxCommandableSpeedVmax",
     "maxCharacteristicDimension",
     "groundRiskBufferMethod",
     "lateralContingencyManoeuvreType",
