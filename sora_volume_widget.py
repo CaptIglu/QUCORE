@@ -82,6 +82,16 @@ class SoraVolumeWidget(QWidget):
         self.h_fg_str = fmt_range(h_fg_list)
         self.h_cv_str = fmt_range(h_cv_list)
         
+        self.cv_warning = any(x < 9.99 for x in s_cv_list) if s_cv_list else False
+        if self.cv_warning:
+            tooltip_txt = self.tr("cv_warning_tooltip", 
+                "Empfohlener Mindestwert nach EASA SORA (AMC1 zu Artikel 11) beträgt 10,0 m.\n"
+                "Ein geringerer Puffer ist im ConOps betrieblich zu begründen (z. B. durch hohe Navigationsgenauigkeit)."
+            )
+            self.setToolTip(tooltip_txt)
+        else:
+            self.setToolTip("")
+
         self.has_data = True
         self.update()
 
@@ -167,8 +177,18 @@ class SoraVolumeWidget(QWidget):
         painter.drawRect(cv_rect)
         
         # Label for CV (shifted to the right to make space for the left-aligned arrow)
+        is_cv_warning = getattr(self, "cv_warning", False)
+        if is_cv_warning:
+            painter.setPen(QPen(QColor(217, 119, 6)))  # Orange (#d97706)
+            cv_label = f"⚠️ S_CV = {self.s_cv_str}"
+        else:
+            painter.setPen(QPen(text_color))
+            cv_label = f"S_CV = {self.s_cv_str}"
+            
         painter.drawText(QRectF(10 + pad_x + 24, 5 + pad_y_top + 4, W - 20 - 2 * pad_x - 32, 14), 
-                         Qt.AlignLeft | Qt.AlignVCenter, f"S_CV = {self.s_cv_str}")
+                         Qt.AlignLeft | Qt.AlignVCenter, cv_label)
+                         
+        painter.setPen(QPen(text_color))
                          
         # 3. Flight Geography ( sage green ) - Sits nested inside CV (height 28.0)
         pad_x2 = 20.0

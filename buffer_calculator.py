@@ -142,7 +142,7 @@ class BufferCalculator:
         # ----------------------------------------------------
         # 5. RADIUS FROM CENTERLINE
         # ----------------------------------------------------
-        corridor_width = float(params.get("corridorWidth", 500.0))
+        corridor_width = float(params.get("corridorWidth", 50.0))
         
         # Enforce minimum Flight Geography size dynamically
         if params.get("geometry_type") == "Circle":

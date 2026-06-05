@@ -492,8 +492,8 @@
     "en": "VLOS Calculator (ALOS/DLOS)"
   },
   "group_inputs": {
-    "de": "Eigenschaften des UAS & Piloten",
-    "en": "UAS & Pilot Properties"
+    "de": "Datenquellen & Einstellungen",
+    "en": "Data Sources & Settings"
   },
   "label_sky": {
     "de": "Himmelszustand:",
@@ -508,8 +508,8 @@
     "en": "Clear Sky / Good Visibility"
   },
   "group_results": {
-    "de": "Berechnete Sichtweiten-Grenzwerte",
-    "en": "Calculated Visual Range Limits"
+    "de": "Berechnete Ergebnisse",
+    "en": "Calculated Results"
   },
   "label_alos": {
     "de": "ALOS Grenzwert (Kombinierter Luftraum-Fokus):",
@@ -847,10 +847,6 @@
     "de": "Berechnung der durchschnittlichen Bevölkerungsdichte innerhalb der Adjacent Ground Area (AA) basierend auf dem Global Human Settlement Layer (GHSL) GHS-POP GeoTIFF gemäß SORA Step #8.",
     "en": "Calculation of the average population density within the Adjacent Ground Area (AA) based on the Global Human Settlement Layer (GHSL) GHS-POP GeoTIFF according to SORA Step #8."
   },
-  "group_inputs": {
-    "de": "Datenquellen & Einstellungen",
-    "en": "Data Sources & Settings"
-  },
   "label_raster_layer": {
     "de": "GHS-POP Raster-Layer:",
     "en": "GHS-POP Raster Layer:"
@@ -874,10 +870,6 @@
   "label_aa_area": {
     "de": "AA-Fläche:",
     "en": "AA Area:"
-  },
-  "group_results": {
-    "de": "Berechnete Ergebnisse",
-    "en": "Calculated Results"
   },
   "btn_calculate_pop": {
     "de": "Berechnung starten",
@@ -1114,5 +1106,13 @@
   "chk_override_v": {
     "de": "Individuelle Wegpunktgeschwindigkeiten überschreiben",
     "en": "Override individual waypoint velocities"
+  },
+  "cv_warning_tooltip": {
+    "de": "Empfohlener Mindestwert nach EASA SORA (AMC1 zu Artikel 11) beträgt 10,0 m.\nEin geringerer Puffer ist im ConOps betrieblich zu begründen (z. B. durch hohe Navigationsgenauigkeit).",
+    "en": "Recommended minimum value per EASA SORA (AMC1 to Article 11) is 10.0 m.\nA smaller buffer must be justified operationally in the ConOps (e.g., due to high navigation accuracy)."
+  },
+  "msg_cv_warning_banner": {
+    "de": "⚠️ <b>Hinweis zum Contingency Volume (CV):</b><br>In mindestens einem Abschnitt beträgt die berechnete Pufferbreite (s_cv) weniger als 10,0 m. Nach EASA SORA (AMC1 zu Artikel 11) wird eine Mindestbreite von 10 Metern empfohlen. Bitte begründen Sie den geringeren Puffer betrieblich in Ihrem ConOps.",
+    "en": "⚠️ <b>Contingency Volume (CV) Note:</b><br>In at least one segment, the calculated buffer width (s_cv) is less than 10.0 m. According to EASA SORA (AMC1 to Article 11), a minimum width of 10 meters is recommended. Please justify the smaller buffer operationally in your ConOps."
   }
 }

@@ -1023,6 +1023,7 @@ class ImporterExporter:
         grb_radii = []
         h_cvs = []
         
+        has_narrow_cv = False
         for i, wp in enumerate(waypoints):
             idx_str = f"WP {i+1}"
             lat_lon_str = f"{wp[1]:.5f}, {wp[0]:.5f}"
@@ -1036,7 +1037,10 @@ class ImporterExporter:
             params_wp["maxVelocity"] = spd
             params_wp["corridorWidth"] = fg_w
             
-            _, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params_wp)
+            r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params_wp)
+            s_cv = r_cv - r_fg
+            if s_cv < 9.99:
+                has_narrow_cv = True
             
             fg_widths.append(fg_w)
             cv_radii.append(r_cv)
@@ -1178,7 +1182,39 @@ class ImporterExporter:
         xml_content = xml_content.replace("__CV_RANGE__", cv_range)
         xml_content = xml_content.replace("__GRB_RANGE__", grb_range)
         xml_content = xml_content.replace("__H_CV_RANGE__", h_cv_range)
-        xml_content = xml_content.replace("__TABLE_XML__", table_xml)
+        
+        # If any segment has a narrow Contingency Volume (s_cv < 10m), append a warning note below the table
+        warning_xml = ""
+        if has_narrow_cv:
+            if is_en:
+                warning_text = (
+                    "Note: In at least one segment, the calculated Contingency Volume (CV) width (s_cv) is less than 10.0 meters. "
+                    "According to EASA SORA (AMC1 to Article 11), a minimum width of 10 meters is recommended for the Contingency Volume. "
+                    "A smaller buffer should be operationally justified in the ConOps (e.g., due to high system precision or rapid pilot reaction times)."
+                )
+            else:
+                warning_text = (
+                    "Hinweis: In mindestens einem Abschnitt unterschreitet die berechnete Breite des Contingency Volumes (s_cv) 10,0 Meter. "
+                    "Nach EASA SORA (AMC1 zu Artikel 11) wird eine Mindestbreite von 10 Metern für das Contingency Volume empfohlen. "
+                    "Eine Abweichung sollte im ConOps betrieblich begründet werden (z. B. durch hohe Navigationsgenauigkeit des UAS oder schnelle Reaktionszeiten)."
+                )
+                
+            warning_xml = (
+                f'<w:p>'
+                f'<w:pPr>'
+                f'<w:spacing w:before="120" w:after="120"/>'
+                f'</w:pPr>'
+                f'<w:r>'
+                f'<w:rPr>'
+                f'<w:i/>'
+                f'<w:color w:val="D97706"/>' # Warning orange color
+                f'</w:rPr>'
+                f'<w:t xml:space="preserve">{warning_text}</w:t>'
+                f'</w:r>'
+                f'</w:p>'
+            )
+            
+        xml_content = xml_content.replace("__TABLE_XML__", table_xml + warning_xml)
         
         # Build and replace __POPULATION_ANALYSIS_XML__
         pop_xml = []

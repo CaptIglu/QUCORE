@@ -702,5 +702,62 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         # Other settings must be preserved
         self.assertEqual(planner.params.get("maxFlightHeight"), 120.0)
 
+    def test_volume_widget_cv_warnings(self):
+        """
+        Verify that SoraVolumeWidget calculates cv_warning and sets tooltip/styling correctly.
+        """
+        from QUCORE.sora_volume_widget import SoraVolumeWidget
+        from unittest.mock import MagicMock
+        
+        widget = SoraVolumeWidget(tr_fn=lambda key, d: d)
+        widget.setToolTip = MagicMock()
+        
+        # Case A: s_cv = 12.0m -> no warning (r_cv - r_fg = 22.0 - 10.0 = 12.0m)
+        widget.update_values([10.0, 10.0], [12.0, 12.0], [8.0, 8.0], [100.0, 100.0], [120.0, 120.0])
+        self.assertFalse(widget.cv_warning)
+        widget.setToolTip.assert_called_with("")
+        
+        # Case B: s_cv = 8.0m -> warning should trigger
+        widget.update_values([10.0, 10.0], [8.0, 8.0], [8.0, 8.0], [100.0, 100.0], [120.0, 120.0])
+        self.assertTrue(widget.cv_warning)
+        widget.setToolTip.assert_called()
+        self.assertIn("AMC1", widget.setToolTip.call_args[0][0])
+
+    def test_parameter_dialog_cv_warnings(self):
+        """
+        Verify that ParameterDialog displays a warning banner if any calculated CV is < 10m.
+        """
+        from QUCORE.parameter_dialog import ParameterDialog
+        from unittest.mock import MagicMock
+        
+        waypoints = []
+        params = self.base_params.copy()
+        # Set values that yield a very low s_cv (reaction time = 0.1s, maxVelocity = 1m/s, maxPitchAngle = 80deg)
+        params.update({
+            "uas_type": "Multikopter",
+            "maxVelocity": 1.0,
+            "reactionTime": 0.1,
+            "gpsInaccuracy": 1.0,
+            "positionError": 1.0,
+            "mapError": 1.0,
+            "additionalErrorLateral": 0.0,
+            "lateralContingencyManoeuvreType": "Default",
+            "maxPitchAngle": 80.0,
+            "corridorWidth": 50.0
+        })
+        
+        dialog = ParameterDialog(None, params, waypoints)
+        dialog.lbl_cv_warning.setVisible = MagicMock()
+        dialog.lbl_cv_warning.setText = MagicMock()
+        dialog.check_cv_warnings()
+        dialog.lbl_cv_warning.setVisible.assert_called_with(True)
+        dialog.lbl_cv_warning.setText.assert_called()
+        self.assertIn("Hinweis zum Contingency Volume", dialog.lbl_cv_warning.setText.call_args[0][0])
+        
+        # Set high velocity -> s_cv will increase above 10m
+        dialog.spin_v0.setValue(50.0)
+        dialog.check_cv_warnings()
+        dialog.lbl_cv_warning.setVisible.assert_called_with(False)
+
 if __name__ == "__main__":
     unittest.main()

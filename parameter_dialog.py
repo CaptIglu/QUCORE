@@ -400,6 +400,20 @@ class ParameterDialog(QDialog):
         if self.has_custom_h:
             self.spin_default_h.setEnabled(False)
 
+        # Warning banner for Contingency Volume < 10m
+        self.lbl_cv_warning = QLabel()
+        self.lbl_cv_warning.setWordWrap(True)
+        self.lbl_cv_warning.setStyleSheet(
+            "background-color: #fffbeb; "
+            "color: #b45309; "
+            "border: 1px solid #fcd34d; "
+            "border-radius: 4px; "
+            "padding: 8px; "
+            "font-size: 11px;"
+        )
+        self.lbl_cv_warning.setVisible(False)
+        main_layout.addWidget(self.lbl_cv_warning)
+
         # ----------------------------------------------------
         # BUTTONS
         # ----------------------------------------------------
@@ -436,6 +450,9 @@ class ParameterDialog(QDialog):
             self.spin_default_h
         ]:
             widget.valueChanged.connect(self.on_value_changed)
+
+        # Initial check for Contingency Volume warnings
+        self.check_cv_warnings()
 
     def accept(self):
         cd = self.spin_cd.value()
@@ -593,5 +610,52 @@ class ParameterDialog(QDialog):
         super(ParameterDialog, self).reject()
 
     def on_value_changed(self):
+        self.check_cv_warnings()
         if hasattr(self, 'on_change_callback') and self.on_change_callback:
             self.on_change_callback(self.get_parameters())
+
+    def get_s_cv_values(self):
+        try:
+            from .buffer_calculator import BufferCalculator
+        except ImportError:
+            return []
+            
+        params = self.get_parameters()
+        s_cv_list = []
+        
+        # If there are no waypoints, check the default settings
+        if not self.waypoints:
+            h = params.get("maxFlightHeight", 100.0)
+            r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params)
+            s_cv_list.append(r_cv - r_fg)
+        else:
+            for w in self.waypoints:
+                h = w[2] if len(w) > 2 else params.get("maxFlightHeight", 100.0)
+                spd = w[3] if len(w) > 3 else params.get("maxVelocity", 30.0)
+                fg = w[4] if len(w) > 4 else params.get("corridorWidth", 50.0)
+                
+                params_wp = params.copy()
+                params_wp["maxVelocity"] = spd
+                params_wp["corridorWidth"] = fg
+                
+                r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params_wp)
+                s_cv_list.append(r_cv - r_fg)
+                
+        return s_cv_list
+
+    def check_cv_warnings(self):
+        s_cv_list = self.get_s_cv_values()
+        has_warning = any(x < 9.99 for x in s_cv_list) if s_cv_list else False
+        
+        if has_warning:
+            text = self.tr(
+                "msg_cv_warning_banner",
+                "⚠️ <b>Hinweis zum Contingency Volume (CV):</b><br>"
+                "In mindestens einem Abschnitt beträgt die berechnete Pufferbreite (s_cv) weniger als 10,0 m. "
+                "Nach EASA SORA (AMC1 zu Artikel 11) wird eine Mindestbreite von 10 Metern empfohlen. "
+                "Bitte begründen Sie den geringeren Puffer betrieblich in Ihrem ConOps."
+            )
+            self.lbl_cv_warning.setText(text)
+            self.lbl_cv_warning.setVisible(True)
+        else:
+            self.lbl_cv_warning.setVisible(False)
