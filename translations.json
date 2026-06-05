@@ -456,8 +456,8 @@
         "en": "VLOS Range (Pilot Position):"
     },
     "defaults_info": {
-        "de": "<b>Hinweis:</b> Dies ist eine Übersicht über die aktuellen Berechnungs- und Darstellungsparameter dieser Planung. Die Werte können hier nicht direkt bearbeitet werden. Um sie auf die in der config.json definierten Standardwerte zurückzusetzen, nutzen Sie bitte den Button 'Standardwerte wiederherstellen' unten.",
-        "en": "<b>Note:</b> This is an overview of the current calculation and representation parameters of this planning session. The values cannot be edited directly here. To reset them to the default values defined in config.json, please use the 'Restore Default Values' button below."
+        "de": "<b>Hinweis:</b> Dies ist eine Übersicht über die aktuellen Berechnungsparameter dieser Session. Die Werte können hier nicht direkt bearbeitet werden. Um sie auf die Standardwerte zurückzusetzen (definiert in der 'config.json'), nutzen Sie bitte den Button 'Standardwerte wiederherstellen' unten.",
+        "en": "<b>Note:</b> This is an overview of the current calculation parameters of this session. The values cannot be edited directly here. To reset them to the default values defined in 'config.json', please use the 'Restore Default Values' button below."
     },
     "btn_open_config": {
         "de": "Konfigurationsdatei (config.json) öffnen...",
