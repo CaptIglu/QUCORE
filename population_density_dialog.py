@@ -346,7 +346,7 @@ class PopulationDensityDialog(QDialog):
                 # 2. Instantiate raster layer locally in worker thread
                 local_raster = QgsRasterLayer(raster_path, raster_name)
                 if not local_raster.isValid():
-                    return False, "Raster-Layer konnte im Hintergrund-Thread nicht geladen werden."
+                    return False, self.tr("error_background_raster_load", "Raster-Layer konnte im Hintergrund-Thread nicht geladen werden.")
                     
                 # Determine stats enum constants
                 try:

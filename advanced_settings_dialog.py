@@ -388,8 +388,8 @@ class AdvancedSettingsDialog(QDialog):
         else:
             QMessageBox.warning(
                 self,
-                "Datei nicht gefunden",
-                "Die Konfigurationsdatei config.json konnte nicht im Plugin-Ordner gefunden werden."
+                self.tr("msg_file_not_found_title", "Datei nicht gefunden"),
+                self.tr("msg_config_not_found_text", "Die Konfigurationsdatei config.json konnte nicht im Plugin-Ordner gefunden werden.")
             )
 
     def get_step_size(self):
@@ -401,7 +401,7 @@ class AdvancedSettingsDialog(QDialog):
 
     def pick_color(self, btn):
         curr_color = QColor(btn.property("color_hex"))
-        color = QColorDialog.getColor(curr_color, self, "Farbe wählen")
+        color = QColorDialog.getColor(curr_color, self, self.tr("dialog_color_picker_title", "Farbe wählen"))
         if color.isValid():
             hex_name = color.name()
             self.update_color_button(btn, hex_name)

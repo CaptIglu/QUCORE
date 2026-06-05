@@ -1,9 +1,36 @@
 # -*- coding: utf-8 -*-
+import os
 import json
 import uuid
 import xml.etree.ElementTree as ET
 from qgis.core import QgsPointXY, QgsGeometry, QgsMessageLog, Qgis
 from .buffer_calculator import BufferCalculator
+
+_tr_strings = {}
+
+def tr(key, default=""):
+    global _tr_strings
+    plugin_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(plugin_dir, "config.json")
+    lang = "de"
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                cfg = json.load(f)
+                lang = cfg.get("language", "de")
+        except Exception:
+            pass
+            
+    if not _tr_strings:
+        tr_path = os.path.join(plugin_dir, "translations.json")
+        if os.path.exists(tr_path):
+            try:
+                with open(tr_path, 'r', encoding='utf-8') as f:
+                    _tr_strings = json.load(f)
+            except Exception:
+                pass
+    return _tr_strings.get(key, {}).get(lang, default)
+
 
 class ImporterExporter:
     @staticmethod
@@ -242,7 +269,7 @@ class ImporterExporter:
             xml_data = f.read()
         ok, error_msg, error_line, error_col = doc.setContent(xml_data)
         if not ok:
-            raise ValueError(f"XML-Parsing der KML-Datei fehlgeschlagen: {error_msg} in Zeile {error_line}, Spalte {error_col}")
+            raise ValueError(tr("error_kml_parse_failed", "XML-Parsing der KML-Datei fehlgeschlagen: {error} in Zeile {line}, Spalte {col}").format(error=error_msg, line=error_line, col=error_col))
             
         root = doc.documentElement()
         
@@ -372,7 +399,7 @@ class ImporterExporter:
                                 break
                                 
         if not waypoints:
-            raise ValueError("Keine gültigen Wegpunkte oder Centerline-Geometrien im KML-Dokument gefunden.")
+            raise ValueError(tr("error_no_waypoints_kml", "Keine gültigen Wegpunkte oder Centerline-Geometrien im KML-Dokument gefunden."))
         return waypoints, pilot_pos, geometry_type
 
     @staticmethod
@@ -640,7 +667,7 @@ class ImporterExporter:
 
         pr = find_first_local_element(root, "PrimaryRoute")
         if pr is None:
-            raise ValueError("Ungültiges SkyDemon-Flugplanformat: <PrimaryRoute> nicht gefunden.")
+            raise ValueError(tr("error_invalid_skydemon_format", "Ungültiges SkyDemon-Flugplanformat: <PrimaryRoute> nicht gefunden."))
             
         level_feet = float(pr.attribute("Level", "3000"))
         max_height = level_feet / 3.28084
@@ -1728,10 +1755,10 @@ class ImporterExporter:
                 except OSError as e:
                     from qgis.core import QgsMessageLog, Qgis
                     QgsMessageLog.logMessage(
-                        f"Fehler beim Entfernen der existierenden DOCX-Datei: {e}",
+                        tr("log_remove_docx_failed", "Fehler beim Entfernen der existierenden DOCX-Datei: {error}").format(error=str(e)),
                         "QUCORE", Qgis.Critical
                     )
-                    raise IOError(f"Zieldatei konnte nicht überschrieben werden (Möglicherweise geöffnet?): {e}")
+                    raise IOError(tr("error_docx_overwrite_failed", "Zieldatei konnte nicht überschrieben werden (Möglicherweise geöffnet?): {error}").format(error=str(e)))
             
             # Copy file content securely (handles cross-device/drive boundaries)
             shutil.copy(temp_zip_path, file_path)
@@ -1741,16 +1768,16 @@ class ImporterExporter:
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
                 QgsMessageLog.logMessage(
-                    f"Fehler beim Löschen der temporären ZIP-Datei: {e}",
+                    tr("log_remove_temp_zip_failed", "Fehler beim Löschen der temporären ZIP-Datei: {error}").format(error=str(e)),
                     "QUCORE", Qgis.Warning
                 )
         except Exception as e:
             from qgis.core import QgsMessageLog, Qgis
             QgsMessageLog.logMessage(
-                f"Fehler beim Speichern der finalen DOCX-Datei auf dem Ziellaufwerk: {e}",
+                tr("log_save_docx_failed", "Fehler beim Speichern der finalen DOCX-Datei auf dem Ziellaufwerk: {error}").format(error=str(e)),
                 "QUCORE", Qgis.Critical
             )
-            raise IOError(f"Fehler beim Speichern der finalen DOCX-Datei auf dem Ziellaufwerk: {e}")
+            raise IOError(tr("error_docx_save_failed", "Fehler beim Speichern der finalen DOCX-Datei auf dem Ziellaufwerk: {error}").format(error=str(e)))
 
     @staticmethod
     def import_geojson(file_path):
@@ -1854,7 +1881,7 @@ class ImporterExporter:
         params["maxFlightHeight"] = max_height
         
         if not waypoints:
-            raise ValueError("Keine gültigen Wegpunkte oder Centerline-Geometrien im GeoJSON-Dokument gefunden.")
+            raise ValueError(tr("error_no_waypoints_geojson", "Keine gültigen Wegpunkte oder Centerline-Geometrien im GeoJSON-Dokument gefunden."))
         return waypoints, pilot_pos, width, max_height, params, geom_type
 
     @staticmethod

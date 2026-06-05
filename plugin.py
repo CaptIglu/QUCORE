@@ -796,7 +796,7 @@ class DroneCorridorPlanner(object):
         
         self.action = QAction(
             icon, 
-            "QUCORE – UAS-Korridorplanung (FG/CV/GRB)", 
+            self.tr("dialog_title", "QUCORE – UAS-Korridorplanung (FG/CV/GRB)"), 
             self.iface.mainWindow()
         )
         self.action.triggered.connect(self.run)
@@ -808,7 +808,7 @@ class DroneCorridorPlanner(object):
         # Add Help Action
         self.help_action = QAction(
             self.iface.mainWindow().style().standardIcon(QStyle.SP_MessageBoxQuestion),
-            "Anleitung / Hilfe...",
+            self.tr("menu_instructions", "Anleitung / Hilfe..."),
             self.iface.mainWindow()
         )
         self.help_action.triggered.connect(self.open_help)
@@ -1204,7 +1204,7 @@ class DroneCorridorPlanner(object):
             if days_since_install > 30 and not is_commercial_unlocked:
                 self.lbl_trial_warning.setText(
                     "<div style='color: #eb5757; font-size: 10px; font-weight: bold; margin-top: 4px; text-align: center;'>"
-                    "⚠️ Testphase für kommerzielle Nutzung abgelaufen (Kommerzielle Nutzung erfordert eine Lizenz. Die private Nutzung ist weiterhin gestattet. Support: tim.strohbach@gmx.de)"
+                    + self.tr("license_expired_warning", "⚠️ Testphase für kommerzielle Nutzung abgelaufen (Kommerzielle Nutzung erfordert eine Lizenz. Die private Nutzung ist weiterhin gestattet. Support: tim.strohbach@gmx.de)") +
                     "</div>"
                 )
                 self.lbl_trial_warning.setVisible(True)
@@ -1357,6 +1357,11 @@ class DroneCorridorPlanner(object):
             self.help_action_menu.setText(self.tr("menu_instructions", "Anleitung / Hilfe..."))
             if hasattr(self, 'about_action'):
                 self.about_action.setText(self.tr("menu_about", "Über QUCORE..."))
+                
+        if hasattr(self, 'action') and self.action:
+            self.action.setText(self.tr("dialog_title", "QUCORE – UAS-Korridorplanung (FG/CV/GRB)"))
+        if hasattr(self, 'help_action') and self.help_action:
+            self.help_action.setText(self.tr("menu_instructions", "Anleitung / Hilfe..."))
 
         # Update Widget Texts in Planning Panel
         if hasattr(self, 'header_label'):
@@ -2453,14 +2458,14 @@ class DroneCorridorPlanner(object):
                         QMessageBox.information(
                             self.gui,
                             self.tr("msg_import_success_title", "Planung reaktiviert"),
-                            "Interaktive Drohnen-Korridorplanung erfolgreich aus Layer '{name}' reaktiviert!".format(name=layer.name())
+                            self.tr("msg_reactivate_success", "Interaktive Drohnen-Korridorplanung erfolgreich aus Layer '{name}' reaktiviert!").format(name=layer.name())
                         )
                         return
                     except Exception as e:
                         QMessageBox.warning(
                             self.gui,
                             self.tr("msg_import_error_title", "Reaktivierungsfehler"),
-                            "Fehler beim Reaktivieren der Planung aus Layer:\n{error}".format(error=str(e))
+                            self.tr("msg_reactivate_error", "Fehler beim Reaktivieren der Planung aus Layer:\n{error}").format(error=str(e))
                         )
 
         geom_type = layer.geometryType()
@@ -2580,7 +2585,7 @@ class DroneCorridorPlanner(object):
                         filtered_waypoints.append(wp)
 
             if not filtered_waypoints:
-                raise ValueError("Keine gültigen Geometrie-Stützpunkte im ausgewählten Layer gefunden.")
+                raise ValueError(self.tr("error_no_valid_waypoints", "Keine gültigen Geometrie-Stützpunkte im ausgewählten Layer gefunden."))
 
             # If Polygon mode, and first and last points are identical, discard the last one to let renderer close it dynamically
             if self.geometry_type == "Polygon" and len(filtered_waypoints) >= 3:

@@ -1,1178 +1,1246 @@
 {
-  "dialog_title": {
-    "de": "QUCORE – UAS-Korridorplanung (FG/CV/GRB)",
-    "en": "QUCORE – UAS Corridor Planning (FG/CV/GRB)"
-  },
-  "geom_corridor": {
-    "de": "Korridor",
-    "en": "Corridor"
-  },
-  "geom_circle": {
-    "de": "Kreis",
-    "en": "Circle"
-  },
-  "geom_polygon": {
-    "de": "Polygon",
-    "en": "Polygon"
-  },
-  "header_title": {
-    "de": "<b>Drohnen-Sicherheitskorridore</b><br>Kartenbasierte interaktive Planung",
-    "en": "<b>Drone Safety Corridors</b><br>Map-based interactive planning"
-  },
-  "geom_type": {
-    "de": "Geometrietyp:",
-    "en": "Geometry Type:"
-  },
-  "circle_rad": {
-    "de": "Kreis-Radius (m):",
-    "en": "Circle Radius (m):"
-  },
-  "map_interaction_grp": {
-    "de": "Karten-Interaktion",
-    "en": "Map Interaction"
-  },
-  "btn_draw_wp": {
-    "de": "Wegpunkte zeichnen/modifizieren",
-    "en": "Draw/Modify Waypoints"
-  },
-  "btn_set_pilot": {
-    "de": "Pilotenposition setzen",
-    "en": "Set Pilot Position"
-  },
-  "btn_undo_tooltip": {
-    "de": "Rückgängig (Undo)",
-    "en": "Undo"
-  },
-  "btn_redo_tooltip": {
-    "de": "Wiederholen (Redo)",
-    "en": "Redo"
-  },
-  "params_grp": {
-    "de": "Parameter",
-    "en": "Parameters"
-  },
-  "btn_params": {
-    "de": "Berechnungsparameter anpassen...",
-    "en": "Adjust Calculation Parameters..."
-  },
-  "btn_alt": {
-    "de": "Höhe, FG-Breite, Geschwindigkeit pro Wegpunkt bearbeiten...",
-    "en": "Edit Height, FG Width, Velocity per Waypoint..."
-  },
-  "btn_reset": {
-    "de": "Planung zurücksetzen",
-    "en": "Reset Planning"
-  },
-  "btn_close": {
-    "de": "Planung abschließen",
-    "en": "Complete Planning"
-  },
-  "status_ready": {
-    "de": "Wegpunkte: {wp} | Puffer: Bereit",
-    "en": "Waypoints: {wp} | Buffers: Ready"
-  },
-  "status_calculated": {
-    "de": "Wegpunkte: {wp} | Puffer: Berechnet",
-    "en": "Waypoints: {wp} | Buffers: Calculated"
-  },
-  "menu_file": {
-    "de": "Datei",
-    "en": "File"
-  },
-  "menu_import": {
-    "de": "Importieren...",
-    "en": "Import..."
-  },
-  "menu_export": {
-    "de": "Exportieren...",
-    "en": "Export..."
-  },
-  "menu_sora_export": {
-    "de": "SORA Dokumentations-Export (.docx)...",
-    "en": "SORA Documentation Export (.docx)..."
-  },
-  "menu_save_persistent": {
-    "de": "Planung als persistenten Layer (GeoPackage) speichern...",
-    "en": "Save Planning as Persistent Layer (GeoPackage)..."
-  },
-  "menu_reset": {
-    "de": "Planung zurücksetzen",
-    "en": "Reset Planning"
-  },
-  "menu_settings": {
-    "de": "Einstellungen",
-    "en": "Settings"
-  },
-  "menu_calc_params": {
-    "de": "Berechnungsparameter...",
-    "en": "Calculation Parameters..."
-  },
-  "menu_adv_settings": {
-    "de": "Erweiterte Einstellungen...",
-    "en": "Advanced Settings..."
-  },
-  "menu_lang": {
-    "de": "Sprache / Language",
-    "en": "Language"
-  },
-  "menu_lang_de": {
-    "de": "🇩🇪 Deutsch (DE)",
-    "en": "🇩🇪 German (DE)"
-  },
-  "menu_lang_en": {
-    "de": "🇬🇧 Englisch (EN)",
-    "en": "🇬🇧 English (EN)"
-  },
-  "menu_tools": {
-    "de": "Werkzeuge",
-    "en": "Tools"
-  },
-  "menu_vlos_calc": {
-    "de": "VLOS-Rechner (ALOS/DLOS)...",
-    "en": "VLOS Calculator (ALOS/DLOS)..."
-  },
-  "menu_help": {
-    "de": "Hilfe",
-    "en": "Help"
-  },
-  "menu_instructions": {
-    "de": "Anleitung / Hilfe...",
-    "en": "User Manual / Help..."
-  },
-  "menu_about": {
-    "de": "Über QUCORE...",
-    "en": "About QUCORE..."
-  },
-  "dialog_about_title": {
-    "de": "Über QUCORE",
-    "en": "About QUCORE"
-  },
-  "about_category": {
-    "de": "Kategorie",
-    "en": "Category"
-  },
-  "about_tags": {
-    "de": "Tags",
-    "en": "Tags"
-  },
-  "about_more_info": {
-    "de": "Weitere Informationen",
-    "en": "More Information"
-  },
-  "about_tracker": {
-    "de": "Fehlerverfolgung",
-    "en": "Bug Tracker"
-  },
-  "about_repo": {
-    "de": "Coderepositorium",
-    "en": "Code Repository"
-  },
-  "about_author": {
-    "de": "Autor",
-    "en": "Author"
-  },
-  "about_version": {
-    "de": "Installierte Version",
-    "en": "Installed Version"
-  },
-  "about_qgis_compatibility": {
-    "de": "Entwickelt für QGIS 3.44.10-Solothurn LTR. Nur hier wird die beste Kompatibilität erwartet.",
-    "en": "Developed for QGIS 3.44.10-Solothurn LTR. Best compatibility is only expected here."
-  },
-  "about_note": {
-    "de": "Hinweis",
-    "en": "Note"
-  },
-  "msg_reset_title": {
-    "de": "Planung zurücksetzen",
-    "en": "Reset Planning"
-  },
-  "msg_reset_text": {
-    "de": "Möchten Sie die gesamte Route, den Piloten und alle berechneten Korridore löschen?",
-    "en": "Do you want to clear the entire route, the pilot, and all calculated corridors?"
-  },
-  "msg_no_wp_title": {
-    "de": "Keine Wegpunkte",
-    "en": "No Waypoints"
-  },
-  "msg_no_wp_text": {
-    "de": "Zeichnen Sie bitte zuerst Wegpunkte auf der Karte ein.",
-    "en": "Please draw waypoints on the map first."
-  },
-  "msg_export_no_wp_text": {
-    "de": "Es gibt keine Wegpunkte zum Exportieren.",
-    "en": "There are no waypoints to export."
-  },
-  "msg_export_success_title": {
-    "de": "Export erfolgreich",
-    "en": "Export Successful"
-  },
-  "msg_export_success_text": {
-    "de": "Die Datei wurde erfolgreich exportiert unter:\n{path}",
-    "en": "The file was successfully exported to:\n{path}"
-  },
-  "msg_import_success_title": {
-    "de": "Import erfolgreich",
-    "en": "Import Successful"
-  },
-  "msg_import_success_text": {
-    "de": "Import abgeschlossen!\n{count} Wegpunkte geladen.",
-    "en": "Import completed!\n{count} waypoints loaded."
-  },
-  "dialog_calc_params_title": {
-    "de": "QUCORE – UAS-Berechnungsparameter",
-    "en": "QUCORE – UAS Calculation Parameters"
-  },
-  "tab_uas": {
-    "de": "UAS Eigenschaften",
-    "en": "UAS Properties"
-  },
-  "tab_assumptions": {
-    "de": "Annahmen",
-    "en": "Assumptions"
-  },
-  "tab_manoeuvre": {
-    "de": "Sicherheitsmanöver",
-    "en": "Safety Manoeuvres"
-  },
-  "tab_grb": {
-    "de": "Ground Risk Buffer",
-    "en": "Ground Risk Buffer"
-  },
-  "tab_general": {
-    "de": "Korridoreinstellungen",
-    "en": "Corridor Settings"
-  },
-  "tab_interpolation": {
-    "de": "Interpolationsschrittweite",
-    "en": "Interpolation Step Size"
-  },
-  "uas_type": {
-    "de": "UAS Typ:",
-    "en": "UAS Type:"
-  },
-  "uas_fw": {
-    "de": "Flächenflieger (Fixed Wing)",
-    "en": "Fixed Wing"
-  },
-  "uas_mc": {
-    "de": "Multikopter",
-    "en": "Multicopter"
-  },
-  "altimetry": {
-    "de": "Höhenmessung:",
-    "en": "Altimetry:"
-  },
-  "alt_gps": {
-    "de": "GPS-basiert",
-    "en": "GPS-based"
-  },
-  "alt_baro": {
-    "de": "barometrisch",
-    "en": "barometric"
-  },
-  "label_v0": {
-    "de": "Max. Betriebsgeschwindigkeit (v0)",
-    "en": "Max. Operating Velocity (v0)"
-  },
-  "label_v_max": {
-    "de": "Max. kommandierbare Geschwindigkeit (v_max)",
-    "en": "Max. Commandable Velocity (v_max)"
-  },
-  "label_cd": {
-    "de": "Charakteristische Dimension (CD)",
-    "en": "Characteristic Dimension (CD)"
-  },
-  "label_stall": {
-    "de": "Überziehgeschwindigkeit (stallVelocity)",
-    "en": "Stall Speed (stallVelocity)"
-  },
-  "label_gps_inacc": {
-    "de": "GPS Ungenauigkeit (SGPS)",
-    "en": "GPS Inaccuracy (SGPS)"
-  },
-  "label_pos_err": {
-    "de": "Positionshaltefehler (SPos)",
-    "en": "Position Hold Error (SPos)"
-  },
-  "label_map_err": {
-    "de": "Kartenfehler (SK)",
-    "en": "Map Error (SK)"
-  },
-  "label_t_rz": {
-    "de": "Fernpilot Reaktionszeit (tRZ)",
-    "en": "Remote Pilot Reaction Time (tRZ)"
-  },
-  "label_alt_gps": {
-    "de": "GPS Höhenfehler",
-    "en": "GPS Altitude Error"
-  },
-  "label_alt_baro": {
-    "de": "Baro Höhenfehler",
-    "en": "Baro Altitude Error"
-  },
-  "label_add_horiz": {
-    "de": "Zusatzentfernung (horizontal)",
-    "en": "Additional Distance (horizontal)"
-  },
-  "label_add_vert": {
-    "de": "Zusatzentfernung (vertikal)",
-    "en": "Additional Distance (vertical)"
-  },
-  "group_lat": {
-    "de": "Laterales Contingency Manöver",
-    "en": "Lateral Contingency Manoeuvre"
-  },
-  "group_vert": {
-    "de": "Vertikales Contingency Manöver",
-    "en": "Vertical Contingency Manoeuvre"
-  },
-  "manoeuvre_type": {
-    "de": "Manövertyp:",
-    "en": "Manoeuvre Type:"
-  },
-  "man_default_lat": {
-    "de": "Standard (Kurve / Anhalten)",
-    "en": "Standard (Turn / Hover)"
-  },
-  "man_default_vert": {
-    "de": "Standard (Energiewandlung / Climb)",
-    "en": "Standard (Energy Conversion / Climb)"
-  },
-  "man_parachute": {
-    "de": "Auslösen des Fallschirms",
-    "en": "Deploy Parachute"
-  },
-  "label_roll": {
-    "de": "Rollwinkel (FixedWing, Φ)",
-    "en": "Roll Angle (FixedWing, Φ)"
-  },
-  "label_pitch": {
-    "de": "Nickwinkel (Multikopter, Θ)",
-    "en": "Pitch Angle (Multicopter, Θ)"
-  },
-  "label_para_lat": {
-    "de": "Fallschirm Öffnungszeit (lat)",
-    "en": "Parachute Opening Time (lat)"
-  },
-  "label_para_vert": {
-    "de": "Fallschirm Öffnungszeit (vert)",
-    "en": "Parachute Opening Time (vert)"
-  },
-  "label_grb_method": {
-    "de": "Terminierungsmethode (GRB):",
-    "en": "Termination Method (GRB):"
-  },
-  "label_glide": {
-    "de": "Gleitzahl (E)",
-    "en": "Glide Ratio (E)"
-  },
-  "label_para_grb": {
-    "de": "Fallschirm Öffnungszeit (GRB)",
-    "en": "Parachute Opening Time (GRB)"
-  },
-  "label_wind": {
-    "de": "Max. zulässige Windgeschwindigkeit",
-    "en": "Max. allowed Wind Speed"
-  },
-  "label_descent": {
-    "de": "Fallschirm Sinkgeschwindigkeit (vZ)",
-    "en": "Parachute Descent Rate (vZ)"
-  },
-  "label_corridor_width": {
-    "de": "Standard Flight Geography Breite (W_FG)",
-    "en": "Default Flight Geography Width (W_FG)"
-  },
-  "label_default_height": {
-    "de": "Standard Flughöhe (h)",
-    "en": "Default Flight Height (h)"
-  },
-  "msg_cd_warning_title": {
-    "de": "Einstellung korrigiert",
-    "en": "Settings Corrected"
-  },
-  "msg_cd_warning_text": {
-    "de": "Die Flight Geography Breite ({width:.1f} m) muss mindestens 3-mal so groß wie die Charakteristische Dimension des UAS (CD = {cd:.1f} m, 3x CD = {min_width:.1f} m) sein.\nDie Breite wurde automatisch auf {min_width:.1f} m angepasst.",
-    "en": "The Flight Geography width ({width:.1f} m) must be at least 3 times the Characteristic Dimension of the UAS (CD = {cd:.1f} m, 3x CD = {min_width:.1f} m).\nThe width was automatically adjusted to {min_width:.1f} m."
-  },
-  "dialog_adv_settings_title": {
-    "de": "Erweiterte Einstellungen & Standardwerte",
-    "en": "Advanced Settings & Default Values"
-  },
-  "tab_style": {
-    "de": "Darstellung",
-    "en": "Representation"
-  },
-  "tab_defaults": {
-    "de": "Standardwerte (LBA-Leitfaden)",
-    "en": "Default Values (LBA Guidelines)"
-  },
-  "step_size": {
-    "de": "Interpolations-Schrittweite (für GRB):",
-    "en": "Interpolation Step Size (for GRB):"
-  },
-  "step_desc": {
-    "de": "Die Schrittweite legt fest, in welchen Abständen entlang der Route Zwischenwerte interpoliert und berechnet werden. Ein kleinerer Wert erhöht die Genauigkeit und Krümmungssicherheit des Ground Risk Buffers (ballistischer Ansatz), erzeugt jedoch mehr Geometrie-Stützpunkte.\n\nEmpfohlene typische Werte liegen zwischen 20-100m, bei sehr langen Korridoren auch mehr.",
-    "en": "The step size defines the intervals along the route at which intermediate values are interpolated and calculated. A smaller value increases the accuracy and curvature safety of the Ground Risk Buffer (ballistic approach), but generates more geometry vertices.\n\nRecommended typical values are between 20-100m, or more for very long corridors."
-  },
-  "style_desc": {
-    "de": "<b>Hinweis:</b> Änderungen an der Darstellung (Linienstärke, Farbe, Deckkraft) in diesem Dialog gelten nur für die aktuelle Sitzung. Dauerhafte Einstellungen können Sie durch direktes Bearbeiten der <code>config.json</code>-Datei vornehmen.",
-    "en": "<b>Note:</b> Changes to the representation (linewidth, color, opacity) in this dialog only apply to the current session. Permanent settings can be configured by directly editing the <code>config.json</code> file."
-  },
-  "header_lw": {
-    "de": "<b>Stärke</b>",
-    "en": "<b>Width</b>"
-  },
-  "header_col": {
-    "de": "<b>Farbe</b>",
-    "en": "<b>Color</b>"
-  },
-  "header_op": {
-    "de": "<b>Deckkraft</b>",
-    "en": "<b>Opacity</b>"
-  },
-  "lyr_route": {
-    "de": "Flugweg (Mittelachse):",
-    "en": "Flight Path (Centerline):"
-  },
-  "lyr_fg": {
-    "de": "Flight Geography (FG):",
-    "en": "Flight Geography (FG):"
-  },
-  "lyr_cv": {
-    "de": "Contingency Volume (CV):",
-    "en": "Contingency Volume (CV):"
-  },
-  "lyr_grb": {
-    "de": "Ground Risk Buffer (GRB):",
-    "en": "Ground Risk Buffer (GRB):"
-  },
-  "lyr_aa": {
-    "de": "Adjacent Area (AA):",
-    "en": "Adjacent Area (AA):"
-  },
-  "lyr_vlos": {
-    "de": "VLOS-Reichweite (Pilotenposition):",
-    "en": "VLOS Range (Pilot Position):"
-  },
-  "defaults_info": {
-    "de": "<b>Hinweis:</b> Die folgenden Parameter stellen die Standardwerte gemäß dem LBA-Leitfaden dar. Diese Liste ist schreibgeschützt. Um diese Werte dauerhaft anzupassen, bearbeiten Sie bitte die <code>config.json</code>-Datei über den Button unten.",
-    "en": "<b>Note:</b> The following parameters represent the default values according to the LBA guidelines. This list is read-only. To permanently adjust these values, please edit the <code>config.json</code> file using the button below."
-  },
-  "btn_open_config": {
-    "de": "Konfigurationsdatei (config.json) öffnen...",
-    "en": "Open Configuration File (config.json)..."
-  },
-  "tree_param": {
-    "de": "Parameter",
-    "en": "Parameter"
-  },
-  "tree_value": {
-    "de": "Standardwert",
-    "en": "Default Value"
-  },
-  "tree_grp_uas": {
-    "de": "UAS Eigenschaften",
-    "en": "UAS Properties"
-  },
-  "tree_grp_sensors": {
-    "de": "Sensorik & Unsicherheiten",
-    "en": "Sensors & Uncertainties"
-  },
-  "tree_grp_manoeuvres": {
-    "de": "Sicherheitsmanöver & Puffer",
-    "en": "Safety Manoeuvres & Buffers"
-  },
-  "tree_grp_global": {
-    "de": "Globale Korridoreinstellungen",
-    "en": "Global Corridor Settings"
-  },
-  "tree_grp_graphics": {
-    "de": "Grafische Darstellung (QGIS Layers)",
-    "en": "Graphical Representation (QGIS Layers)"
-  },
-  "dialog_vlos_title": {
-    "de": "VLOS-Rechner (ALOS/DLOS)",
-    "en": "VLOS Calculator (ALOS/DLOS)"
-  },
-  "group_inputs": {
-    "de": "Datenquellen & Einstellungen",
-    "en": "Data Sources & Settings"
-  },
-  "label_sky": {
-    "de": "Himmelszustand:",
-    "en": "Sky Condition:"
-  },
-  "sky_overcast": {
-    "de": "Bedeckter Himmel (Kontrastverringerung)",
-    "en": "Overcast Sky (Reduced Contrast)"
-  },
-  "sky_clear": {
-    "de": "Klarer Himmel / Gute Sichtbedingungen",
-    "en": "Clear Sky / Good Visibility"
-  },
-  "group_results": {
-    "de": "Berechnete Ergebnisse",
-    "en": "Calculated Results"
-  },
-  "label_alos": {
-    "de": "ALOS Grenzwert (Kombinierter Luftraum-Fokus):",
-    "en": "ALOS Limit (Combined Airspace Focus):"
-  },
-  "label_dlos": {
-    "de": "DLOS Grenzwert (Erkennungsgrenze des Piloten):",
-    "en": "DLOS Limit (Pilot Detection Limit):"
-  },
-  "label_vlos_max": {
-    "de": "Max. VLOS Betriebsreichweite (LBA-Leitfaden):",
-    "en": "Max. VLOS Operating Range (LBA Guidelines):"
-  },
-  "vlos_note": {
-    "de": "<b>Hinweis:</b> Gemäß dem LBA-Leitfaden für U-Space und UAS-Betrieb im VLOS darf die maximale Entfernung zwischen Fernpilot und UAS den kleineren Wert aus ALOS und DLOS nicht überschreiten, maximal jedoch 500 Meter (oder 1000 Meter bei Einsatz eines Luftraumbeobachters).",
-    "en": "<b>Note:</b> According to the LBA guidelines for U-Space and UAS operations in VLOS, the maximum distance between remote pilot and UAS must not exceed the smaller of ALOS and DLOS, with an absolute maximum of 500 meters (or 1000 meters if an airspace observer is deployed)."
-  },
-  "dialog_altitude_title": {
-    "de": "Wegpunkt-Spezifische Parameter bearbeiten",
-    "en": "Edit Waypoint-Specific Parameters"
-  },
-  "dialog_altitude_desc": {
-    "de": "Geben Sie die Werte für jeden Wegpunkt individuell ein. Die Pufferzonen passen sich an diese lokalen Parameter dynamisch an.",
-    "en": "Enter the values for each waypoint individually. The buffer zones adjust dynamically to these local parameters."
-  },
-  "col_wp": {
-    "de": "Wegpunkt",
-    "en": "Waypoint"
-  },
-  "col_alt": {
-    "de": "h_FG (Flughöhe) (m)",
-    "en": "h_FG (Altitude) (m)"
-  },
-  "col_spd": {
-    "de": "v0 (Geschwindigkeit) (m/s)",
-    "en": "v0 (Velocity) (m/s)"
-  },
-  "col_fg": {
-    "de": "W_FG (Breite) (m)",
-    "en": "W_FG (Width) (m)"
-  },
-  "btn_apply_all": {
-    "de": "Auf alle anwenden",
-    "en": "Apply to All"
-  },
-  "btn_cancel": {
-    "de": "Abbrechen",
-    "en": "Cancel"
-  },
-  "label_apply_to_all_title": {
-    "de": "Wert auf alle Wegpunkte übertragen",
-    "en": "Apply Value to All Waypoints"
-  },
-  "dialog_export_title": {
-    "de": "Parameter für den Export festlegen",
-    "en": "Define Parameters for Export"
-  },
-  "dialog_export_desc": {
-    "de": "Beim Exportieren einer dipul- oder flightplan-Datei müssen die veränderlichen Wegpunkt-Parameter (Höhe, Geschwindigkeit und Flight Geography Breite) in konstante Werte überführt werden, um den offiziellen Formatspezifikationen zu entsprechen. Bitte legen Sie diese konstanten Werte hier fest:",
-    "en": "When exporting a dipul or flightplan file, the variable waypoint parameters (height, velocity, and Flight Geography width) must be converted into constant values to match the official format specifications. Please define these constant values here:"
-  },
-  "label_export_height": {
-    "de": "Konstante Flughöhe (m):",
-    "en": "Constant Flight Height (m):"
-  },
-  "label_export_speed": {
-    "de": "Konstante Geschwindigkeit (m/s):",
-    "en": "Constant Velocity (m/s):"
-  },
-  "label_export_fg_width": {
-    "de": "Konstante FG-Breite (m):",
-    "en": "Constant FG Width (m):"
-  },
-  "grb_simplified": {
-    "de": "Vereinfachter Ansatz (1:1 Regel)",
-    "en": "Simplified Approach (1:1 Rule)"
-  },
-  "grb_ballistic": {
-    "de": "Ballistischer Ansatz",
-    "en": "Ballistic Approach"
-  },
-  "grb_glide": {
-    "de": "Antrieb aus mit Gleitflug",
-    "en": "Power-off with Glide Flight"
-  },
-  "grb_parachute": {
-    "de": "Terminierung mit Auslösen des Fallschirms",
-    "en": "Termination with Parachute Deployment"
-  },
-  "vlos_desc": {
-    "de": "Berechnung der maximalen Sichtweite (VLOS) gemäß den EASA/LBA-Richtlinien basierend auf der Größe der Drohne (ALOS) und der Bodensicht (DLOS).",
-    "en": "Calculation of the maximum visual line of sight (VLOS) according to EASA/LBA guidelines based on drone size (ALOS) and ground visibility (DLOS)."
-  },
-  "uas_mc_rot": {
-    "de": "Multikopter / Drehflügler",
-    "en": "Multicopter / Rotorcraft"
-  },
-  "label_gv": {
-    "de": "Aktuelle Bodensicht (GV, max. 5000m):",
-    "en": "Current Ground Visibility (GV, max. 5000m):"
-  },
-  "col_pos": {
-    "de": "Position (Lat, Lon)",
-    "en": "Position (Lat, Lon)"
-  },
-  "col_cv": {
-    "de": "CV Radius (m)",
-    "en": "CV Radius (m)"
-  },
-  "col_grb": {
-    "de": "GRB Radius (m)",
-    "en": "GRB Radius (m)"
-  },
-  "col_hfg": {
-    "de": "h_FG (m)",
-    "en": "h_FG (m)"
-  },
-  "col_hcv": {
-    "de": "h_CV (m)",
-    "en": "h_CV (m)"
-  },
-  "btn_copy_excel": {
-    "de": "Tabelle kopieren (für Excel)",
-    "en": "Copy Table (for Excel)"
-  },
-  "btn_copy_excel_tooltip": {
-    "de": "Kopiert die gesamte Tabelle inkl. Spaltenköpfe in die Zwischenablage für MS Excel.",
-    "en": "Copies the entire table including column headers to the clipboard for MS Excel."
-  },
-  "msg_speed_limit_title": {
-    "de": "Geschwindigkeit überschritten",
-    "en": "Velocity Limit Exceeded"
-  },
-  "msg_speed_limit_text": {
-    "de": "Die eingegebene Geschwindigkeit ({spd_val:.1f} m/s) darf die maximale Betriebsgeschwindigkeit des UAS ({max_vel:.1f} m/s) nicht überschreiten.\nDer Wert wurde automatisch auf {max_vel:.1f} m/s zurückgesetzt.",
-    "en": "The entered velocity ({spd_val:.1f} m/s) must not exceed the maximum operating velocity of the UAS ({max_vel:.1f} m/s).\nThe value was automatically reset to {max_vel:.1f} m/s."
-  },
-  "msg_speed_ops_vs_cmd_title": {
-    "de": "Ungültige Geschwindigkeitseinstellung",
-    "en": "Invalid Velocity Setting"
-  },
-  "msg_speed_ops_vs_cmd_text": {
-    "de": "Die maximale Betriebsgeschwindigkeit (v0 = {v0:.1f} m/s) darf nicht größer sein als die maximale kommandierbare Geschwindigkeit (v_max = {vmax:.1f} m/s).\nBitte korrigieren Sie die Werte.",
-    "en": "The maximum operational speed (v0 = {v0:.1f} m/s) must not exceed the maximum commandable speed (v_max = {vmax:.1f} m/s).\nPlease correct the values."
-  },
-  "msg_fg_limit_title": {
-    "de": "Flight Geography Breite zu gering",
-    "en": "Flight Geography Width Too Small"
-  },
-  "msg_fg_limit_text": {
-    "de": "Die Flight Geography Breite ({fg_val:.1f} m) muss mindestens 3-mal so groß wie die Charakteristische Dimension des UAS (CD = {cd:.1f} m, 3x CD = {min_fg:.1f} m) sein.\nDer Wert wurde automatisch auf {min_fg:.1f} m gesetzt.",
-    "en": "The Flight Geography width ({fg_val:.1f} m) must be at least 3 times the Characteristic Dimension of the UAS (CD = {cd:.1f} m, 3x CD = {min_fg:.1f} m).\nThe value was automatically set to {min_fg:.1f} m."
-  },
-  "msg_export_error_title": {
-    "de": "Export Fehler",
-    "en": "Export Error"
-  },
-  "msg_export_error_text": {
-    "de": "Fehler beim Exportieren der Datei:\n{error}",
-    "en": "Error exporting file:\n{error}"
-  },
-  "msg_import_error_title": {
-    "de": "Import Fehler",
-    "en": "Import Error"
-  },
-  "msg_import_error_text": {
-    "de": "Fehler beim Importieren der Datei:\n{error}",
-    "en": "Error importing file:\n{error}"
-  },
-  "dialog_import_title": {
-    "de": "Datei importieren",
-    "en": "Import File"
-  },
-  "dialog_export_file_title": {
-    "de": "Datei exportieren",
-    "en": "Export File"
-  },
-  "btn_load_active_layer": {
-    "de": "Aktivierten QGIS-Layer einlesen",
-    "en": "Load Active QGIS Layer"
-  },
-  "menu_import_active": {
-    "de": "Aktivierten QGIS-Layer einlesen...",
-    "en": "Load active QGIS layer..."
-  },
-  "msg_invalid_layer_title": {
-    "de": "Ungültiger Layer-Typ",
-    "en": "Invalid Layer Type"
-  },
-  "msg_invalid_layer_text": {
-    "de": "Bitte wählen Sie zuerst einen Vektor-Layer vom Typ Linie (Line) oder Punkt (Point / Multi-Point) in QGIS aus.",
-    "en": "Please select a vector layer of type Line or Point/Multi-Point in QGIS first."
-  },
-  "msg_import_active_success": {
-    "de": "Import abgeschlossen!\n{count} Wegpunkte aus Layer '{name}' geladen.",
-    "en": "Import completed!\n{count} waypoints loaded from layer '{name}'."
-  },
-  "msg_invalid_polygon_layer_text": {
-    "de": "Im Polygon-Modus können nur Vektor-Layer vom Typ Polygon eingelesen werden.",
-    "en": "In Polygon mode, only vector layers of type Polygon can be loaded."
-  },
-  "msg_polygon_mode_required_text": {
-    "de": "Ein Polygon-Layer kann nur im Planungsmodus 'Polygon' eingelesen werden. Bitte wechseln Sie zuerst den Geometrietyp auf 'Polygon'.",
-    "en": "A Polygon layer can only be loaded in 'Polygon' planning mode. Please switch the geometry type to 'Polygon' first."
-  },
-  "results_grp": {
-    "de": "Berechnungsergebnis",
-    "en": "Calculation Results"
-  },
-  "results_label_rfg": {
-    "de": "R<sub>FG</sub>",
-    "en": "R<sub>FG</sub>"
-  },
-  "results_label_scv": {
-    "de": "S<sub>CV</sub>",
-    "en": "S<sub>CV</sub>"
-  },
-  "results_label_rcv": {
-    "de": "CV-Radius",
-    "en": "CV Radius"
-  },
-  "results_label_sgrb": {
-    "de": "S<sub>GRB</sub>",
-    "en": "S<sub>GRB</sub>"
-  },
-  "results_label_rgrb": {
-    "de": "GRB-Radius",
-    "en": "GRB Radius"
-  },
-  "results_label_hfg": {
-    "de": "H<sub>FG</sub>",
-    "en": "H<sub>FG</sub>"
-  },
-  "results_label_hcv": {
-    "de": "H<sub>CV</sub>",
-    "en": "H<sub>CV</sub>"
-  },
-  "results_no_data": {
-    "de": "Noch keine Wegpunkte gesetzt.",
-    "en": "No waypoints set yet."
-  },
-  "results_error": {
-    "de": "Berechnungsfehler",
-    "en": "Calculation error"
-  },
-  "btn_delete_wp": {
-    "de": "Wegpunkt löschen",
-    "en": "Delete Waypoint"
-  },
-  "btn_delete_wp_tooltip": {
-    "de": "Löscht den ausgewählten Wegpunkt (auch per Entf-Taste).",
-    "en": "Deletes the selected waypoint (also via Delete key)."
-  },
-  "msg_delete_wp_title": {
-    "de": "Wegpunkt löschen",
-    "en": "Delete Waypoint"
-  },
-  "msg_delete_wp_no_sel": {
-    "de": "Bitte wählen Sie zuerst eine Zeile in der Tabelle aus.",
-    "en": "Please select a row in the table first."
-  },
-  "decimal_separator": {
-    "de": ",",
-    "en": "."
-  },
-  "viz_waiting": {
-    "de": "Warten auf Puffer-Berechnung...",
-    "en": "Waiting for buffer calculation..."
-  },
-  "viz_vertical_title": {
-    "de": "Vertikal (nicht maßstäblich)",
-    "en": "Vertical (not to scale)"
-  },
-  "viz_fg": {
-    "de": "Flight Geography",
-    "en": "Flight Geography"
-  },
-  "viz_cv": {
-    "de": "Contingency Volume",
-    "en": "Contingency Volume"
-  },
-  "viz_grb": {
-    "de": "Ground Risk Buffer",
-    "en": "Ground Risk Buffer"
-  },
-  "btn_apply_h_all": {
-    "de": "Flughöhe für alle Wegpunkte übernehmen",
-    "en": "Apply Flight Height to All Waypoints"
-  },
-  "confirm_h_all_title": {
-    "de": "Höhe übernehmen",
-    "en": "Apply Height"
-  },
-  "confirm_h_all_text": {
-    "de": "Möchten Sie die Flughöhe für alle Wegpunkte wirklich auf die Standardhöhe ({height:.1f} m) zurücksetzen und alle wegpunktspezifischen Höhen überschreiben?",
-    "en": "Do you really want to reset the flight height for all waypoints to the default height ({height:.1f} m) and overwrite all waypoint-specific heights?"
-  },
-  "msg_h_applied_title": {
-    "de": "Höhe übernommen",
-    "en": "Height Applied"
-  },
-  "msg_h_applied_text": {
-    "de": "Die Flughöhe wurde erfolgreich für alle Wegpunkte übernommen.",
-    "en": "The flight height has been successfully applied to all waypoints."
-  },
-  "msg_no_wp_for_h": {
-    "de": "Es sind derzeit keine Wegpunkte vorhanden, auf die die Flughöhe angewendet werden könnte.",
-    "en": "There are currently no waypoints to apply the flight height to."
-  },
-  "btn_apply_w_all": {
-    "de": "Flight Geography Breite für alle Wegpunkte übernehmen",
-    "en": "Apply Flight Geography Width to All Waypoints"
-  },
-  "confirm_w_all_title": {
-    "de": "Breite übernehmen",
-    "en": "Apply Width"
-  },
-  "confirm_w_all_text": {
-    "de": "Möchten Sie die Flight Geography Breite für alle Wegpunkte wirklich auf die Standardbreite ({width:.1f} m) zurücksetzen und alle wegpunktspezifischen Breiten überschreiben?",
-    "en": "Do you really want to reset the Flight Geography width for all waypoints to the default width ({width:.1f} m) and overwrite all waypoint-specific widths?"
-  },
-  "msg_w_applied_title": {
-    "de": "Breite übernommen",
-    "en": "Width Applied"
-  },
-  "msg_w_applied_text": {
-    "de": "Die Flight Geography Breite wurde erfolgreich für alle Wegpunkte übernommen.",
-    "en": "The Flight Geography width has been successfully applied to all waypoints."
-  },
-  "msg_no_wp_for_w": {
-    "de": "Es sind derzeit keine Wegpunkte vorhanden, auf die die Flight Geography Breite angewendet werden könnte.",
-    "en": "There are currently no waypoints to apply the Flight Geography width to."
-  },
-  "menu_pop_density": {
-    "de": "Bevölkerungsdichte im AA-Bereich berechnen...",
-    "en": "Calculate Population Density in AA Area..."
-  },
-  "dialog_pop_title": {
-    "de": "Bevölkerungsdichte im Adjacent Area (AA) Bereich",
-    "en": "Population Density in Adjacent Area (AA) Area"
-  },
-  "pop_desc": {
-    "de": "Berechnung der durchschnittlichen Bevölkerungsdichte innerhalb der Adjacent Ground Area (AA) basierend auf dem Global Human Settlement Layer (GHSL) GHS-POP GeoTIFF gemäß SORA Step #8.",
-    "en": "Calculation of the average population density within the Adjacent Ground Area (AA) based on the Global Human Settlement Layer (GHSL) GHS-POP GeoTIFF according to SORA Step #8."
-  },
-  "label_raster_layer": {
-    "de": "GHS-POP Raster-Layer:",
-    "en": "GHS-POP Raster Layer:"
-  },
-  "btn_browse": {
-    "de": "Durchsuchen...",
-    "en": "Browse..."
-  },
-  "label_raster_info": {
-    "de": "Raster Info:",
-    "en": "Raster Info:"
-  },
-  "no_raster_selected": {
-    "de": "Kein Raster ausgewählt",
-    "en": "No raster selected"
-  },
-  "grp_aa_details": {
-    "de": "Adjacent Ground Area (AA) Eigenschaften",
-    "en": "Adjacent Ground Area (AA) Properties"
-  },
-  "label_aa_area": {
-    "de": "AA-Fläche:",
-    "en": "AA Area:"
-  },
-  "btn_calculate_pop": {
-    "de": "Berechnung starten",
-    "en": "Start Calculation"
-  },
-  "label_total_pop": {
-    "de": "Gesamtbevölkerung im AA-Bereich:",
-    "en": "Total Population in AA Area:"
-  },
-  "label_avg_density": {
-    "de": "Durchschnittliche Bevölkerungsdichte:",
-    "en": "Average Population Density:"
-  },
-  "sora_containment_info": {
-    "de": "<b>SORA Step #8 Hinweis:</b> Der ermittelte Dichtewert (Einwohner/km²) dient zur Einstufung der Containment-Anforderungen (z.B. Enhanced Containment bei Dichten > 25/km² in bestimmten Szenarien). Bitte prüfen Sie die Grenzwerte gemäß den EASA-Richtlinien. Assemblies of People (Menschenansammlungen) müssen manuell ausgeschlossen werden.",
-    "en": "<b>SORA Step #8 Note:</b> The calculated density value (people/km²) is used to classify containment requirements (e.g., Enhanced Containment for densities > 25/km² in certain scenarios). Please verify the thresholds according to EASA guidelines. Assemblies of people must be manually excluded."
-  },
-  "people": {
-    "de": "Personen",
-    "en": "People"
-  },
-  "people_per_km2": {
-    "de": "Einwohner / km²",
-    "en": "People / km²"
-  },
-  "no_rasters_in_project": {
-    "de": "Keine Raster-Layer im Projekt geladen",
-    "en": "No raster layers loaded in project"
-  },
-  "dialog_select_raster": {
-    "de": "GHS-POP GeoTIFF-Datei auswählen",
-    "en": "Select GHS-POP GeoTIFF File"
-  },
-  "error_invalid_raster_title": {
-    "de": "Ungültiges Raster",
-    "en": "Invalid Raster"
-  },
-  "error_invalid_raster_text": {
-    "de": "Die ausgewählte Datei konnte nicht als Raster-Layer geladen werden.",
-    "en": "The selected file could not be loaded as a raster layer."
-  },
-  "empty_aa_geometry": {
-    "de": "AA-Geometrie ist leer",
-    "en": "AA geometry is empty"
-  },
-  "msg_no_raster_title": {
-    "de": "Kein Raster",
-    "en": "No Raster"
-  },
-  "msg_no_raster_text": {
-    "de": "Bitte wählen Sie zuerst einen gültigen GHS-POP Raster-Layer aus.",
-    "en": "Please select a valid GHS-POP raster layer first."
-  },
-  "error_empty_aa_title": {
-    "de": "Keine Adjacent Area",
-    "en": "No Adjacent Area"
-  },
-  "error_empty_aa_text": {
-    "de": "Es existiert kein gültiger 'Adjacent Area (AA)'-Layer oder dieser enthält keine Geometrie. Bitte erstellen Sie zuerst eine Flugplanung.",
-    "en": "There is no valid 'Adjacent Area (AA)' layer, or it contains no geometry. Please create a flight planning first."
-  },
-  "error_calc_failed_title": {
-    "de": "Fehler bei Berechnung",
-    "en": "Calculation Error"
-  },
-  "error_calc_failed_text": {
-    "de": "Zonalstatistik-Berechnung fehlgeschlagen:\n{error}",
-    "en": "Zonal statistics calculation failed:\n{error}"
-  },
-  "dialog_save_persistent_title": {
-    "de": "Planung als persistenten Layer (GeoPackage) speichern",
-    "en": "Save Planning as Persistent Layer (GeoPackage)"
-  },
-  "group_name_dialog_title": {
-    "de": "Layer-Gruppe benennen",
-    "en": "Name Layer Group"
-  },
-  "group_name_dialog_label": {
-    "de": "Geben Sie einen Namen für die Layer-Gruppe im QGIS-Projekt ein:",
-    "en": "Enter a name for the layer group in the QGIS project:"
-  },
-  "msg_save_error_title": {
-    "de": "Speicherfehler",
-    "en": "Save Error"
-  },
-  "msg_save_error_text": {
-    "de": "Fehler beim Speichern in GeoPackage:\n{error}",
-    "en": "Error saving to GeoPackage:\n{error}"
-  },
-  "msg_save_success_title": {
-    "de": "Speichern erfolgreich",
-    "en": "Save Successful"
-  },
-  "msg_save_success_text": {
-    "de": "Die Korridorplanung wurde erfolgreich als dauerhafter GeoPackage-Layer gespeichert!\n\nDatei: {file_path}\n\nDie Layer wurden zur Gruppe '{group_name}' hinzugefügt.",
-    "en": "The corridor planning was successfully saved as a persistent GeoPackage layer!\n\nFile: {file_path}\n\nThe layers have been added to the group '{group_name}'."
-  },
-  "menu_grb_density": {
-    "de": "Bodenrisiko-Analyse (GRB-Bevölkerungsdichte)...",
-    "en": "Ground Risk Analysis (GRB Population Density)..."
-  },
-  "dialog_grb_pop_title": {
-    "de": "Bodenrisiko-Analyse (GRB-Bevölkerungsdichte)",
-    "en": "Ground Risk Analysis (GRB Population Density)"
-  },
-  "grb_pop_desc": {
-    "de": "Berechnung der durchschnittlichen und maximalen Bevölkerungsdichte innerhalb des Ground Risk Buffers (GRB) basierend auf dem GHS-POP GeoTIFF gemäß EASA SORA-Vorgaben.",
-    "en": "Calculation of the average and maximum population density within the Ground Risk Buffer (GRB) based on the GHS-POP GeoTIFF according to EASA SORA requirements."
-  },
-  "grp_grb_details": {
-    "de": "Ground Risk Buffer (GRB) Eigenschaften",
-    "en": "Ground Risk Buffer (GRB) Properties"
-  },
-  "label_grb_area": {
-    "de": "GRB-Gesamtfläche:",
-    "en": "GRB Total Area:"
-  },
-  "label_total_pop_grb": {
-    "de": "Gesamtbevölkerung im GRB:",
-    "en": "Total Population in GRB:"
-  },
-  "label_avg_density_grb": {
-    "de": "Durchschnittliche Bevölkerungsdichte:",
-    "en": "Average Population Density:"
-  },
-  "label_max_density_grb": {
-    "de": "Maximale Bevölkerungsdichte (konservativ):",
-    "en": "Maximum Population Density (conservative):"
-  },
-  "easa_grb_info": {
-    "de": "<b>EASA SORA Hinweis (Konservativer Ansatz):</b> Für den Maximalwert der Bevölkerungsdichte im GRB wird ein konservativer Ansatz gewählt. Jede Rasterzelle, die das GRB-Polygon auch nur berührt, wird voll berücksichtigt, um das maximale Bodenrisiko sicherzustellen.",
-    "en": "<b>EASA SORA Note (Conservative Approach):</b> For the maximum value of population density in the GRB, a conservative approach is chosen. Any raster cell that even slightly touches the GRB polygon is fully considered to ensure maximum ground risk coverage."
-  },
-  "error_empty_grb_title": {
-    "de": "Kein Ground Risk Buffer",
-    "en": "No Ground Risk Buffer"
-  },
-  "error_empty_grb_text": {
-    "de": "Es existiert kein gültiger 'Ground Risk Buffer (GRB)'-Layer oder dieser enthält keine Geometrie. Bitte erstellen Sie zuerst eine Flugplanung.",
-    "en": "There is no valid 'Ground Risk Buffer (GRB)' layer, or it contains no geometry. Please create a flight planning first."
-  },
-  "compatibility_note": {
-    "de": "Entwickelt für QGIS 3.44.10-Solothurn LTR. Nur hier wird die beste Kompatibilität erwartet.",
-    "en": "Developed for QGIS 3.44.10-Solothurn LTR. Best compatibility is only expected here."
-  },
-  "license_status_title": {
-    "de": "Lizenzierung und Testzeitraum",
-    "en": "Licensing & Trial Period"
-  },
-  "license_status": {
-    "de": "Lizenz-Status",
-    "en": "License Status"
-  },
-  "license_activated": {
-    "de": "Aktiviert (Kommerzielle Lizenz)",
-    "en": "Activated (Commercial License)"
-  },
-  "license_not_activated": {
-    "de": "Nicht aktiviert (Testphase)",
-    "en": "Not activated (Trial Period)"
-  },
-  "license_trial_days_remaining": {
-    "de": "Verbleibende Testtage",
-    "en": "Remaining trial days"
-  },
-  "license_days": {
-    "de": "{days} Tage",
-    "en": "{days} days"
-  },
-  "license_expired": {
-    "de": "Abgelaufen (Kommerzielle Lizenz erforderlich)",
-    "en": "Expired (Commercial license required)"
-  },
-  "btn_enter_license_key": {
-    "de": "Lizenzschlüssel eingeben...",
-    "en": "Enter license key..."
-  },
-  "btn_change_license_key": {
-    "de": "Lizenzschlüssel ändern...",
-    "en": "Change license key..."
-  },
-  "license_prompt_title": {
-    "de": "Lizenzschlüssel eingeben",
-    "en": "Enter License Key"
-  },
-  "license_prompt_label": {
-    "de": "Bitte geben Sie den QUCORE-Lizenzschlüssel ein:",
-    "en": "Please enter the QUCORE license key:"
-  },
-  "license_success_title": {
-    "de": "Aktivierung erfolgreich",
-    "en": "Activation Successful"
-  },
-  "license_success_text": {
-    "de": "Lizenz erfolgreich aktiviert! Vielen Dank für die Unterstützung von QUCORE.",
-    "en": "License successfully activated! Thank you for supporting QUCORE."
-  },
-  "license_invalid_title": {
-    "de": "Ungültiger Lizenzschlüssel",
-    "en": "Invalid License Key"
-  },
-  "license_invalid_text": {
-    "de": "Ungültiger Lizenzschlüssel. Bitte überprüfen Sie Ihre Eingabe oder kontaktieren Sie den Autor unter tim.strohbach@gmx.de.",
-    "en": "Invalid license key. Please check your input or contact the author at tim.strohbach@gmx.de."
-  },
-  "license_expired_desc": {
-    "de": "Die 30-tägige Testphase für die kommerzielle Nutzung ist abgelaufen (kommerzielle Nutzung erfordert eine Lizenz). Die private Nutzung ist weiterhin gestattet.",
-    "en": "The 30-day trial period for commercial use has expired (commercial use requires a license). Private use is still permitted."
-  },
-  "no_raster_loaded_warn": {
-    "de": "Achtung: Kein Bevölkerungsraster geladen!",
-    "en": "Attention: No population raster loaded!"
-  },
-  "download_hint": {
-    "de": "Für die SORA-Analyse wird das offizielle GHS-POP GeoTIFF-Raster benötigt.",
-    "en": "For SORA analysis, the official GHS-POP GeoTIFF raster is required."
-  },
-  "download_link_label": {
-    "de": "Hier kostenfrei herunterladen:",
-    "en": "Download for free here:"
-  },
-  "download_tip": {
-    "de": "Tipp: Wählen Sie die 100m-Auflösung (WGS84) für optimale Ergebnisse.",
-    "en": "Tip: Choose the 100m resolution (WGS84) for optimal results."
-  },
-  "chk_override_h": {
-    "de": "Individuelle Wegpunkthöhen überschreiben",
-    "en": "Override individual waypoint heights"
-  },
-  "chk_override_w": {
-    "de": "Individuelle Wegpunktbreiten überschreiben",
-    "en": "Override individual waypoint widths"
-  },
-  "chk_override_v": {
-    "de": "Individuelle Wegpunktgeschwindigkeiten überschreiben",
-    "en": "Override individual waypoint velocities"
-  },
-  "cv_warning_tooltip": {
-    "de": "Empfohlener Mindestwert nach EASA SORA (AMC1 zu Artikel 11) beträgt 10,0 m.\nEin geringerer Puffer ist im ConOps betrieblich zu begründen (z. B. durch hohe Navigationsgenauigkeit).",
-    "en": "Recommended minimum value per EASA SORA (AMC1 to Article 11) is 10.0 m.\nA smaller buffer must be justified operationally in the ConOps (e.g., due to high navigation accuracy)."
-  },
-  "msg_cv_warning_banner": {
-    "de": "⚠️ <b>Hinweis zum Contingency Volume (CV):</b><br>In mindestens einem Abschnitt beträgt die berechnete Pufferbreite (s_cv) weniger als 10,0 m. Nach EASA SORA (AMC1 zu Artikel 11) wird eine Mindestbreite von 10 Metern empfohlen. Bitte begründen Sie den geringeren Puffer betrieblich in Ihrem ConOps.",
-    "en": "⚠️ <b>Contingency Volume (CV) Note:</b><br>In at least one segment, the calculated buffer width (s_cv) is less than 10.0 m. According to EASA SORA (AMC1 to Article 11), a minimum width of 10 meters is recommended. Please justify the smaller buffer operationally in your ConOps."
-  },
-  "msg_restore_defaults_title": {
-    "de": "Standardwerte wiederherstellen",
-    "en": "Restore Default Values"
-  },
-  "msg_restore_defaults_text": {
-    "de": "Möchten Sie wirklich alle Parameter auf die Standardwerte aus der config.json zurücksetzen?",
-    "en": "Do you really want to reset all parameters to the default values from config.json?"
-  },
-  "empty_grb_geometry": {
-    "de": "GRB-Geometrie ist leer",
-    "en": "GRB geometry is empty"
-  },
-  "btn_calculating": {
-    "de": "Berechnung läuft...",
-    "en": "Calculation in progress..."
-  },
-  "raw_value": {
-    "de": "Rohwert",
-    "en": "Raw value"
-  },
-  "people_per_cell": {
-    "de": "Personen/Zelle",
-    "en": "People/cell"
-  },
-  "msg_help_not_found_title": {
-    "de": "Hilfe nicht gefunden",
-    "en": "Help Not Found"
-  },
-  "msg_help_not_found_text": {
-    "de": "Die Hilfedatei 'instructions.html' konnte im Plugin-Ordner nicht gefunden werden.",
-    "en": "The help file 'instructions.html' could not be found in the plugin folder."
-  },
-  "error_gpkg_no_state": {
-    "de": "Die GPKG-Datei enthält keine gespeicherte Planung (qucore_state fehlt oder leer).",
-    "en": "The GPKG file does not contain a saved planning (qucore_state is missing or empty)."
-  },
-  "error_gpkg_no_features": {
-    "de": "Die GPKG-Datei enthält keine Features im Wegpunkte-Layer.",
-    "en": "The GPKG file does not contain features in the waypoints layer."
-  },
-  "error_gpkg_no_state_field": {
-    "de": "Der Wegpunkte-Layer in der GPKG-Datei enthält kein qucore_state-Feld.",
-    "en": "The waypoints layer in the GPKG file does not contain a qucore_state field."
-  },
-  "error_gpkg_load_failed": {
-    "de": "Der Wegpunkte-Layer konnte nicht aus der GeoPackage-Datei geladen werden.",
-    "en": "The waypoints layer could not be loaded from the GeoPackage file."
-  }
+    "dialog_title": {
+        "de": "QUCORE – UAS-Korridorplanung (FG/CV/GRB)",
+        "en": "QUCORE – UAS Corridor Planning (FG/CV/GRB)"
+    },
+    "geom_corridor": {
+        "de": "Korridor",
+        "en": "Corridor"
+    },
+    "geom_circle": {
+        "de": "Kreis",
+        "en": "Circle"
+    },
+    "geom_polygon": {
+        "de": "Polygon",
+        "en": "Polygon"
+    },
+    "header_title": {
+        "de": "<b>Drohnen-Sicherheitskorridore</b><br>Kartenbasierte interaktive Planung",
+        "en": "<b>Drone Safety Corridors</b><br>Map-based interactive planning"
+    },
+    "geom_type": {
+        "de": "Geometrietyp:",
+        "en": "Geometry Type:"
+    },
+    "circle_rad": {
+        "de": "Kreis-Radius (m):",
+        "en": "Circle Radius (m):"
+    },
+    "map_interaction_grp": {
+        "de": "Karten-Interaktion",
+        "en": "Map Interaction"
+    },
+    "btn_draw_wp": {
+        "de": "Wegpunkte zeichnen/modifizieren",
+        "en": "Draw/Modify Waypoints"
+    },
+    "btn_set_pilot": {
+        "de": "Pilotenposition setzen",
+        "en": "Set Pilot Position"
+    },
+    "btn_undo_tooltip": {
+        "de": "Rückgängig (Undo)",
+        "en": "Undo"
+    },
+    "btn_redo_tooltip": {
+        "de": "Wiederholen (Redo)",
+        "en": "Redo"
+    },
+    "params_grp": {
+        "de": "Parameter",
+        "en": "Parameters"
+    },
+    "btn_params": {
+        "de": "Berechnungsparameter anpassen...",
+        "en": "Adjust Calculation Parameters..."
+    },
+    "btn_alt": {
+        "de": "Höhe, FG-Breite, Geschwindigkeit pro Wegpunkt bearbeiten...",
+        "en": "Edit Height, FG Width, Velocity per Waypoint..."
+    },
+    "btn_reset": {
+        "de": "Planung zurücksetzen",
+        "en": "Reset Planning"
+    },
+    "btn_close": {
+        "de": "Planung abschließen",
+        "en": "Complete Planning"
+    },
+    "status_ready": {
+        "de": "Wegpunkte: {wp} | Puffer: Bereit",
+        "en": "Waypoints: {wp} | Buffers: Ready"
+    },
+    "status_calculated": {
+        "de": "Wegpunkte: {wp} | Puffer: Berechnet",
+        "en": "Waypoints: {wp} | Buffers: Calculated"
+    },
+    "menu_file": {
+        "de": "Datei",
+        "en": "File"
+    },
+    "menu_import": {
+        "de": "Importieren...",
+        "en": "Import..."
+    },
+    "menu_export": {
+        "de": "Exportieren...",
+        "en": "Export..."
+    },
+    "menu_sora_export": {
+        "de": "SORA Dokumentations-Export (.docx)...",
+        "en": "SORA Documentation Export (.docx)..."
+    },
+    "menu_save_persistent": {
+        "de": "Planung als persistenten Layer (GeoPackage) speichern...",
+        "en": "Save Planning as Persistent Layer (GeoPackage)..."
+    },
+    "menu_reset": {
+        "de": "Planung zurücksetzen",
+        "en": "Reset Planning"
+    },
+    "menu_settings": {
+        "de": "Einstellungen",
+        "en": "Settings"
+    },
+    "menu_calc_params": {
+        "de": "Berechnungsparameter...",
+        "en": "Calculation Parameters..."
+    },
+    "menu_adv_settings": {
+        "de": "Erweiterte Einstellungen...",
+        "en": "Advanced Settings..."
+    },
+    "menu_lang": {
+        "de": "Sprache / Language",
+        "en": "Language"
+    },
+    "menu_lang_de": {
+        "de": "🇩🇪 Deutsch (DE)",
+        "en": "🇩🇪 German (DE)"
+    },
+    "menu_lang_en": {
+        "de": "🇬🇧 Englisch (EN)",
+        "en": "🇬🇧 English (EN)"
+    },
+    "menu_tools": {
+        "de": "Werkzeuge",
+        "en": "Tools"
+    },
+    "menu_vlos_calc": {
+        "de": "VLOS-Rechner (ALOS/DLOS)...",
+        "en": "VLOS Calculator (ALOS/DLOS)..."
+    },
+    "menu_help": {
+        "de": "Hilfe",
+        "en": "Help"
+    },
+    "menu_instructions": {
+        "de": "Anleitung / Hilfe...",
+        "en": "User Manual / Help..."
+    },
+    "menu_about": {
+        "de": "Über QUCORE...",
+        "en": "About QUCORE..."
+    },
+    "dialog_about_title": {
+        "de": "Über QUCORE",
+        "en": "About QUCORE"
+    },
+    "about_category": {
+        "de": "Kategorie",
+        "en": "Category"
+    },
+    "about_tags": {
+        "de": "Tags",
+        "en": "Tags"
+    },
+    "about_more_info": {
+        "de": "Weitere Informationen",
+        "en": "More Information"
+    },
+    "about_tracker": {
+        "de": "Fehlerverfolgung",
+        "en": "Bug Tracker"
+    },
+    "about_repo": {
+        "de": "Coderepositorium",
+        "en": "Code Repository"
+    },
+    "about_author": {
+        "de": "Autor",
+        "en": "Author"
+    },
+    "about_version": {
+        "de": "Installierte Version",
+        "en": "Installed Version"
+    },
+    "about_qgis_compatibility": {
+        "de": "Entwickelt für QGIS 3.44.10-Solothurn LTR. Nur hier wird die beste Kompatibilität erwartet.",
+        "en": "Developed for QGIS 3.44.10-Solothurn LTR. Best compatibility is only expected here."
+    },
+    "about_note": {
+        "de": "Hinweis",
+        "en": "Note"
+    },
+    "msg_reset_title": {
+        "de": "Planung zurücksetzen",
+        "en": "Reset Planning"
+    },
+    "msg_reset_text": {
+        "de": "Möchten Sie die gesamte Route, den Piloten und alle berechneten Korridore löschen?",
+        "en": "Do you want to clear the entire route, the pilot, and all calculated corridors?"
+    },
+    "msg_no_wp_title": {
+        "de": "Keine Wegpunkte",
+        "en": "No Waypoints"
+    },
+    "msg_no_wp_text": {
+        "de": "Zeichnen Sie bitte zuerst Wegpunkte auf der Karte ein.",
+        "en": "Please draw waypoints on the map first."
+    },
+    "msg_export_no_wp_text": {
+        "de": "Es gibt keine Wegpunkte zum Exportieren.",
+        "en": "There are no waypoints to export."
+    },
+    "msg_export_success_title": {
+        "de": "Export erfolgreich",
+        "en": "Export Successful"
+    },
+    "msg_export_success_text": {
+        "de": "Die Datei wurde erfolgreich exportiert unter:\n{path}",
+        "en": "The file was successfully exported to:\n{path}"
+    },
+    "msg_import_success_title": {
+        "de": "Import erfolgreich",
+        "en": "Import Successful"
+    },
+    "msg_import_success_text": {
+        "de": "Import abgeschlossen!\n{count} Wegpunkte geladen.",
+        "en": "Import completed!\n{count} waypoints loaded."
+    },
+    "dialog_calc_params_title": {
+        "de": "QUCORE – UAS-Berechnungsparameter",
+        "en": "QUCORE – UAS Calculation Parameters"
+    },
+    "tab_uas": {
+        "de": "UAS Eigenschaften",
+        "en": "UAS Properties"
+    },
+    "tab_assumptions": {
+        "de": "Annahmen",
+        "en": "Assumptions"
+    },
+    "tab_manoeuvre": {
+        "de": "Sicherheitsmanöver",
+        "en": "Safety Manoeuvres"
+    },
+    "tab_grb": {
+        "de": "Ground Risk Buffer",
+        "en": "Ground Risk Buffer"
+    },
+    "tab_general": {
+        "de": "Korridoreinstellungen",
+        "en": "Corridor Settings"
+    },
+    "tab_interpolation": {
+        "de": "Interpolationsschrittweite",
+        "en": "Interpolation Step Size"
+    },
+    "uas_type": {
+        "de": "UAS Typ:",
+        "en": "UAS Type:"
+    },
+    "uas_fw": {
+        "de": "Flächenflieger (Fixed Wing)",
+        "en": "Fixed Wing"
+    },
+    "uas_mc": {
+        "de": "Multikopter",
+        "en": "Multicopter"
+    },
+    "altimetry": {
+        "de": "Höhenmessung:",
+        "en": "Altimetry:"
+    },
+    "alt_gps": {
+        "de": "GPS-basiert",
+        "en": "GPS-based"
+    },
+    "alt_baro": {
+        "de": "barometrisch",
+        "en": "barometric"
+    },
+    "label_v0": {
+        "de": "Max. Betriebsgeschwindigkeit (v0)",
+        "en": "Max. Operating Velocity (v0)"
+    },
+    "label_v_max": {
+        "de": "Max. kommandierbare Geschwindigkeit (v_max)",
+        "en": "Max. Commandable Velocity (v_max)"
+    },
+    "label_cd": {
+        "de": "Charakteristische Dimension (CD)",
+        "en": "Characteristic Dimension (CD)"
+    },
+    "label_stall": {
+        "de": "Überziehgeschwindigkeit (stallVelocity)",
+        "en": "Stall Speed (stallVelocity)"
+    },
+    "label_gps_inacc": {
+        "de": "GPS Ungenauigkeit (SGPS)",
+        "en": "GPS Inaccuracy (SGPS)"
+    },
+    "label_pos_err": {
+        "de": "Positionshaltefehler (SPos)",
+        "en": "Position Hold Error (SPos)"
+    },
+    "label_map_err": {
+        "de": "Kartenfehler (SK)",
+        "en": "Map Error (SK)"
+    },
+    "label_t_rz": {
+        "de": "Fernpilot Reaktionszeit (tRZ)",
+        "en": "Remote Pilot Reaction Time (tRZ)"
+    },
+    "label_alt_gps": {
+        "de": "GPS Höhenfehler",
+        "en": "GPS Altitude Error"
+    },
+    "label_alt_baro": {
+        "de": "Baro Höhenfehler",
+        "en": "Baro Altitude Error"
+    },
+    "label_add_horiz": {
+        "de": "Zusatzentfernung (horizontal)",
+        "en": "Additional Distance (horizontal)"
+    },
+    "label_add_vert": {
+        "de": "Zusatzentfernung (vertikal)",
+        "en": "Additional Distance (vertical)"
+    },
+    "group_lat": {
+        "de": "Laterales Contingency Manöver",
+        "en": "Lateral Contingency Manoeuvre"
+    },
+    "group_vert": {
+        "de": "Vertikales Contingency Manöver",
+        "en": "Vertical Contingency Manoeuvre"
+    },
+    "manoeuvre_type": {
+        "de": "Manövertyp:",
+        "en": "Manoeuvre Type:"
+    },
+    "man_default_lat": {
+        "de": "Standard (Kurve / Anhalten)",
+        "en": "Standard (Turn / Hover)"
+    },
+    "man_default_vert": {
+        "de": "Standard (Energiewandlung / Climb)",
+        "en": "Standard (Energy Conversion / Climb)"
+    },
+    "man_parachute": {
+        "de": "Auslösen des Fallschirms",
+        "en": "Deploy Parachute"
+    },
+    "label_roll": {
+        "de": "Rollwinkel (FixedWing, Φ)",
+        "en": "Roll Angle (FixedWing, Φ)"
+    },
+    "label_pitch": {
+        "de": "Nickwinkel (Multikopter, Θ)",
+        "en": "Pitch Angle (Multicopter, Θ)"
+    },
+    "label_para_lat": {
+        "de": "Fallschirm Öffnungszeit (lat)",
+        "en": "Parachute Opening Time (lat)"
+    },
+    "label_para_vert": {
+        "de": "Fallschirm Öffnungszeit (vert)",
+        "en": "Parachute Opening Time (vert)"
+    },
+    "label_grb_method": {
+        "de": "Terminierungsmethode (GRB):",
+        "en": "Termination Method (GRB):"
+    },
+    "label_glide": {
+        "de": "Gleitzahl (E)",
+        "en": "Glide Ratio (E)"
+    },
+    "label_para_grb": {
+        "de": "Fallschirm Öffnungszeit (GRB)",
+        "en": "Parachute Opening Time (GRB)"
+    },
+    "label_wind": {
+        "de": "Max. zulässige Windgeschwindigkeit",
+        "en": "Max. allowed Wind Speed"
+    },
+    "label_descent": {
+        "de": "Fallschirm Sinkgeschwindigkeit (vZ)",
+        "en": "Parachute Descent Rate (vZ)"
+    },
+    "label_corridor_width": {
+        "de": "Standard Flight Geography Breite (W_FG)",
+        "en": "Default Flight Geography Width (W_FG)"
+    },
+    "label_default_height": {
+        "de": "Standard Flughöhe (h)",
+        "en": "Default Flight Height (h)"
+    },
+    "msg_cd_warning_title": {
+        "de": "Einstellung korrigiert",
+        "en": "Settings Corrected"
+    },
+    "msg_cd_warning_text": {
+        "de": "Die Flight Geography Breite ({width:.1f} m) muss mindestens 3-mal so groß wie die Charakteristische Dimension des UAS (CD = {cd:.1f} m, 3x CD = {min_width:.1f} m) sein.\nDie Breite wurde automatisch auf {min_width:.1f} m angepasst.",
+        "en": "The Flight Geography width ({width:.1f} m) must be at least 3 times the Characteristic Dimension of the UAS (CD = {cd:.1f} m, 3x CD = {min_width:.1f} m).\nThe width was automatically adjusted to {min_width:.1f} m."
+    },
+    "dialog_adv_settings_title": {
+        "de": "Erweiterte Einstellungen & Standardwerte",
+        "en": "Advanced Settings & Default Values"
+    },
+    "tab_style": {
+        "de": "Darstellung",
+        "en": "Representation"
+    },
+    "tab_defaults": {
+        "de": "Standardwerte (LBA-Leitfaden)",
+        "en": "Default Values (LBA Guidelines)"
+    },
+    "step_size": {
+        "de": "Interpolations-Schrittweite (für GRB):",
+        "en": "Interpolation Step Size (for GRB):"
+    },
+    "step_desc": {
+        "de": "Die Schrittweite legt fest, in welchen Abständen entlang der Route Zwischenwerte interpoliert und berechnet werden. Ein kleinerer Wert erhöht die Genauigkeit und Krümmungssicherheit des Ground Risk Buffers (ballistischer Ansatz), erzeugt jedoch mehr Geometrie-Stützpunkte.\n\nEmpfohlene typische Werte liegen zwischen 20-100m, bei sehr langen Korridoren auch mehr.",
+        "en": "The step size defines the intervals along the route at which intermediate values are interpolated and calculated. A smaller value increases the accuracy and curvature safety of the Ground Risk Buffer (ballistic approach), but generates more geometry vertices.\n\nRecommended typical values are between 20-100m, or more for very long corridors."
+    },
+    "style_desc": {
+        "de": "<b>Hinweis:</b> Änderungen an der Darstellung (Linienstärke, Farbe, Deckkraft) in diesem Dialog gelten nur für die aktuelle Sitzung. Dauerhafte Einstellungen können Sie durch direktes Bearbeiten der <code>config.json</code>-Datei vornehmen.",
+        "en": "<b>Note:</b> Changes to the representation (linewidth, color, opacity) in this dialog only apply to the current session. Permanent settings can be configured by directly editing the <code>config.json</code> file."
+    },
+    "header_lw": {
+        "de": "<b>Stärke</b>",
+        "en": "<b>Width</b>"
+    },
+    "header_col": {
+        "de": "<b>Farbe</b>",
+        "en": "<b>Color</b>"
+    },
+    "header_op": {
+        "de": "<b>Deckkraft</b>",
+        "en": "<b>Opacity</b>"
+    },
+    "lyr_route": {
+        "de": "Flugweg (Mittelachse):",
+        "en": "Flight Path (Centerline):"
+    },
+    "lyr_fg": {
+        "de": "Flight Geography (FG):",
+        "en": "Flight Geography (FG):"
+    },
+    "lyr_cv": {
+        "de": "Contingency Volume (CV):",
+        "en": "Contingency Volume (CV):"
+    },
+    "lyr_grb": {
+        "de": "Ground Risk Buffer (GRB):",
+        "en": "Ground Risk Buffer (GRB):"
+    },
+    "lyr_aa": {
+        "de": "Adjacent Area (AA):",
+        "en": "Adjacent Area (AA):"
+    },
+    "lyr_vlos": {
+        "de": "VLOS-Reichweite (Pilotenposition):",
+        "en": "VLOS Range (Pilot Position):"
+    },
+    "defaults_info": {
+        "de": "<b>Hinweis:</b> Die folgenden Parameter stellen die Standardwerte gemäß dem LBA-Leitfaden dar. Diese Liste ist schreibgeschützt. Um diese Werte dauerhaft anzupassen, bearbeiten Sie bitte die <code>config.json</code>-Datei über den Button unten.",
+        "en": "<b>Note:</b> The following parameters represent the default values according to the LBA guidelines. This list is read-only. To permanently adjust these values, please edit the <code>config.json</code> file using the button below."
+    },
+    "btn_open_config": {
+        "de": "Konfigurationsdatei (config.json) öffnen...",
+        "en": "Open Configuration File (config.json)..."
+    },
+    "tree_param": {
+        "de": "Parameter",
+        "en": "Parameter"
+    },
+    "tree_value": {
+        "de": "Standardwert",
+        "en": "Default Value"
+    },
+    "tree_grp_uas": {
+        "de": "UAS Eigenschaften",
+        "en": "UAS Properties"
+    },
+    "tree_grp_sensors": {
+        "de": "Sensorik & Unsicherheiten",
+        "en": "Sensors & Uncertainties"
+    },
+    "tree_grp_manoeuvres": {
+        "de": "Sicherheitsmanöver & Puffer",
+        "en": "Safety Manoeuvres & Buffers"
+    },
+    "tree_grp_global": {
+        "de": "Globale Korridoreinstellungen",
+        "en": "Global Corridor Settings"
+    },
+    "tree_grp_graphics": {
+        "de": "Grafische Darstellung (QGIS Layers)",
+        "en": "Graphical Representation (QGIS Layers)"
+    },
+    "dialog_vlos_title": {
+        "de": "VLOS-Rechner (ALOS/DLOS)",
+        "en": "VLOS Calculator (ALOS/DLOS)"
+    },
+    "group_inputs": {
+        "de": "Datenquellen & Einstellungen",
+        "en": "Data Sources & Settings"
+    },
+    "label_sky": {
+        "de": "Himmelszustand:",
+        "en": "Sky Condition:"
+    },
+    "sky_overcast": {
+        "de": "Bedeckter Himmel (Kontrastverringerung)",
+        "en": "Overcast Sky (Reduced Contrast)"
+    },
+    "sky_clear": {
+        "de": "Klarer Himmel / Gute Sichtbedingungen",
+        "en": "Clear Sky / Good Visibility"
+    },
+    "group_results": {
+        "de": "Berechnete Ergebnisse",
+        "en": "Calculated Results"
+    },
+    "label_alos": {
+        "de": "ALOS Grenzwert (Kombinierter Luftraum-Fokus):",
+        "en": "ALOS Limit (Combined Airspace Focus):"
+    },
+    "label_dlos": {
+        "de": "DLOS Grenzwert (Erkennungsgrenze des Piloten):",
+        "en": "DLOS Limit (Pilot Detection Limit):"
+    },
+    "label_vlos_max": {
+        "de": "Max. VLOS Betriebsreichweite (LBA-Leitfaden):",
+        "en": "Max. VLOS Operating Range (LBA Guidelines):"
+    },
+    "vlos_note": {
+        "de": "<b>Hinweis:</b> Gemäß dem LBA-Leitfaden für U-Space und UAS-Betrieb im VLOS darf die maximale Entfernung zwischen Fernpilot und UAS den kleineren Wert aus ALOS und DLOS nicht überschreiten, maximal jedoch 500 Meter (oder 1000 Meter bei Einsatz eines Luftraumbeobachters).",
+        "en": "<b>Note:</b> According to the LBA guidelines for U-Space and UAS operations in VLOS, the maximum distance between remote pilot and UAS must not exceed the smaller of ALOS and DLOS, with an absolute maximum of 500 meters (or 1000 meters if an airspace observer is deployed)."
+    },
+    "dialog_altitude_title": {
+        "de": "Wegpunkt-Spezifische Parameter bearbeiten",
+        "en": "Edit Waypoint-Specific Parameters"
+    },
+    "dialog_altitude_desc": {
+        "de": "Geben Sie die Werte für jeden Wegpunkt individuell ein. Die Pufferzonen passen sich an diese lokalen Parameter dynamisch an.",
+        "en": "Enter the values for each waypoint individually. The buffer zones adjust dynamically to these local parameters."
+    },
+    "col_wp": {
+        "de": "Wegpunkt",
+        "en": "Waypoint"
+    },
+    "col_alt": {
+        "de": "h_FG (Flughöhe) (m)",
+        "en": "h_FG (Altitude) (m)"
+    },
+    "col_spd": {
+        "de": "v0 (Geschwindigkeit) (m/s)",
+        "en": "v0 (Velocity) (m/s)"
+    },
+    "col_fg": {
+        "de": "W_FG (Breite) (m)",
+        "en": "W_FG (Width) (m)"
+    },
+    "btn_apply_all": {
+        "de": "Auf alle anwenden",
+        "en": "Apply to All"
+    },
+    "btn_cancel": {
+        "de": "Abbrechen",
+        "en": "Cancel"
+    },
+    "label_apply_to_all_title": {
+        "de": "Wert auf alle Wegpunkte übertragen",
+        "en": "Apply Value to All Waypoints"
+    },
+    "dialog_export_title": {
+        "de": "Parameter für den Export festlegen",
+        "en": "Define Parameters for Export"
+    },
+    "dialog_export_desc": {
+        "de": "Beim Exportieren einer dipul- oder flightplan-Datei müssen die veränderlichen Wegpunkt-Parameter (Höhe, Geschwindigkeit und Flight Geography Breite) in konstante Werte überführt werden, um den offiziellen Formatspezifikationen zu entsprechen. Bitte legen Sie diese konstanten Werte hier fest:",
+        "en": "When exporting a dipul or flightplan file, the variable waypoint parameters (height, velocity, and Flight Geography width) must be converted into constant values to match the official format specifications. Please define these constant values here:"
+    },
+    "label_export_height": {
+        "de": "Konstante Flughöhe (m):",
+        "en": "Constant Flight Height (m):"
+    },
+    "label_export_speed": {
+        "de": "Konstante Geschwindigkeit (m/s):",
+        "en": "Constant Velocity (m/s):"
+    },
+    "label_export_fg_width": {
+        "de": "Konstante FG-Breite (m):",
+        "en": "Constant FG Width (m):"
+    },
+    "grb_simplified": {
+        "de": "Vereinfachter Ansatz (1:1 Regel)",
+        "en": "Simplified Approach (1:1 Rule)"
+    },
+    "grb_ballistic": {
+        "de": "Ballistischer Ansatz",
+        "en": "Ballistic Approach"
+    },
+    "grb_glide": {
+        "de": "Antrieb aus mit Gleitflug",
+        "en": "Power-off with Glide Flight"
+    },
+    "grb_parachute": {
+        "de": "Terminierung mit Auslösen des Fallschirms",
+        "en": "Termination with Parachute Deployment"
+    },
+    "vlos_desc": {
+        "de": "Berechnung der maximalen Sichtweite (VLOS) gemäß den EASA/LBA-Richtlinien basierend auf der Größe der Drohne (ALOS) und der Bodensicht (DLOS).",
+        "en": "Calculation of the maximum visual line of sight (VLOS) according to EASA/LBA guidelines based on drone size (ALOS) and ground visibility (DLOS)."
+    },
+    "uas_mc_rot": {
+        "de": "Multikopter / Drehflügler",
+        "en": "Multicopter / Rotorcraft"
+    },
+    "label_gv": {
+        "de": "Aktuelle Bodensicht (GV, max. 5000m):",
+        "en": "Current Ground Visibility (GV, max. 5000m):"
+    },
+    "col_pos": {
+        "de": "Position (Lat, Lon)",
+        "en": "Position (Lat, Lon)"
+    },
+    "col_cv": {
+        "de": "CV Radius (m)",
+        "en": "CV Radius (m)"
+    },
+    "col_grb": {
+        "de": "GRB Radius (m)",
+        "en": "GRB Radius (m)"
+    },
+    "col_hfg": {
+        "de": "h_FG (m)",
+        "en": "h_FG (m)"
+    },
+    "col_hcv": {
+        "de": "h_CV (m)",
+        "en": "h_CV (m)"
+    },
+    "btn_copy_excel": {
+        "de": "Tabelle kopieren (für Excel)",
+        "en": "Copy Table (for Excel)"
+    },
+    "btn_copy_excel_tooltip": {
+        "de": "Kopiert die gesamte Tabelle inkl. Spaltenköpfe in die Zwischenablage für MS Excel.",
+        "en": "Copies the entire table including column headers to the clipboard for MS Excel."
+    },
+    "msg_speed_limit_title": {
+        "de": "Geschwindigkeit überschritten",
+        "en": "Velocity Limit Exceeded"
+    },
+    "msg_speed_limit_text": {
+        "de": "Die eingegebene Geschwindigkeit ({spd_val:.1f} m/s) darf die maximale Betriebsgeschwindigkeit des UAS ({max_vel:.1f} m/s) nicht überschreiten.\nDer Wert wurde automatisch auf {max_vel:.1f} m/s zurückgesetzt.",
+        "en": "The entered velocity ({spd_val:.1f} m/s) must not exceed the maximum operating velocity of the UAS ({max_vel:.1f} m/s).\nThe value was automatically reset to {max_vel:.1f} m/s."
+    },
+    "msg_speed_ops_vs_cmd_title": {
+        "de": "Ungültige Geschwindigkeitseinstellung",
+        "en": "Invalid Velocity Setting"
+    },
+    "msg_speed_ops_vs_cmd_text": {
+        "de": "Die maximale Betriebsgeschwindigkeit (v0 = {v0:.1f} m/s) darf nicht größer sein als die maximale kommandierbare Geschwindigkeit (v_max = {vmax:.1f} m/s).\nBitte korrigieren Sie die Werte.",
+        "en": "The maximum operational speed (v0 = {v0:.1f} m/s) must not exceed the maximum commandable speed (v_max = {vmax:.1f} m/s).\nPlease correct the values."
+    },
+    "msg_fg_limit_title": {
+        "de": "Flight Geography Breite zu gering",
+        "en": "Flight Geography Width Too Small"
+    },
+    "msg_fg_limit_text": {
+        "de": "Die Flight Geography Breite ({fg_val:.1f} m) muss mindestens 3-mal so groß wie die Charakteristische Dimension des UAS (CD = {cd:.1f} m, 3x CD = {min_fg:.1f} m) sein.\nDer Wert wurde automatisch auf {min_fg:.1f} m gesetzt.",
+        "en": "The Flight Geography width ({fg_val:.1f} m) must be at least 3 times the Characteristic Dimension of the UAS (CD = {cd:.1f} m, 3x CD = {min_fg:.1f} m).\nThe value was automatically set to {min_fg:.1f} m."
+    },
+    "msg_export_error_title": {
+        "de": "Export Fehler",
+        "en": "Export Error"
+    },
+    "msg_export_error_text": {
+        "de": "Fehler beim Exportieren der Datei:\n{error}",
+        "en": "Error exporting file:\n{error}"
+    },
+    "msg_import_error_title": {
+        "de": "Import Fehler",
+        "en": "Import Error"
+    },
+    "msg_import_error_text": {
+        "de": "Fehler beim Importieren der Datei:\n{error}",
+        "en": "Error importing file:\n{error}"
+    },
+    "dialog_import_title": {
+        "de": "Datei importieren",
+        "en": "Import File"
+    },
+    "dialog_export_file_title": {
+        "de": "Datei exportieren",
+        "en": "Export File"
+    },
+    "btn_load_active_layer": {
+        "de": "Aktivierten QGIS-Layer einlesen",
+        "en": "Load Active QGIS Layer"
+    },
+    "menu_import_active": {
+        "de": "Aktivierten QGIS-Layer einlesen...",
+        "en": "Load active QGIS layer..."
+    },
+    "msg_invalid_layer_title": {
+        "de": "Ungültiger Layer-Typ",
+        "en": "Invalid Layer Type"
+    },
+    "msg_invalid_layer_text": {
+        "de": "Bitte wählen Sie zuerst einen Vektor-Layer vom Typ Linie (Line) oder Punkt (Point / Multi-Point) in QGIS aus.",
+        "en": "Please select a vector layer of type Line or Point/Multi-Point in QGIS first."
+    },
+    "msg_import_active_success": {
+        "de": "Import abgeschlossen!\n{count} Wegpunkte aus Layer '{name}' geladen.",
+        "en": "Import completed!\n{count} waypoints loaded from layer '{name}'."
+    },
+    "msg_invalid_polygon_layer_text": {
+        "de": "Im Polygon-Modus können nur Vektor-Layer vom Typ Polygon eingelesen werden.",
+        "en": "In Polygon mode, only vector layers of type Polygon can be loaded."
+    },
+    "msg_polygon_mode_required_text": {
+        "de": "Ein Polygon-Layer kann nur im Planungsmodus 'Polygon' eingelesen werden. Bitte wechseln Sie zuerst den Geometrietyp auf 'Polygon'.",
+        "en": "A Polygon layer can only be loaded in 'Polygon' planning mode. Please switch the geometry type to 'Polygon' first."
+    },
+    "results_grp": {
+        "de": "Berechnungsergebnis",
+        "en": "Calculation Results"
+    },
+    "results_label_rfg": {
+        "de": "R<sub>FG</sub>",
+        "en": "R<sub>FG</sub>"
+    },
+    "results_label_scv": {
+        "de": "S<sub>CV</sub>",
+        "en": "S<sub>CV</sub>"
+    },
+    "results_label_rcv": {
+        "de": "CV-Radius",
+        "en": "CV Radius"
+    },
+    "results_label_sgrb": {
+        "de": "S<sub>GRB</sub>",
+        "en": "S<sub>GRB</sub>"
+    },
+    "results_label_rgrb": {
+        "de": "GRB-Radius",
+        "en": "GRB Radius"
+    },
+    "results_label_hfg": {
+        "de": "H<sub>FG</sub>",
+        "en": "H<sub>FG</sub>"
+    },
+    "results_label_hcv": {
+        "de": "H<sub>CV</sub>",
+        "en": "H<sub>CV</sub>"
+    },
+    "results_no_data": {
+        "de": "Noch keine Wegpunkte gesetzt.",
+        "en": "No waypoints set yet."
+    },
+    "results_error": {
+        "de": "Berechnungsfehler",
+        "en": "Calculation error"
+    },
+    "btn_delete_wp": {
+        "de": "Wegpunkt löschen",
+        "en": "Delete Waypoint"
+    },
+    "btn_delete_wp_tooltip": {
+        "de": "Löscht den ausgewählten Wegpunkt (auch per Entf-Taste).",
+        "en": "Deletes the selected waypoint (also via Delete key)."
+    },
+    "msg_delete_wp_title": {
+        "de": "Wegpunkt löschen",
+        "en": "Delete Waypoint"
+    },
+    "msg_delete_wp_no_sel": {
+        "de": "Bitte wählen Sie zuerst eine Zeile in der Tabelle aus.",
+        "en": "Please select a row in the table first."
+    },
+    "decimal_separator": {
+        "de": ",",
+        "en": "."
+    },
+    "viz_waiting": {
+        "de": "Warten auf Puffer-Berechnung...",
+        "en": "Waiting for buffer calculation..."
+    },
+    "viz_vertical_title": {
+        "de": "Vertikal (nicht maßstäblich)",
+        "en": "Vertical (not to scale)"
+    },
+    "viz_fg": {
+        "de": "Flight Geography",
+        "en": "Flight Geography"
+    },
+    "viz_cv": {
+        "de": "Contingency Volume",
+        "en": "Contingency Volume"
+    },
+    "viz_grb": {
+        "de": "Ground Risk Buffer",
+        "en": "Ground Risk Buffer"
+    },
+    "btn_apply_h_all": {
+        "de": "Flughöhe für alle Wegpunkte übernehmen",
+        "en": "Apply Flight Height to All Waypoints"
+    },
+    "confirm_h_all_title": {
+        "de": "Höhe übernehmen",
+        "en": "Apply Height"
+    },
+    "confirm_h_all_text": {
+        "de": "Möchten Sie die Flughöhe für alle Wegpunkte wirklich auf die Standardhöhe ({height:.1f} m) zurücksetzen und alle wegpunktspezifischen Höhen überschreiben?",
+        "en": "Do you really want to reset the flight height for all waypoints to the default height ({height:.1f} m) and overwrite all waypoint-specific heights?"
+    },
+    "msg_h_applied_title": {
+        "de": "Höhe übernommen",
+        "en": "Height Applied"
+    },
+    "msg_h_applied_text": {
+        "de": "Die Flughöhe wurde erfolgreich für alle Wegpunkte übernommen.",
+        "en": "The flight height has been successfully applied to all waypoints."
+    },
+    "msg_no_wp_for_h": {
+        "de": "Es sind derzeit keine Wegpunkte vorhanden, auf die die Flughöhe angewendet werden könnte.",
+        "en": "There are currently no waypoints to apply the flight height to."
+    },
+    "btn_apply_w_all": {
+        "de": "Flight Geography Breite für alle Wegpunkte übernehmen",
+        "en": "Apply Flight Geography Width to All Waypoints"
+    },
+    "confirm_w_all_title": {
+        "de": "Breite übernehmen",
+        "en": "Apply Width"
+    },
+    "confirm_w_all_text": {
+        "de": "Möchten Sie die Flight Geography Breite für alle Wegpunkte wirklich auf die Standardbreite ({width:.1f} m) zurücksetzen und alle wegpunktspezifischen Breiten überschreiben?",
+        "en": "Do you really want to reset the Flight Geography width for all waypoints to the default width ({width:.1f} m) and overwrite all waypoint-specific widths?"
+    },
+    "msg_w_applied_title": {
+        "de": "Breite übernommen",
+        "en": "Width Applied"
+    },
+    "msg_w_applied_text": {
+        "de": "Die Flight Geography Breite wurde erfolgreich für alle Wegpunkte übernommen.",
+        "en": "The Flight Geography width has been successfully applied to all waypoints."
+    },
+    "msg_no_wp_for_w": {
+        "de": "Es sind derzeit keine Wegpunkte vorhanden, auf die die Flight Geography Breite angewendet werden könnte.",
+        "en": "There are currently no waypoints to apply the Flight Geography width to."
+    },
+    "menu_pop_density": {
+        "de": "Bevölkerungsdichte im AA-Bereich berechnen...",
+        "en": "Calculate Population Density in AA Area..."
+    },
+    "dialog_pop_title": {
+        "de": "Bevölkerungsdichte im Adjacent Area (AA) Bereich",
+        "en": "Population Density in Adjacent Area (AA) Area"
+    },
+    "pop_desc": {
+        "de": "Berechnung der durchschnittlichen Bevölkerungsdichte innerhalb der Adjacent Ground Area (AA) basierend auf dem Global Human Settlement Layer (GHSL) GHS-POP GeoTIFF gemäß SORA Step #8.",
+        "en": "Calculation of the average population density within the Adjacent Ground Area (AA) based on the Global Human Settlement Layer (GHSL) GHS-POP GeoTIFF according to SORA Step #8."
+    },
+    "label_raster_layer": {
+        "de": "GHS-POP Raster-Layer:",
+        "en": "GHS-POP Raster Layer:"
+    },
+    "btn_browse": {
+        "de": "Durchsuchen...",
+        "en": "Browse..."
+    },
+    "label_raster_info": {
+        "de": "Raster Info:",
+        "en": "Raster Info:"
+    },
+    "no_raster_selected": {
+        "de": "Kein Raster ausgewählt",
+        "en": "No raster selected"
+    },
+    "grp_aa_details": {
+        "de": "Adjacent Ground Area (AA) Eigenschaften",
+        "en": "Adjacent Ground Area (AA) Properties"
+    },
+    "label_aa_area": {
+        "de": "AA-Fläche:",
+        "en": "AA Area:"
+    },
+    "btn_calculate_pop": {
+        "de": "Berechnung starten",
+        "en": "Start Calculation"
+    },
+    "label_total_pop": {
+        "de": "Gesamtbevölkerung im AA-Bereich:",
+        "en": "Total Population in AA Area:"
+    },
+    "label_avg_density": {
+        "de": "Durchschnittliche Bevölkerungsdichte:",
+        "en": "Average Population Density:"
+    },
+    "sora_containment_info": {
+        "de": "<b>SORA Step #8 Hinweis:</b> Der ermittelte Dichtewert (Einwohner/km²) dient zur Einstufung der Containment-Anforderungen (z.B. Enhanced Containment bei Dichten > 25/km² in bestimmten Szenarien). Bitte prüfen Sie die Grenzwerte gemäß den EASA-Richtlinien. Assemblies of People (Menschenansammlungen) müssen manuell ausgeschlossen werden.",
+        "en": "<b>SORA Step #8 Note:</b> The calculated density value (people/km²) is used to classify containment requirements (e.g., Enhanced Containment for densities > 25/km² in certain scenarios). Please verify the thresholds according to EASA guidelines. Assemblies of people must be manually excluded."
+    },
+    "people": {
+        "de": "Personen",
+        "en": "People"
+    },
+    "people_per_km2": {
+        "de": "Einwohner / km²",
+        "en": "People / km²"
+    },
+    "no_rasters_in_project": {
+        "de": "Keine Raster-Layer im Projekt geladen",
+        "en": "No raster layers loaded in project"
+    },
+    "dialog_select_raster": {
+        "de": "GHS-POP GeoTIFF-Datei auswählen",
+        "en": "Select GHS-POP GeoTIFF File"
+    },
+    "error_invalid_raster_title": {
+        "de": "Ungültiges Raster",
+        "en": "Invalid Raster"
+    },
+    "error_invalid_raster_text": {
+        "de": "Die ausgewählte Datei konnte nicht als Raster-Layer geladen werden.",
+        "en": "The selected file could not be loaded as a raster layer."
+    },
+    "empty_aa_geometry": {
+        "de": "AA-Geometrie ist leer",
+        "en": "AA geometry is empty"
+    },
+    "msg_no_raster_title": {
+        "de": "Kein Raster",
+        "en": "No Raster"
+    },
+    "msg_no_raster_text": {
+        "de": "Bitte wählen Sie zuerst einen gültigen GHS-POP Raster-Layer aus.",
+        "en": "Please select a valid GHS-POP raster layer first."
+    },
+    "error_empty_aa_title": {
+        "de": "Keine Adjacent Area",
+        "en": "No Adjacent Area"
+    },
+    "error_empty_aa_text": {
+        "de": "Es existiert kein gültiger 'Adjacent Area (AA)'-Layer oder dieser enthält keine Geometrie. Bitte erstellen Sie zuerst eine Flugplanung.",
+        "en": "There is no valid 'Adjacent Area (AA)' layer, or it contains no geometry. Please create a flight planning first."
+    },
+    "error_calc_failed_title": {
+        "de": "Fehler bei Berechnung",
+        "en": "Calculation Error"
+    },
+    "error_calc_failed_text": {
+        "de": "Zonalstatistik-Berechnung fehlgeschlagen:\n{error}",
+        "en": "Zonal statistics calculation failed:\n{error}"
+    },
+    "dialog_save_persistent_title": {
+        "de": "Planung als persistenten Layer (GeoPackage) speichern",
+        "en": "Save Planning as Persistent Layer (GeoPackage)"
+    },
+    "group_name_dialog_title": {
+        "de": "Layer-Gruppe benennen",
+        "en": "Name Layer Group"
+    },
+    "group_name_dialog_label": {
+        "de": "Geben Sie einen Namen für die Layer-Gruppe im QGIS-Projekt ein:",
+        "en": "Enter a name for the layer group in the QGIS project:"
+    },
+    "msg_save_error_title": {
+        "de": "Speicherfehler",
+        "en": "Save Error"
+    },
+    "msg_save_error_text": {
+        "de": "Fehler beim Speichern in GeoPackage:\n{error}",
+        "en": "Error saving to GeoPackage:\n{error}"
+    },
+    "msg_save_success_title": {
+        "de": "Speichern erfolgreich",
+        "en": "Save Successful"
+    },
+    "msg_save_success_text": {
+        "de": "Die Korridorplanung wurde erfolgreich als dauerhafter GeoPackage-Layer gespeichert!\n\nDatei: {file_path}\n\nDie Layer wurden zur Gruppe '{group_name}' hinzugefügt.",
+        "en": "The corridor planning was successfully saved as a persistent GeoPackage layer!\n\nFile: {file_path}\n\nThe layers have been added to the group '{group_name}'."
+    },
+    "menu_grb_density": {
+        "de": "Bodenrisiko-Analyse (GRB-Bevölkerungsdichte)...",
+        "en": "Ground Risk Analysis (GRB Population Density)..."
+    },
+    "dialog_grb_pop_title": {
+        "de": "Bodenrisiko-Analyse (GRB-Bevölkerungsdichte)",
+        "en": "Ground Risk Analysis (GRB Population Density)"
+    },
+    "grb_pop_desc": {
+        "de": "Berechnung der durchschnittlichen und maximalen Bevölkerungsdichte innerhalb des Ground Risk Buffers (GRB) basierend auf dem GHS-POP GeoTIFF gemäß EASA SORA-Vorgaben.",
+        "en": "Calculation of the average and maximum population density within the Ground Risk Buffer (GRB) based on the GHS-POP GeoTIFF according to EASA SORA requirements."
+    },
+    "grp_grb_details": {
+        "de": "Ground Risk Buffer (GRB) Eigenschaften",
+        "en": "Ground Risk Buffer (GRB) Properties"
+    },
+    "label_grb_area": {
+        "de": "GRB-Gesamtfläche:",
+        "en": "GRB Total Area:"
+    },
+    "label_total_pop_grb": {
+        "de": "Gesamtbevölkerung im GRB:",
+        "en": "Total Population in GRB:"
+    },
+    "label_avg_density_grb": {
+        "de": "Durchschnittliche Bevölkerungsdichte:",
+        "en": "Average Population Density:"
+    },
+    "label_max_density_grb": {
+        "de": "Maximale Bevölkerungsdichte (konservativ):",
+        "en": "Maximum Population Density (conservative):"
+    },
+    "easa_grb_info": {
+        "de": "<b>EASA SORA Hinweis (Konservativer Ansatz):</b> Für den Maximalwert der Bevölkerungsdichte im GRB wird ein konservativer Ansatz gewählt. Jede Rasterzelle, die das GRB-Polygon auch nur berührt, wird voll berücksichtigt, um das maximale Bodenrisiko sicherzustellen.",
+        "en": "<b>EASA SORA Note (Conservative Approach):</b> For the maximum value of population density in the GRB, a conservative approach is chosen. Any raster cell that even slightly touches the GRB polygon is fully considered to ensure maximum ground risk coverage."
+    },
+    "error_empty_grb_title": {
+        "de": "Kein Ground Risk Buffer",
+        "en": "No Ground Risk Buffer"
+    },
+    "error_empty_grb_text": {
+        "de": "Es existiert kein gültiger 'Ground Risk Buffer (GRB)'-Layer oder dieser enthält keine Geometrie. Bitte erstellen Sie zuerst eine Flugplanung.",
+        "en": "There is no valid 'Ground Risk Buffer (GRB)' layer, or it contains no geometry. Please create a flight planning first."
+    },
+    "compatibility_note": {
+        "de": "Entwickelt für QGIS 3.44.10-Solothurn LTR. Nur hier wird die beste Kompatibilität erwartet.",
+        "en": "Developed for QGIS 3.44.10-Solothurn LTR. Best compatibility is only expected here."
+    },
+    "license_status_title": {
+        "de": "Lizenzierung und Testzeitraum",
+        "en": "Licensing & Trial Period"
+    },
+    "license_status": {
+        "de": "Lizenz-Status",
+        "en": "License Status"
+    },
+    "license_activated": {
+        "de": "Aktiviert (Kommerzielle Lizenz)",
+        "en": "Activated (Commercial License)"
+    },
+    "license_not_activated": {
+        "de": "Nicht aktiviert (Testphase)",
+        "en": "Not activated (Trial Period)"
+    },
+    "license_trial_days_remaining": {
+        "de": "Verbleibende Testtage",
+        "en": "Remaining trial days"
+    },
+    "license_days": {
+        "de": "{days} Tage",
+        "en": "{days} days"
+    },
+    "license_expired": {
+        "de": "Abgelaufen (Kommerzielle Lizenz erforderlich)",
+        "en": "Expired (Commercial license required)"
+    },
+    "btn_enter_license_key": {
+        "de": "Lizenzschlüssel eingeben...",
+        "en": "Enter license key..."
+    },
+    "btn_change_license_key": {
+        "de": "Lizenzschlüssel ändern...",
+        "en": "Change license key..."
+    },
+    "license_prompt_title": {
+        "de": "Lizenzschlüssel eingeben",
+        "en": "Enter License Key"
+    },
+    "license_prompt_label": {
+        "de": "Bitte geben Sie den QUCORE-Lizenzschlüssel ein:",
+        "en": "Please enter the QUCORE license key:"
+    },
+    "license_success_title": {
+        "de": "Aktivierung erfolgreich",
+        "en": "Activation Successful"
+    },
+    "license_success_text": {
+        "de": "Lizenz erfolgreich aktiviert! Vielen Dank für die Unterstützung von QUCORE.",
+        "en": "License successfully activated! Thank you for supporting QUCORE."
+    },
+    "license_invalid_title": {
+        "de": "Ungültiger Lizenzschlüssel",
+        "en": "Invalid License Key"
+    },
+    "license_invalid_text": {
+        "de": "Ungültiger Lizenzschlüssel. Bitte überprüfen Sie Ihre Eingabe oder kontaktieren Sie den Autor unter tim.strohbach@gmx.de.",
+        "en": "Invalid license key. Please check your input or contact the author at tim.strohbach@gmx.de."
+    },
+    "license_expired_desc": {
+        "de": "Die 30-tägige Testphase für die kommerzielle Nutzung ist abgelaufen (kommerzielle Nutzung erfordert eine Lizenz). Die private Nutzung ist weiterhin gestattet.",
+        "en": "The 30-day trial period for commercial use has expired (commercial use requires a license). Private use is still permitted."
+    },
+    "no_raster_loaded_warn": {
+        "de": "Achtung: Kein Bevölkerungsraster geladen!",
+        "en": "Attention: No population raster loaded!"
+    },
+    "download_hint": {
+        "de": "Für die SORA-Analyse wird das offizielle GHS-POP GeoTIFF-Raster benötigt.",
+        "en": "For SORA analysis, the official GHS-POP GeoTIFF raster is required."
+    },
+    "download_link_label": {
+        "de": "Hier kostenfrei herunterladen:",
+        "en": "Download for free here:"
+    },
+    "download_tip": {
+        "de": "Tipp: Wählen Sie die 100m-Auflösung (WGS84) für optimale Ergebnisse.",
+        "en": "Tip: Choose the 100m resolution (WGS84) for optimal results."
+    },
+    "chk_override_h": {
+        "de": "Individuelle Wegpunkthöhen überschreiben",
+        "en": "Override individual waypoint heights"
+    },
+    "chk_override_w": {
+        "de": "Individuelle Wegpunktbreiten überschreiben",
+        "en": "Override individual waypoint widths"
+    },
+    "chk_override_v": {
+        "de": "Individuelle Wegpunktgeschwindigkeiten überschreiben",
+        "en": "Override individual waypoint velocities"
+    },
+    "cv_warning_tooltip": {
+        "de": "Empfohlener Mindestwert nach EASA SORA (AMC1 zu Artikel 11) beträgt 10,0 m.\nEin geringerer Puffer ist im ConOps betrieblich zu begründen (z. B. durch hohe Navigationsgenauigkeit).",
+        "en": "Recommended minimum value per EASA SORA (AMC1 to Article 11) is 10.0 m.\nA smaller buffer must be justified operationally in the ConOps (e.g., due to high navigation accuracy)."
+    },
+    "msg_cv_warning_banner": {
+        "de": "⚠️ <b>Hinweis zum Contingency Volume (CV):</b><br>In mindestens einem Abschnitt beträgt die berechnete Pufferbreite (s_cv) weniger als 10,0 m. Nach EASA SORA (AMC1 zu Artikel 11) wird eine Mindestbreite von 10 Metern empfohlen. Bitte begründen Sie den geringeren Puffer betrieblich in Ihrem ConOps.",
+        "en": "⚠️ <b>Contingency Volume (CV) Note:</b><br>In at least one segment, the calculated buffer width (s_cv) is less than 10.0 m. According to EASA SORA (AMC1 to Article 11), a minimum width of 10 meters is recommended. Please justify the smaller buffer operationally in your ConOps."
+    },
+    "msg_restore_defaults_title": {
+        "de": "Standardwerte wiederherstellen",
+        "en": "Restore Default Values"
+    },
+    "msg_restore_defaults_text": {
+        "de": "Möchten Sie wirklich alle Parameter auf die Standardwerte aus der config.json zurücksetzen?",
+        "en": "Do you really want to reset all parameters to the default values from config.json?"
+    },
+    "empty_grb_geometry": {
+        "de": "GRB-Geometrie ist leer",
+        "en": "GRB geometry is empty"
+    },
+    "btn_calculating": {
+        "de": "Berechnung läuft...",
+        "en": "Calculation in progress..."
+    },
+    "raw_value": {
+        "de": "Rohwert",
+        "en": "Raw value"
+    },
+    "people_per_cell": {
+        "de": "Personen/Zelle",
+        "en": "People/cell"
+    },
+    "msg_help_not_found_title": {
+        "de": "Hilfe nicht gefunden",
+        "en": "Help Not Found"
+    },
+    "msg_help_not_found_text": {
+        "de": "Die Hilfedatei 'instructions.html' konnte im Plugin-Ordner nicht gefunden werden.",
+        "en": "The help file 'instructions.html' could not be found in the plugin folder."
+    },
+    "error_gpkg_no_state": {
+        "de": "Die GPKG-Datei enthält keine gespeicherte Planung (qucore_state fehlt oder leer).",
+        "en": "The GPKG file does not contain a saved planning (qucore_state is missing or empty)."
+    },
+    "error_gpkg_no_features": {
+        "de": "Die GPKG-Datei enthält keine Features im Wegpunkte-Layer.",
+        "en": "The GPKG file does not contain features in the waypoints layer."
+    },
+    "error_gpkg_no_state_field": {
+        "de": "Der Wegpunkte-Layer in der GPKG-Datei enthält kein qucore_state-Feld.",
+        "en": "The waypoints layer in the GPKG file does not contain a qucore_state field."
+    },
+    "error_gpkg_load_failed": {
+        "de": "Der Wegpunkte-Layer konnte nicht aus der GeoPackage-Datei geladen werden.",
+        "en": "The waypoints layer could not be loaded from the GeoPackage file."
+    },
+    "error_background_raster_load": {
+        "de": "Raster-Layer konnte im Hintergrund-Thread nicht geladen werden.",
+        "en": "Raster layer could not be loaded in the background thread."
+    },
+    "license_expired_warning": {
+        "de": "⚠️ Testphase für kommerzielle Nutzung abgelaufen (Kommerzielle Nutzung erfordert eine Lizenz. Die private Nutzung ist weiterhin gestattet. Support: tim.strohbach@gmx.de)",
+        "en": "⚠️ Trial period for commercial use has expired (Commercial use requires a license. Private use is still permitted. Support: tim.strohbach@gmx.de)"
+    },
+    "msg_reactivate_success": {
+        "de": "Interaktive Drohnen-Korridorplanung erfolgreich aus Layer '{name}' reaktiviert!",
+        "en": "Interactive drone corridor planning successfully reactivated from layer '{name}'!"
+    },
+    "msg_reactivate_error": {
+        "de": "Fehler beim Reaktivieren der Planung aus Layer:\n{error}",
+        "en": "Error reactivating planning from layer:\n{error}"
+    },
+    "error_no_valid_waypoints": {
+        "de": "Keine gültigen Geometrie-Stützpunkte im ausgewählten Layer gefunden.",
+        "en": "No valid geometry vertices found in the selected layer."
+    },
+    "error_kml_parse_failed": {
+        "de": "XML-Parsing der KML-Datei fehlgeschlagen: {error} in Zeile {line}, Spalte {col}",
+        "en": "XML parsing of KML file failed: {error} at line {line}, column {col}"
+    },
+    "error_no_waypoints_kml": {
+        "de": "Keine gültigen Wegpunkte oder Centerline-Geometrien im KML-Dokument gefunden.",
+        "en": "No valid waypoints or centerline geometries found in the KML document."
+    },
+    "error_invalid_skydemon_format": {
+        "de": "Ungültiges SkyDemon-Flugplanformat: <PrimaryRoute> nicht gefunden.",
+        "en": "Invalid SkyDemon flightplan format: <PrimaryRoute> not found."
+    },
+    "log_remove_docx_failed": {
+        "de": "Fehler beim Entfernen der existierenden DOCX-Datei: {error}",
+        "en": "Error removing existing DOCX file: {error}"
+    },
+    "error_docx_overwrite_failed": {
+        "de": "Zieldatei konnte nicht überschrieben werden (Möglicherweise geöffnet?): {error}",
+        "en": "Target file could not be overwritten (Possibly open?): {error}"
+    },
+    "log_remove_temp_zip_failed": {
+        "de": "Fehler beim Löschen der temporären ZIP-Datei: {error}",
+        "en": "Error deleting temporary ZIP file: {error}"
+    },
+    "log_save_docx_failed": {
+        "de": "Fehler beim Speichern der finalen DOCX-Datei auf dem Ziellaufwerk: {error}",
+        "en": "Error saving final DOCX file on destination drive: {error}"
+    },
+    "error_docx_save_failed": {
+        "de": "Fehler beim Speichern der finalen DOCX-Datei auf dem Ziellaufwerk: {error}",
+        "en": "Error saving final DOCX file on destination drive: {error}"
+    },
+    "error_no_waypoints_geojson": {
+        "de": "Keine gültigen Wegpunkte oder Centerline-Geometrien im GeoJSON-Dokument gefunden.",
+        "en": "No valid waypoints or centerline geometries found in the GeoJSON document."
+    },
+    "msg_file_not_found_title": {
+        "de": "Datei nicht gefunden",
+        "en": "File Not Found"
+    },
+    "msg_config_not_found_text": {
+        "de": "Die Konfigurationsdatei config.json konnte nicht im Plugin-Ordner gefunden werden.",
+        "en": "The configuration file config.json could not be found in the plugin folder."
+    },
+    "dialog_color_picker_title": {
+        "de": "Farbe wählen",
+        "en": "Select Color"
+    }
 }
