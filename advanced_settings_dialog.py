@@ -97,7 +97,7 @@ class AdvancedSettingsDialog(QDialog):
         lay_gen = QVBoxLayout(self.tab_general)
         
         form_gen = QFormLayout()
-        form_gen.setMargin(15)
+        form_gen.setContentsMargins(15, 15, 15, 15)
         form_gen.setSpacing(15)
         
         self.spin_step = QDoubleSpinBox()
@@ -120,7 +120,7 @@ class AdvancedSettingsDialog(QDialog):
         lay_style = QVBoxLayout(self.tab_style)
         
         form_style = QFormLayout()
-        form_style.setMargin(15)
+        form_style.setContentsMargins(15, 15, 15, 15)
         form_style.setSpacing(10)
         
         style_desc = QLabel(self.tr("style_desc", "<b>Hinweis:</b> Änderungen an der Darstellung (Linienstärke, Farbe, Deckkraft) in diesem Dialog gelten nur für die aktuelle Sitzung. Dauerhafte Einstellungen können Sie durch direktes Bearbeiten der <code>config.json</code>-Datei vornehmen."))

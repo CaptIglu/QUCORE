@@ -187,7 +187,7 @@ class ParameterDialog(QDialog):
         # TAB 1: UAS PROPERTIES
         # ----------------------------------------------------
         uas_layout = QFormLayout(self.tab_uas)
-        uas_layout.setMargin(15)
+        uas_layout.setContentsMargins(15, 15, 15, 15)
         uas_layout.setSpacing(10)
         
         self.combo_uas_type = QComboBox()
@@ -237,7 +237,7 @@ class ParameterDialog(QDialog):
         # TAB 2: ASSUMPTIONS & ERRORS
         # ----------------------------------------------------
         ass_layout = QFormLayout(self.tab_assumptions)
-        ass_layout.setMargin(15)
+        ass_layout.setContentsMargins(15, 15, 15, 15)
         
         self.combo_altimetry = QComboBox()
         self.combo_altimetry.addItems([self.tr("alt_gps", "GPS-basiert"), self.tr("alt_baro", "barometrisch")])
@@ -299,7 +299,7 @@ class ParameterDialog(QDialog):
         # TAB 3: CONTINGENCY MANOEUVRES
         # ----------------------------------------------------
         man_layout = QVBoxLayout(self.tab_manoeuvre)
-        man_layout.setMargin(15)
+        man_layout.setContentsMargins(15, 15, 15, 15)
         
         # Lateral group
         group_lat = QGroupBox(self.tr("group_lat", "Laterales Contingency Manöver"))
@@ -357,7 +357,7 @@ class ParameterDialog(QDialog):
         # TAB 4: GROUND RISK BUFFER (GRB)
         # ----------------------------------------------------
         grb_layout = QFormLayout(self.tab_grb)
-        grb_layout.setMargin(15)
+        grb_layout.setContentsMargins(15, 15, 15, 15)
         
         self.combo_grb_method = QComboBox()
         self.combo_grb_method.addItems([
@@ -404,7 +404,7 @@ class ParameterDialog(QDialog):
         # TAB 5: GENERAL CORRIDOR SETTINGS
         # ----------------------------------------------------
         gen_layout = QFormLayout(self.tab_general)
-        gen_layout.setMargin(15)
+        gen_layout.setContentsMargins(15, 15, 15, 15)
         
         self.spin_corridor_width = QDoubleSpinBox()
         self.configure_spinbox(self.spin_corridor_width, "corridorWidth", 1.0, 5000.0, 5.0, 1)
