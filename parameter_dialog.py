@@ -895,17 +895,56 @@ class ParameterDialog(QDialog):
 
     def check_cv_warnings(self):
         s_cv_list = self.get_s_cv_values()
-        has_warning = any(x < 9.99 for x in s_cv_list) if s_cv_list else False
+        warnings = []
         
+        # 1. Contingency Volume width warning
+        has_warning = any(x < 9.99 for x in s_cv_list) if s_cv_list else False
         if has_warning:
-            text = self.tr(
+            warnings.append(self.tr(
                 "msg_cv_warning_banner",
                 "⚠️ <b>Hinweis zum Contingency Volume (CV):</b><br>"
                 "In mindestens einem Abschnitt beträgt die berechnete Pufferbreite (s_cv) weniger als 10,0 m. "
                 "Nach EASA SORA (AMC1 zu Artikel 11) wird eine Mindestbreite von 10 Metern empfohlen. "
                 "Bitte begründen Sie den geringeren Puffer betrieblich in Ihrem ConOps."
-            )
-            self.lbl_cv_warning.setText(text)
+            ))
+            
+        # 2. Check active parachute opening times
+        lat_is_para = (self.combo_lat_man.currentIndex() == 1)
+        vert_is_para = (self.combo_vert_man.currentIndex() == 1)
+        grb_is_para = (self.combo_grb_method.currentIndex() == 3)
+        
+        para_times = []
+        if lat_is_para:
+            para_times.append(self.spin_para_lat.value())
+        if vert_is_para:
+            para_times.append(self.spin_para_vert.value())
+        if grb_is_para:
+            para_times.append(self.spin_para_grb.value())
+            
+        if len(para_times) > 1 and len(set(para_times)) > 1:
+            warnings.append(self.tr(
+                "msg_different_para_times_warning",
+                "⚠️ <b>Compliance-Hinweis (Fallschirm-Öffnungszeiten):</b><br>"
+                "Sie haben unterschiedliche Fallschirm-Öffnungszeiten in Ihren aktiven Manövern konfiguriert. "
+                "Dies weicht von der Logik des offiziellen LBA-Berechnungstools ab. Dieser Betriebszustand "
+                "ist unter Umständen nicht konform und erfordert eine zusätzliche Begründung in Ihrem Betriebshandbuch (OM)."
+            ))
+            
+        # 3. Check contradictory safety manoeuvre concepts
+        if (lat_is_para or vert_is_para) and not grb_is_para:
+            warnings.append(self.tr(
+                "msg_different_manoeuvres_warning",
+                "⚠️ <b>Compliance-Hinweis (Manöverkonzepte):</b><br>"
+                "Sie haben das Fallschirm-Manöver für das Contingency Volume gewählt, nutzen aber ein anderes Verfahren "
+                "(ballistisch/Gleitflug) für die Flugbeendigung (GRB). Dies ist physikalisch widersprüchlich "
+                "(da der Fallschirm bereits entfaltet ist) und wird vom offiziellen LBA-Excel-Tool gesperrt. "
+                "Dieser Betriebszustand ist unter Umständen nicht konform und erfordert eine zusätzliche Begründung "
+                "in Ihrem Betriebshandbuch (OM)."
+            ))
+            
+        if warnings:
+            combined_text = "<br><hr style='border: 0; border-top: 1px solid #fcd34d;'><br>".join(warnings)
+            self.lbl_cv_warning.setText(combined_text)
             self.lbl_cv_warning.setVisible(True)
         else:
             self.lbl_cv_warning.setVisible(False)

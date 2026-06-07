@@ -1,4 +1,4 @@
-# QUCORE – Flexible Drohnenflugplanung von FG, CV & GRB in QGIS
+# QUCORE – Flexible Drohnenflugplanung (FG, CV, GRB & AA) in QGIS
 
 🇩🇪 **Deutsch** | 🇬🇧 [**English Version**](#english-version)
 

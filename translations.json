@@ -1274,5 +1274,13 @@
     "chk_show_wp_nums": {
         "de": "Wegpunkt-Nummern auf Karte anzeigen",
         "en": "Show waypoint numbers on map"
+    },
+    "msg_different_para_times_warning": {
+        "de": "⚠️ <b>Compliance-Hinweis (Fallschirm-Öffnungszeiten):</b><br>Sie haben unterschiedliche Fallschirm-Öffnungszeiten in Ihren aktiven Manövern konfiguriert. Dies weicht von der Logik des offiziellen LBA-Berechnungstools ab. Dieser Betriebszustand ist unter Umständen nicht konform und erfordert eine zusätzliche Begründung in Ihrem Betriebshandbuch (OM).",
+        "en": "⚠️ <b>Compliance Notice (Parachute Opening Times):</b><br>You configured different parachute opening times in your active maneuvers. This deviates from the logic of the official LBA Excel tool. This configuration might not be compliant and requires an additional explanation in your Operations Manual (OM)."
+    },
+    "msg_different_manoeuvres_warning": {
+        "de": "⚠️ <b>Compliance-Hinweis (Manöverkonzepte):</b><br>Sie haben das Fallschirm-Manöver für das Contingency Volume gewählt, nutzen aber ein anderes Verfahren (ballistisch/Gleitflug) für die Flugbeendigung (GRB). Dies ist physikalisch widersprüchlich (da der Fallschirm bereits entfaltet ist) und wird vom offiziellen LBA-Excel-Tool gesperrt. Dieser Betriebszustand ist unter Umständen nicht konform und erfordert eine zusätzliche Begründung in Ihrem Betriebshandbuch (OM).",
+        "en": "⚠️ <b>Compliance Notice (Manoeuvre Approaches):</b><br>You selected the parachute maneuver for the Contingency Volume but a different method (ballistic/glide) for the Ground Risk Buffer termination. This is physically contradictory (as the parachute is already deployed) and is blocked by the official LBA Excel tool. This configuration might not be compliant and requires an additional explanation in your Operations Manual (OM)."
     }
 }
