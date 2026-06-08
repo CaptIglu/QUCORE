@@ -371,7 +371,7 @@ class AboutDialog(QDialog):
         title_layout.setSpacing(4)
         
         name = self.metadata.get('name', 'QUCORE (Variable UAS Corridor Planning)')
-        version = self.metadata.get('version', '0.6.2')
+        version = self.metadata.get('version', '0.6.3')
         
         lbl_name = QLabel(f'<span style="font-size: 16px; font-weight: bold; color: #2c3e50;">{name}</span>')
         lbl_version = QLabel(f'<span style="font-size: 12px; color: #7f8c8d; font-weight: 500;">Version {version}</span>')
@@ -992,28 +992,30 @@ class DroneCorridorPlanner(object):
             # File Menu
             self.file_menu = self.menu_bar.addMenu("Datei")
             
-            self.import_active_action = self.file_menu.addAction("Aktivierten QGIS-Layer einlesen...")
-            self.import_active_action.triggered.connect(self.import_active_layer)
-            
             self.import_action = self.file_menu.addAction("Importieren...")
             self.import_action.triggered.connect(self.import_file)
             
             self.export_action = self.file_menu.addAction("Exportieren...")
             self.export_action.triggered.connect(self.export_file)
             
-            self.sora_export_action = self.file_menu.addAction("SORA Dokumentations-Export (.docx)...")
-            self.sora_export_action.triggered.connect(self.export_sora_report)
+            self.file_menu.addSeparator()
             
-            self.save_persistent_action = self.file_menu.addAction("Planung als persistenten Layer (GeoPackage) speichern...")
-            self.save_persistent_action.triggered.connect(self.save_as_persistent_layer)
+            self.import_active_action = self.file_menu.addAction("Aktivierten QGIS-Layer einlesen...")
+            self.import_active_action.triggered.connect(self.import_active_layer)
             
             self.reactivate_action = self.file_menu.addAction("QUCORE Gruppe bearbeiten...")
             self.reactivate_action.triggered.connect(self.reactivate_persistent_group)
             
-            self.formats_info_action = self.file_menu.addAction(self.tr("menu_formats_matrix", "Dateiformate im Vergleich..."))
-            self.formats_info_action.triggered.connect(self.show_formats_info_dialog)
+            self.save_persistent_action = self.file_menu.addAction("Planung als persistenten Layer (GeoPackage) speichern...")
+            self.save_persistent_action.triggered.connect(self.save_as_persistent_layer)
+            
+            self.sora_export_action = self.file_menu.addAction("SORA Dokumentations-Export (.docx)...")
+            self.sora_export_action.triggered.connect(self.export_sora_report)
             
             self.file_menu.addSeparator()
+            
+            self.formats_info_action = self.file_menu.addAction(self.tr("menu_formats_matrix", "Dateiformate im Vergleich..."))
+            self.formats_info_action.triggered.connect(self.show_formats_info_dialog)
             
             self.reset_action = self.file_menu.addAction("Planung zurücksetzen")
             self.reset_action.triggered.connect(self.reset_planning)
