@@ -2030,12 +2030,78 @@ class DroneCorridorPlanner(object):
             if key in self.params:
                 del self.params[key]
 
+    def remove_planning_layers(self):
+        """
+        Removes the QUCORE-Korridorplanung layer group and all its layers from the QGIS project.
+        """
+        from qgis.core import QgsProject, QgsLayerTreeNode
+        
+        project = QgsProject.instance()
+        
+        # 1. Remove our known layers
+        for lyr_var in ['lyr_waypoints', 'lyr_route', 'lyr_fg', 'lyr_cv', 'lyr_grb', 'lyr_pilot', 'lyr_vlos', 'lyr_aga']:
+            lyr = getattr(self, lyr_var, None)
+            if self.is_layer_valid(lyr):
+                project.removeMapLayer(lyr.id())
+                
+        # 2. Clean up group and any leftover layers in it
+        root = project.layerTreeRoot()
+        layer_group = root.findGroup("QUCORE-Korridorplanung")
+        if layer_group:
+            for child in list(layer_group.children()):
+                if child.nodeType() == QgsLayerTreeNode.NodeLayer:
+                    layer = child.layer()
+                    if layer:
+                        project.removeMapLayer(layer.id())
+            root.removeChildNode(layer_group)
+            
+        self.layer_group = None
+        self.lyr_waypoints = None
+        self.lyr_route = None
+        self.lyr_fg = None
+        self.lyr_cv = None
+        self.lyr_grb = None
+        self.lyr_pilot = None
+        self.lyr_vlos = None
+        self.lyr_aga = None
+        
+        # Clear Sora widget visualization if active
+        if hasattr(self, 'sora_viz') and self.sora_viz is not None:
+            self.sora_viz.update_values([], [], [], [], [], self.geometry_type)
+            
+        # Clear results panel text
+        if hasattr(self, 'lbl_results'):
+            self.lbl_results.setText(
+                f"<i style='color:#999;'>{self.tr('results_no_data', 'Noch keine Wegpunkte gesetzt.')}</i>"
+            )
+
     def rebuild_and_calculate(self, force_restyle=False):
         """
         Rebuilds waypoints, route, and buffer layers and re-runs the safety calculations.
         """
         if not getattr(self, 'is_loading', False):
             self.clear_population_density_results()
+            
+        if not self.waypoints and not self.pilot_pos:
+            self.remove_planning_layers()
+            if hasattr(self, 'cmb_geom_type'):
+                self.cmb_geom_type.setEnabled(True)
+            if hasattr(self, 'lbl_circle_rad'):
+                self.lbl_circle_rad.setVisible(self.geometry_type == "Circle")
+            if hasattr(self, 'spn_circle_radius'):
+                self.spn_circle_radius.setVisible(self.geometry_type == "Circle")
+            if hasattr(self, 'btn_alt'):
+                self.btn_alt.setEnabled(self.geometry_type in ["Corridor", "Polygon"])
+            self.lbl_status.setText(self.tr("status_ready", "Wegpunkte: {wp} | Puffer: Bereit").format(wp=0))
+            self.lbl_status.setStyleSheet("")
+            self.canvas.refresh()
+            try:
+                state_json = self.serialize_state()
+                from qgis.core import QgsProject
+                QgsProject.instance().writeEntry("QUCORE", "state", state_json)
+            except Exception:
+                pass
+            return
             
         self.initialize_layers(force_restyle=force_restyle)
         
@@ -2220,6 +2286,10 @@ class DroneCorridorPlanner(object):
         """
         Updates the pilot position layer feature and the VLOS range circle.
         """
+        if not self.waypoints and not self.pilot_pos:
+            self.remove_planning_layers()
+            return
+            
         self.initialize_layers()
         self.lyr_pilot.dataProvider().truncate()
         if self.is_layer_valid(self.lyr_vlos):

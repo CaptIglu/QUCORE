@@ -1338,5 +1338,84 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             if os.path.exists(temp_config_path):
                 os.remove(temp_config_path)
 
+    def test_remove_planning_layers_when_reset_or_empty(self):
+        """
+        Verify that remove_planning_layers properly removes all map layers and group from project,
+        resets internal references to None, and updates results label.
+        """
+        from QUCORE.plugin import DroneCorridorPlanner
+        from unittest.mock import MagicMock, patch
+        
+        # We need to mock QgsProject.instance(), self.gui, and the layers
+        class MockPlanner(DroneCorridorPlanner):
+            def __init__(self):
+                self.params = {}
+                self.geometry_type = "Corridor"
+                self.waypoints = []
+                self.pilot_pos = None
+                self.gui = MagicMock()
+                self.canvas = MagicMock()
+                
+                # Mock layer attributes
+                self.layer_group = MagicMock()
+                self.lyr_waypoints = MagicMock()
+                self.lyr_route = MagicMock()
+                self.lyr_fg = MagicMock()
+                self.lyr_cv = MagicMock()
+                self.lyr_grb = MagicMock()
+                self.lyr_pilot = MagicMock()
+                self.lyr_vlos = MagicMock()
+                self.lyr_aga = MagicMock()
+                self.lbl_results = MagicMock()
+                self.sora_viz = MagicMock()
+                
+            def tr(self, key, text):
+                return text
+                
+            def is_layer_valid(self, layer):
+                return layer is not None
+
+        planner = MockPlanner()
+        
+        # Patch QgsProject.instance()
+        mock_project = MagicMock()
+        mock_root = MagicMock()
+        mock_project.layerTreeRoot.return_value = mock_root
+        mock_root.findGroup.return_value = planner.layer_group
+        
+        # Set layer IDs for removal verification
+        for lyr_name in ['lyr_waypoints', 'lyr_route', 'lyr_fg', 'lyr_cv', 'lyr_grb', 'lyr_pilot', 'lyr_vlos', 'lyr_aga']:
+            lyr = getattr(planner, lyr_name)
+            lyr.id.return_value = lyr_name + "_id"
+            
+        expected_group = planner.layer_group
+        with patch('qgis.core.QgsProject.instance', return_value=mock_project):
+            planner.remove_planning_layers()
+            
+        # Verify removeMapLayer was called for all layers
+        calls = [c[0][0] for c in mock_project.removeMapLayer.call_args_list]
+        for lyr_name in ['lyr_waypoints', 'lyr_route', 'lyr_fg', 'lyr_cv', 'lyr_grb', 'lyr_pilot', 'lyr_vlos', 'lyr_aga']:
+            self.assertIn(lyr_name + "_id", calls)
+            
+        # Verify the group node was removed
+        mock_root.removeChildNode.assert_called_with(expected_group)
+        
+        # Verify all layer attributes are reset to None
+        self.assertIsNone(planner.layer_group)
+        self.assertIsNone(planner.lyr_waypoints)
+        self.assertIsNone(planner.lyr_route)
+        self.assertIsNone(planner.lyr_fg)
+        self.assertIsNone(planner.lyr_cv)
+        self.assertIsNone(planner.lyr_grb)
+        self.assertIsNone(planner.lyr_pilot)
+        self.assertIsNone(planner.lyr_vlos)
+        self.assertIsNone(planner.lyr_aga)
+        
+        # Verify sora viz was cleared
+        planner.sora_viz.update_values.assert_called_once()
+        
+        # Verify label results was cleared
+        planner.lbl_results.setText.assert_called_once()
+
 if __name__ == "__main__":
     unittest.main()
