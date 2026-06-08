@@ -21,7 +21,7 @@ class AltitudeTableDialog(QDialog):
     def __init__(self, parent=None, waypoints=None, params=None, on_change_callback=None, geometry_type="Corridor", waypoints_layer=None, canvas=None):
         super(AltitudeTableDialog, self).__init__(parent)
         self.resize(980, 450) # increased width to fit all 8 columns beautifully
-        self.setModal(True)
+        self.setModal(False)
         
         # self.waypoints is a list of tuples: (lon, lat, height, speed, fg_width)
         self.waypoints = waypoints if waypoints is not None else []

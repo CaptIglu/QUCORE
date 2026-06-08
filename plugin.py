@@ -371,7 +371,7 @@ class AboutDialog(QDialog):
         title_layout.setSpacing(4)
         
         name = self.metadata.get('name', 'QUCORE (Variable UAS Corridor Planning)')
-        version = self.metadata.get('version', '0.6.1')
+        version = self.metadata.get('version', '0.6.2')
         
         lbl_name = QLabel(f'<span style="font-size: 16px; font-weight: bold; color: #2c3e50;">{name}</span>')
         lbl_version = QLabel(f'<span style="font-size: 12px; color: #7f8c8d; font-weight: 500;">Version {version}</span>')
@@ -682,6 +682,7 @@ class DroneCorridorPlanner(object):
         self.gui = None
         self.wp_tool = None
         self.pilot_tool = None
+        self.altitude_table_dialog = None
         
         # Memory layers
         self.layer_group = None
@@ -2443,18 +2444,30 @@ class DroneCorridorPlanner(object):
             )
             return
             
+        # Deactivate drawing/pilot tools to prevent editing map features during table view
+        if hasattr(self, 'btn_draw_wp') and self.btn_draw_wp.isChecked():
+            self.btn_draw_wp.setChecked(False)
+            self.canvas.unsetMapTool(self.wp_tool)
+        if hasattr(self, 'btn_set_pilot') and self.btn_set_pilot.isChecked():
+            self.btn_set_pilot.setChecked(False)
+            self.canvas.unsetMapTool(self.pilot_tool)
+
+        # Disable parent UI to prevent concurrent action triggers (e.g. import, export, reset)
+        self.gui.setEnabled(False)
+
         original_waypoints = list(self.waypoints)
         original_params = dict(self.params)
         
         def on_waypoint_edited():
-            updated_params = dialog.get_waypoint_params()
+            updated_params = self.altitude_table_dialog.get_waypoint_params()
             for idx in range(len(self.waypoints)):
                 lon, lat, new_alt, new_spd, new_fg = updated_params[idx]
                 self.waypoints[idx] = (lon, lat, new_alt, new_spd, new_fg)
             self.rebuild_and_calculate()
             
-        dialog = AltitudeTableDialog(
-            self.gui, 
+        # Pass QGIS MainWindow as parent so disabling self.gui does not disable this dialog
+        self.altitude_table_dialog = AltitudeTableDialog(
+            self.iface.mainWindow(), 
             self.waypoints, 
             self.params, 
             on_change_callback=on_waypoint_edited, 
@@ -2462,19 +2475,27 @@ class DroneCorridorPlanner(object):
             waypoints_layer=self.lyr_waypoints,
             canvas=self.canvas
         )
-        if dialog.exec_() == QDialog.Accepted:
-            # Commit changes and add to undo stack
-            self.undo_stack.append(list(original_waypoints))
-            self.redo_stack.clear()
-            self.update_undo_redo_buttons()
-            # Already updated on the map, but a final calculation ensures everything is clean
-            self.rebuild_and_calculate()
-        else:
-            # Revert to original waypoints and parameters on cancel
-            self.waypoints = original_waypoints
-            self.params.clear()
-            self.params.update(original_params)
-            self.rebuild_and_calculate()
+        self.altitude_table_dialog.setModal(False)
+
+        def handle_finished(result):
+            self.gui.setEnabled(True)  # Re-enable parent UI
+            if result == QDialog.Accepted:
+                # Commit changes and add to undo stack
+                self.undo_stack.append(list(original_waypoints))
+                self.redo_stack.clear()
+                self.update_undo_redo_buttons()
+                # Already updated on the map, but a final calculation ensures everything is clean
+                self.rebuild_and_calculate()
+            else:
+                # Revert to original waypoints and parameters on cancel
+                self.waypoints = original_waypoints
+                self.params.clear()
+                self.params.update(original_params)
+                self.rebuild_and_calculate()
+            self.altitude_table_dialog = None
+
+        self.altitude_table_dialog.finished.connect(handle_finished)
+        self.altitude_table_dialog.show()
 
     def reset_planning(self):
         reply = QMessageBox.question(
