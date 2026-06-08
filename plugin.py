@@ -1010,6 +1010,9 @@ class DroneCorridorPlanner(object):
             self.reactivate_action = self.file_menu.addAction("QUCORE Gruppe bearbeiten...")
             self.reactivate_action.triggered.connect(self.reactivate_persistent_group)
             
+            self.formats_info_action = self.file_menu.addAction(self.tr("menu_formats_matrix", "Dateiformate im Vergleich..."))
+            self.formats_info_action.triggered.connect(self.show_formats_info_dialog)
+            
             self.file_menu.addSeparator()
             
             self.reset_action = self.file_menu.addAction("Planung zurücksetzen")
@@ -1060,6 +1063,10 @@ class DroneCorridorPlanner(object):
             
             self.about_action = self.help_menu.addAction("Über QUCORE...")
             self.about_action.triggered.connect(self.open_about_dialog)
+            
+            self.help_menu.addSeparator()
+            self.formats_info_help_action = self.help_menu.addAction(self.tr("menu_formats_matrix", "Dateiformate im Vergleich..."))
+            self.formats_info_help_action.triggered.connect(self.show_formats_info_dialog)
             
             # Header
             self.header_label = QLabel("<b>Drohnen-Sicherheitskorridore</b><br>Kartenbasierte interaktive Planung")
@@ -1352,6 +1359,8 @@ class DroneCorridorPlanner(object):
             if hasattr(self, 'reactivate_action'):
                 self.reactivate_action.setText(self.tr("menu_reactivate_group", "QUCORE Gruppe bearbeiten..."))
             self.reset_action.setText(self.tr("menu_reset", "Planung zurücksetzen"))
+            if hasattr(self, 'formats_info_action'):
+                self.formats_info_action.setText(self.tr("menu_formats_matrix", "Dateiformate im Vergleich..."))
             
             self.settings_menu.setTitle(self.tr("menu_settings", "Einstellungen"))
             self.calc_params_action.setText(self.tr("menu_calc_params", "Berechnungsparameter..."))
@@ -1371,6 +1380,8 @@ class DroneCorridorPlanner(object):
             self.help_action_menu.setText(self.tr("menu_instructions", "Anleitung / Hilfe..."))
             if hasattr(self, 'about_action'):
                 self.about_action.setText(self.tr("menu_about", "Über QUCORE..."))
+            if hasattr(self, 'formats_info_help_action'):
+                self.formats_info_help_action.setText(self.tr("menu_formats_matrix", "Dateiformate im Vergleich..."))
                 
         if hasattr(self, 'action') and self.action:
             self.action.setText(self.tr("dialog_title", "QUCORE – UAS-Korridorplanung (FG/CV/GRB)"))
@@ -1468,6 +1479,85 @@ class DroneCorridorPlanner(object):
                 
         dlg = AboutDialog(self.gui if self.gui else self.iface.mainWindow(), metadata, self)
         dlg.exec_()
+
+    def show_formats_info_dialog(self):
+        """
+        Displays a comparison dialog detailing the support matrix of all available file formats.
+        """
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QPushButton, QHBoxLayout, QHeaderView
+        from PyQt5.QtCore import Qt
+        
+        dialog = QDialog(self.gui if self.gui else self.iface.mainWindow())
+        dialog.setObjectName("FormatsInfoDialog")
+        dialog.setWindowTitle(self.tr("dialog_formats_title", "QUCORE – Dateiformate im Vergleich"))
+        dialog.resize(820, 360)
+        
+        layout = QVBoxLayout(dialog)
+        
+        # Header
+        header = QLabel(self.tr("formats_header", "<b>Dateiformate und deren Unterstützung bei Import / Export</b>"))
+        header.setObjectName("FormatsHeaderLabel")
+        layout.addWidget(header)
+        
+        # Table setup
+        table = QTableWidget(5, 7)
+        table.setObjectName("FormatsTableWidget")
+        table.setHorizontalHeaderLabels([
+            self.tr("matrix_col_format", "Format"),
+            self.tr("matrix_col_geom", "Geometrie"),
+            self.tr("matrix_col_height", "Wegpunkt-Höhen"),
+            self.tr("matrix_col_speed", "Wegpunkt-Geschw."),
+            self.tr("matrix_col_pilot", "Pilotenposition"),
+            self.tr("matrix_col_params", "Berechnungsparameter"),
+            self.tr("matrix_col_roundtrip", "Round-Trip fähig?")
+        ])
+        
+        # Style table
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        table.setEditTriggers(QTableWidget.NoEditTriggers)
+        table.setSelectionMode(QTableWidget.NoSelection)
+        table.setAlternatingRowColors(True)
+        
+        # Data Rows
+        # Row 0: GeoPackage (.gpkg)
+        # Row 1: GeoJSON (.geojson)
+        # Row 2: KML (.kml)
+        # Row 3: dipul (.dipul)
+        # Row 4: SkyDemon (.flightplan)
+        rows_data = [
+            ("GeoPackage (.gpkg)", self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes_full", "Ja (Vollständig)")),
+            ("GeoJSON (.geojson)", self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes_full", "Ja (Vollständig)")),
+            ("KML (.kml)", self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes_full", "Ja (Vollständig)")),
+            ("dipul (.dipul)", self.tr("yes", "Ja"), self.tr("global_only", "Nur global"), self.tr("global_only", "Nur global"), self.tr("yes", "Ja"), self.tr("global_only", "Nur global"), self.tr("limited_qucore", "Eingeschränkt (Vollständig bei QUCORE-Dateien)")),
+            ("SkyDemon (.flightplan)", self.tr("yes", "Ja"), self.tr("global_only", "Nur global"), self.tr("no", "Nein"), self.tr("no", "Nein"), self.tr("no", "Nein"), self.tr("route_only", "Nur Route / Wegpunkte"))
+        ]
+        
+        for r_idx, row in enumerate(rows_data):
+            for c_idx, val in enumerate(row):
+                item = QTableWidgetItem(val)
+                # Align all columns except the first to center
+                if c_idx > 0:
+                    item.setTextAlignment(Qt.AlignCenter)
+                table.setItem(r_idx, c_idx, item)
+                
+        layout.addWidget(table)
+        
+        # Note
+        note = QLabel(self.tr("formats_note", "<i>* Hinweis: GeoPackage, GeoJSON und aus QUCORE exportierte KML-Dateien speichern den 100% exakten Zustand Ihrer Planung (einschließlich aller SORA-Parameter) für die spätere Weiterbearbeitung.</i>"))
+        note.setObjectName("FormatsNoteLabel")
+        note.setWordWrap(True)
+        layout.addWidget(note)
+        
+        # OK Button
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        btn_ok = QPushButton(self.tr("btn_close_dialog", "Schließen"))
+        btn_ok.setObjectName("FormatsCloseButton")
+        btn_ok.clicked.connect(dialog.accept)
+        btn_layout.addWidget(btn_ok)
+        layout.addLayout(btn_layout)
+        
+        dialog.exec_()
 
     def on_geometry_type_changed(self, index):
         types = ["Corridor", "Circle", "Polygon"]
@@ -3230,7 +3320,7 @@ class DroneCorridorPlanner(object):
             self.gui, 
             self.tr("dialog_import_title", "Datei importieren"), 
             last_dir, 
-            "Planungsdateien (*.dipul *.kml *.flightplan *.geojson *.gpkg);;dipul Planungsdatei (*.dipul);;KML Geometriedatei (*.kml);;SkyDemon Flugplan (*.flightplan);;GeoJSON (*.geojson);;GeoPackage (*.gpkg)"
+            self.tr("import_file_filter", "Planungsdateien (*.gpkg *.geojson *.kml *.dipul *.flightplan);;GeoPackage - Voller Zustand (*.gpkg);;GeoJSON - Voller Zustand (*.geojson);;KML Geometriedatei - Voller Zustand (*.kml);;dipul Planungsdatei - Eingeschränkter Zustand (*.dipul);;SkyDemon Flugplan - Nur Route (*.flightplan)")
         )
         if not file_path:
             return
@@ -3281,9 +3371,10 @@ class DroneCorridorPlanner(object):
                     raise ValueError(self.tr("error_gpkg_load_failed", "Der Wegpunkte-Layer konnte nicht aus der GeoPackage-Datei geladen werden."))
             else:
                 # KML
-                waypoints, pilot_pos, geom_type = ImporterExporter.import_kml(file_path)
+                waypoints, pilot_pos, width, max_height, params, geom_type = ImporterExporter.import_kml(file_path)
                 self.waypoints = waypoints
                 self.pilot_pos = pilot_pos
+                self.params.update(params)
                 imported_geom_type = geom_type
                 
             self.geometry_type = imported_geom_type
@@ -3334,7 +3425,7 @@ class DroneCorridorPlanner(object):
             self.gui, 
             self.tr("dialog_export_file_title", "Datei exportieren"), 
             default_path, 
-            "dipul Planungsdatei (*.dipul);;KML Geometriedatei (*.kml);;SkyDemon Flugplan (*.flightplan);;GeoJSON (*.geojson);;GeoPackage (*.gpkg);;SORA Dokumentations-Export (*.docx)"
+            self.tr("export_file_filter", "GeoPackage - Voller Zustand (*.gpkg);;GeoJSON - Voller Zustand (*.geojson);;KML Geometriedatei - Voller Zustand (*.kml);;dipul Planungsdatei - Eingeschränkter Zustand (*.dipul);;SkyDemon Flugplan - Nur Route (*.flightplan);;SORA Dokumentation (*.docx)")
         )
         if not file_path:
             return

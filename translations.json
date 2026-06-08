@@ -1322,5 +1322,65 @@
     "msg_overwrite_confirm_text": {
         "de": "Die Datei '{name}' existiert bereits.\n\nMöchten Sie diese Datei überschreiben? Die bestehende Layer-Gruppe '{group}' in QGIS wird dabei aktualisiert.",
         "en": "The file '{name}' already exists.\n\nDo you want to overwrite this file? The existing layer group '{group}' in QGIS will be updated."
+    },
+    "import_file_filter": {
+        "de": "Planungsdateien (*.gpkg *.geojson *.kml *.dipul *.flightplan);;GeoPackage - Voller Zustand (*.gpkg);;GeoJSON - Voller Zustand (*.geojson);;KML Geometriedatei - Voller Zustand (*.kml);;dipul Planungsdatei - Eingeschränkter Zustand (*.dipul);;SkyDemon Flugplan - Nur Route (*.flightplan)",
+        "en": "Planning Files (*.gpkg *.geojson *.kml *.dipul *.flightplan);;GeoPackage - Full State (*.gpkg);;GeoJSON - Full State (*.geojson);;KML Geometry - Full State (*.kml);;dipul Planning - Limited State (*.dipul);;SkyDemon Flightplan - Route Only (*.flightplan)"
+    },
+    "export_file_filter": {
+        "de": "GeoPackage - Voller Zustand (*.gpkg);;GeoJSON - Voller Zustand (*.geojson);;KML Geometriedatei - Voller Zustand (*.kml);;dipul Planungsdatei - Eingeschränkter Zustand (*.dipul);;SkyDemon Flugplan - Nur Route (*.flightplan);;SORA Dokumentation (*.docx)",
+        "en": "GeoPackage - Full State (*.gpkg);;GeoJSON - Full State (*.geojson);;KML Geometry - Full State (*.kml);;dipul Planning - Limited State (*.dipul);;SkyDemon Flightplan - Route Only (*.flightplan);;SORA Documentation (*.docx)"
+    },
+    "dialog_formats_title": {
+        "de": "QUCORE – Dateiformate im Vergleich",
+        "en": "QUCORE – File Format Comparison"
+    },
+    "formats_header": {
+        "de": "<b>Dateiformate und deren Unterstützung bei Import / Export</b>",
+        "en": "<b>File Formats and Their Support during Import / Export</b>"
+    },
+    "formats_note": {
+        "de": "<i>* Hinweis: GeoPackage, GeoJSON und aus QUCORE exportierte KML-Dateien speichern den 100% exakten Zustand Ihrer Planung (einschließlich aller SORA-Parameter) für die spätere Weiterbearbeitung.</i>",
+        "en": "<i>* Note: GeoPackage, GeoJSON and KML files exported from QUCORE save the 100% exact state of your planning (including all SORA parameters) for later editing.</i>"
+    },
+    "matrix_col_format": { "de": "Format", "en": "Format" },
+    "matrix_col_geom": { "de": "Geometrie", "en": "Geometry" },
+    "matrix_col_height": { "de": "Wegpunkt-Höhen", "en": "Waypoint Altitudes" },
+    "matrix_col_speed": { "de": "Wegpunkt-Geschw.", "en": "Waypoint Speeds" },
+    "matrix_col_params": { "de": "Berechnungsparameter", "en": "Calculation Params" },
+    "matrix_col_roundtrip": { "de": "Round-Trip fähig?", "en": "Round-Trip Support?" },
+    "yes": { "de": "Ja", "en": "Yes" },
+    "no": { "de": "Nein", "en": "No" },
+    "yes_full": { "de": "Ja (Vollständig)", "en": "Yes (Full)" },
+    "limited_qucore": { "de": "Eingeschränkt (Vollständig bei QUCORE-Dateien)", "en": "Limited (Full with QUCORE files)" },
+    "global_only": { "de": "Nur global", "en": "Global only" },
+    "route_only": { "de": "Nur Route / Wegpunkte", "en": "Route / Waypoints only" },
+    "menu_formats_matrix": {
+        "de": "Dateiformate im Vergleich...",
+        "en": "File Format Comparison..."
+    },
+    "btn_close_dialog": {
+        "de": "Schließen",
+        "en": "Close"
+    },
+    "matrix_col_pilot": {
+        "de": "Pilotenposition",
+        "en": "Pilot Position"
+    },
+    "matrix_col_layers": {
+        "de": "Puffer-Layer (gespeichert)",
+        "en": "Buffer Layers (saved)"
+    },
+    "yes_layers": {
+        "de": "Ja (als separate Layer)",
+        "en": "Yes (as separate layers)"
+    },
+    "no_recalculated": {
+        "de": "Nein (werden neu berechnet)",
+        "en": "No (recalculated)"
+    },
+    "yes_kml_layers": {
+        "de": "Ja (Visualisierung / neu berechnet)",
+        "en": "Yes (visual only / recalculated)"
     }
 }

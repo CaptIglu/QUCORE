@@ -25,6 +25,8 @@ class RealMockQgsGeometry:
         self._area = 100.0
     def isEmpty(self):
         return self.empty
+    def asPolygon(self):
+        return [[RealMockQgsPointXY(8.751481, 53.841847), RealMockQgsPointXY(8.336079, 54.006354)]]
     def isGeosValid(self):
         return RealMockQgsGeometry.is_valid_mock_geom
     def area(self):
@@ -106,6 +108,8 @@ class MockQWidget:
         pass
     def reject(self):
         pass
+    def exec_(self):
+        return 1
     def __getattr__(self, name):
         return MagicMock()
 
@@ -144,6 +148,8 @@ class MockQTableWidgetItemClass:
         self._text = text
 
 class MockQTableWidget(MockQWidget):
+    NoEditTriggers = 0
+    NoSelection = 0
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._items = {}
@@ -220,6 +226,72 @@ qt_core.QPointF = DummyClass
 qt_core.QVariant = DummyClass
 qt_core.QUrl = DummyClass
 sys.modules['PyQt5.QtCore'] = qt_core
+
+# Mock PyQt5.QtXml for standalone tests
+qt_xml = types.ModuleType("QtXml")
+import xml.etree.ElementTree as ET
+
+class MockQDomNode:
+    def __init__(self, element, parent_node=None, idx=0):
+        self.element = element
+        self.parent_node = parent_node
+        self.idx = idx
+        if element is not None:
+            self._children = [MockQDomNode(child, self, i) for i, child in enumerate(element)]
+        else:
+            self._children = []
+            
+    def isElement(self):
+        return self.element is not None
+        
+    def toElement(self):
+        return self
+        
+    def tagName(self):
+        # XML tags in element tree might include namespace in format {ns}tag, strip namespace
+        tag = self.element.tag if self.element is not None else ""
+        if "}" in tag:
+            tag = tag.split("}", 1)[1]
+        return tag
+        
+    def attribute(self, name, default=""):
+        return self.element.attrib.get(name, default) if self.element is not None else default
+        
+    def text(self):
+        if self.element is None:
+            return ""
+        return "".join(self.element.itertext())
+        
+    def firstChild(self):
+        if self._children:
+            return self._children[0]
+        return MockQDomNode(None)
+        
+    def nextSibling(self):
+        if self.parent_node and self.idx + 1 < len(self.parent_node._children):
+            return self.parent_node._children[self.idx + 1]
+        return MockQDomNode(None)
+        
+    def isNull(self):
+        return self.element is None
+
+class MockQDomDocument:
+    def __init__(self):
+        self.root_element = None
+        
+    def setContent(self, xml_data):
+        try:
+            # Handle potential encoding declarations in XML bytes
+            self.root_element = ET.fromstring(xml_data)
+            return True, "", 0, 0
+        except Exception as e:
+            return False, str(e), 1, 1
+            
+    def documentElement(self):
+        return MockQDomNode(self.root_element)
+
+qt_xml.QDomDocument = MockQDomDocument
+sys.modules['PyQt5.QtXml'] = qt_xml
 
 
 # 2. Add parent directory of QUCORE package to sys.path dynamically
@@ -689,6 +761,69 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             if os.path.exists(dest_geojson):
                 os.remove(dest_geojson)
 
+    def test_sora_kml_export_and_import(self):
+        """
+        Verify that QUCORE UAS corridor planning projects can be exported to and imported from KML with full roundtrip.
+        """
+        from QUCORE.importer_exporter import ImporterExporter
+        from qgis.core import QgsPointXY
+        import tempfile
+        
+        # 1. Define waypoints, pilot position, and parameters
+        waypoints = [
+            (8.751481, 53.841847, 100.0, 30.0, 50.0),
+            (8.336079, 54.006354, 110.0, 25.0, 60.0)
+        ]
+        pilot_pos = QgsPointXY(8.751481, 53.841847)
+        params = self.base_params.copy()
+        params.update({
+            "uas_type": "FixedWing",
+            "maxVelocity": 20.0,
+            "maxWindVelocity": 5.0,
+            "groundRiskBufferMethod": "Parachute"
+        })
+        
+        temp_dir = tempfile.gettempdir()
+        dest_kml = os.path.join(temp_dir, "test_sora_export.kml")
+        
+        try:
+            # 2. Export to KML
+            ImporterExporter.export_kml(dest_kml, waypoints, pilot_pos, params, "Corridor")
+            self.assertTrue(os.path.exists(dest_kml))
+            self.assertGreater(os.path.getsize(dest_kml), 100)
+            
+            # 3. Read back from KML and verify
+            wpts_in, pilot_in, width_in, max_height_in, params_in, geom_in = ImporterExporter.import_kml(dest_kml)
+            
+            # 4. Verify structural correctness
+            self.assertEqual(len(wpts_in), 2)
+            self.assertEqual(geom_in, "Corridor")
+            
+            # First waypoint (height, speed, width should be fully restored!)
+            self.assertAlmostEqual(wpts_in[0][0], 8.751481, places=6)
+            self.assertAlmostEqual(wpts_in[0][1], 53.841847, places=6)
+            self.assertEqual(wpts_in[0][2], 100.0)
+            self.assertEqual(wpts_in[0][3], 30.0)
+            
+            # Second waypoint
+            self.assertAlmostEqual(wpts_in[1][0], 8.336079, places=6)
+            self.assertAlmostEqual(wpts_in[1][1], 54.006354, places=6)
+            self.assertEqual(wpts_in[1][2], 110.0)
+            self.assertEqual(wpts_in[1][3], 25.0)
+            
+            # Pilot Position
+            self.assertIsNotNone(pilot_in)
+            
+            # General parameters restored
+            self.assertEqual(params_in.get("uas_type"), "FixedWing")
+            self.assertEqual(params_in.get("maxVelocity"), 20.0)
+            self.assertEqual(params_in.get("maxWindVelocity"), 5.0)
+            self.assertEqual(params_in.get("groundRiskBufferMethod"), "Parachute")
+            
+        finally:
+            if os.path.exists(dest_kml):
+                os.remove(dest_kml)
+
     def test_parameter_dialog_apply_height_to_all_waypoints(self):
         """
         Verify that applying flight height to all waypoints updates waypoint altitudes correctly
@@ -803,6 +938,76 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             
         # Other settings must be preserved
         self.assertEqual(planner.params.get("maxFlightHeight"), 120.0)
+
+    def test_show_formats_info_dialog(self):
+        """
+        Verify that show_formats_info_dialog runs without errors and instantiates QDialog and QTableWidget correctly.
+        """
+        from QUCORE.plugin import DroneCorridorPlanner
+        from unittest.mock import MagicMock
+        
+        class MockPlanner(DroneCorridorPlanner):
+            def __init__(self):
+                self.params = {"language": "de"}
+                self.tr_strings = {}
+                self.gui = MagicMock()
+                self.iface = MagicMock()
+                
+        planner = MockPlanner()
+        # Mock QDialog's exec_ to avoid blocking
+        from PyQt5.QtWidgets import QDialog
+        original_exec = QDialog.exec_
+        QDialog.exec_ = MagicMock()
+        
+        try:
+            planner.show_formats_info_dialog()
+            # Verify QDialog.exec_ was called
+            self.assertTrue(QDialog.exec_.called)
+        finally:
+            QDialog.exec_ = original_exec
+
+    def test_translations_exist(self):
+        """
+        Verify that the new translation keys for IDEE B and C exist and have de/en values.
+        """
+        import json
+        tests_dir = os.path.dirname(os.path.abspath(__file__))
+        plugin_dir = os.path.dirname(tests_dir)
+        tr_path = os.path.join(plugin_dir, "translations.json")
+        
+        self.assertTrue(os.path.exists(tr_path))
+        with open(tr_path, 'r', encoding='utf-8') as f:
+            tr_strings = json.load(f)
+            
+        keys_to_check = [
+            "import_file_filter",
+            "export_file_filter",
+            "dialog_formats_title",
+            "formats_header",
+            "formats_note",
+            "matrix_col_format",
+            "matrix_col_geom",
+            "matrix_col_height",
+            "matrix_col_speed",
+            "matrix_col_params",
+            "matrix_col_roundtrip",
+            "yes",
+            "no",
+            "yes_full",
+            "limited_qucore",
+            "global_only",
+            "route_only",
+            "menu_formats_matrix",
+            "btn_close_dialog",
+            "matrix_col_pilot"
+        ]
+        
+        for key in keys_to_check:
+            self.assertIn(key, tr_strings)
+            self.assertIn("de", tr_strings[key])
+            self.assertIn("en", tr_strings[key])
+            self.assertGreater(len(tr_strings[key]["de"]), 0)
+            self.assertGreater(len(tr_strings[key]["en"]), 0)
 
     def test_volume_widget_cv_warnings(self):
         """

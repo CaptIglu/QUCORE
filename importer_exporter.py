@@ -260,7 +260,8 @@ class ImporterExporter:
     def import_kml(file_path):
         """
         Parses waypoints and pilot position from a KML file.
-        Returns a tuple: (waypoints, pilot_pos, geometry_type)
+        Returns a tuple: (waypoints, pilot_pos, width, max_height, params, geometry_type)
+        Supports 100% reactivation if qucore_state is stored in ExtendedData.
         """
         from PyQt5.QtXml import QDomDocument
         
@@ -308,6 +309,36 @@ class ImporterExporter:
                 return None
             return recurse(parent)
 
+        # 1. Try to restore complete QUCORE state from ExtendedData
+        data_elems = find_local_elements(root, "Data")
+        for de in data_elems:
+            if de.attribute("name") == "qucore_state":
+                val_elem = find_first_local_element(de, "value")
+                if val_elem is not None and val_elem.text():
+                    state_json = val_elem.text()
+                    try:
+                        import json
+                        state = json.loads(state_json)
+                        waypoints = [tuple(wp) for wp in state.get("waypoints", [])]
+                        pilot_coords = state.get("pilot_pos")
+                        pilot_pos = None
+                        if pilot_coords and len(pilot_coords) >= 2:
+                            pilot_pos = QgsPointXY(pilot_coords[0], pilot_coords[1])
+                        params = state.get("params", {})
+                        # Legacy migrations
+                        if "maxVelocity" in params and "maxOpsSpeedV0" not in params:
+                            params["maxOpsSpeedV0"] = params["maxVelocity"]
+                        if "maxVelocityVmax" in params or "maxCommandSpeedVmax" in params or "maxCommandableSpeedVmax" not in params:
+                            if "maxCommandableSpeedVmax" not in params:
+                                params["maxCommandableSpeedVmax"] = params.get("maxVelocityVmax", params.get("maxCommandSpeedVmax", params.get("maxOpsSpeedV0", 30.0)))
+                        geom_type = state.get("geometry_type", "Corridor")
+                        width = float(params.get("corridorWidth", 50.0))
+                        max_height = float(params.get("maxFlightHeight", 100.0))
+                        return waypoints, pilot_pos, width, max_height, params, geom_type
+                    except Exception as e:
+                        QgsMessageLog.logMessage(f"Failed to restore state from KML qucore_state: {e}", "QUCORE", Qgis.Warning)
+
+        # 2. Fallback: Parse only geometry and pilot from KML
         waypoints = []
         pilot_pos = None
         geometry_type = "Corridor"
@@ -316,7 +347,7 @@ class ImporterExporter:
         
         placemarks = find_local_elements(root, "Placemark")
         
-        # 1. Search for LineString or Point (Circle Center) or Polygon (vertices)
+        # Search for LineString or Point (Circle Center) or Polygon (vertices)
         for pm in placemarks:
             ls = find_first_local_element(pm, "LineString")
             if ls is not None:
@@ -400,7 +431,20 @@ class ImporterExporter:
                                 
         if not waypoints:
             raise ValueError(tr("error_no_waypoints_kml", "Keine gültigen Wegpunkte oder Centerline-Geometrien im KML-Dokument gefunden."))
-        return waypoints, pilot_pos, geometry_type
+            
+        # Fallback values for standard KML files
+        width = 50.0
+        max_height = 100.0
+        if waypoints:
+            max_height = max(wp[2] for wp in waypoints)
+            
+        params = {
+            "maxFlightHeight": max_height,
+            "maxOpsSpeedV0": 30.0,
+            "maxCommandableSpeedVmax": 30.0,
+            "corridorWidth": width
+        }
+        return waypoints, pilot_pos, width, max_height, params, geometry_type
 
     @staticmethod
     def export_kml(file_path, waypoints, pilot_pos, params, geometry_type="Corridor"):
