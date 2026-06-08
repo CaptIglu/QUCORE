@@ -236,6 +236,16 @@
         <p>Um das Plugin zu starten, klicken Sie auf das Luftraum-Symbol in der Vektorsymbolleiste oder öffnen Sie das Menü <b>Vektor</b> &gt; <b>QUCORE</b> &gt; <b>QUCORE – UAS-Korridorplanung (FG/CV/GRB)</b>.</p>
         <p>Es öffnet sich das Bedienpanel, welches standardmäßig im Vordergrund Ihrer QGIS-Karte bleibt.</p>
 
+        <div class="alert alert-important">
+            <b>💡 Wichtiges Grundprinzip: Temporäre vs. Persistente Layer</b><br>
+            Die aktive Bearbeitung und Berechnung Ihrer Flugplanung findet <b>ausschließlich</b> in den temporären Layern der Gruppe <code>QUCORE-Korridorplanung</code> statt.
+            <ul>
+                <li><b>Speichern:</b> Um eine Planung dauerhaft zu sichern, speichern Sie diese als persistenten Layer (GeoPackage).</li>
+                <li><b>Bearbeiten:</b> Möchten Sie eine gespeicherte Planung später ändern, müssen Sie diese reaktivieren (Button <i>„QUCORE Gruppe bearbeiten“</i>). Dadurch wird sie wieder in die aktive, temporäre Gruppe <code>QUCORE-Korridorplanung</code> geladen.</li>
+                <li><b>Änderungen sichern:</b> Nach der Bearbeitung müssen Sie die Planung erneut speichern, um die Änderungen in der Datei zu überschreiben.</li>
+            </ul>
+        </div>
+
         <!-- 2. GEOMETRY MODES -->
         <h2 id="geometry">📐 2. Die drei Geometriemodi</h2>
         <p>Wählen Sie vor dem Zeichnen von Wegpunkten den gewünschten Geometrietyp oben im Dropdown-Menü aus:</p>
@@ -926,8 +936,8 @@
         <ol>
             <li><b>Anpassen der Parameter</b>: Passen Sie bei Bedarf die globalen Berechnungsparameter (z. B. UAS-Typ, Wind, CD) im Einstellungsfenster an und modifizieren Sie die wegpunktspezifischen Parameter (Höhe, Geschwindigkeit, FG-Halbbreite) über die Tabelle <b>Höhe, FG, V_cruise pro Wegpunkt bearbeiten...</b>. Die Karte wird in Echtzeit live aktualisiert.</li>
             <li><b>Abspeichern der temporären Flugplanung als GeoPackage (Persistent)</b>: Da temporäre Memory-Layer beim Schließen von QGIS unwiderruflich verloren gehen, sichern Sie Ihre Planung dauerhaft! Wählen Sie hierzu <b>Datei &gt; Planung als persistenten Layer (GeoPackage) speichern...</b>. Als Dateiname wird Ihnen automatisch das Format <code>QUCORE-Route_JJJJMMTT.gpkg</code> vorgeschlagen. Nach der Dateiauswahl fragt Sie das Plugin nach einem Namen für die neue Layer-Gruppe im QGIS-Projekt (Standard: <code>QUCORE-Persistente_Layer</code>). So können Sie problemlos mehrere unterschiedliche Routen in separaten Gruppen verwalten. Das Plugin speichert alle berechneten Schutzbereiche, Wegpunkte und Einstellungen als echte Dateien auf der Festplatte und l&auml;dt sie in die benannte Gruppe in Ihr QGIS-Projekt.</li>
-            <li><b>Reaktivierung &amp; nachträgliche Anpassung</b>: Bei Bedarf kann diese persistente Flugplanung mit dem QUCORE-Plugin jederzeit wieder angepasst werden. Öffnen Sie dazu einfach das QGIS-Projekt, wählen Sie den gespeicherten Flugweg (Mittelachse oder Wegpunkte aus dem GeoPackage-Layer) aus und lesen Sie ihn wieder ein (<b>Datei &gt; Aktivierten QGIS-Layer einlesen...</b>). Der vollständige Planungszustand (inklusive aller Wegpunkthöhen und SORA-Parameter) wird sofort wieder 1:1 hergestellt.</li>
-            <li><b>Änderungen sichern</b>: Um Ihre vorgenommenen Anpassungen dauerhaft zu behalten, vergessen Sie nicht, die Planung wieder über <b>Datei &gt; Planung als persistenten Layer (GeoPackage) speichern...</b> abzuspeichern. Sie können dabei die vorherige GeoPackage-Datei einfach überschreiben.</li>
+            <li><b>Reaktivierung &amp; nachträgliche Anpassung (QUCORE Gruppe bearbeiten)</b>: Bei Bedarf kann diese persistente Flugplanung mit dem QUCORE-Plugin jederzeit komfortabel wieder angepasst werden. Klicken Sie dazu im Hauptpanel auf den Button <b>QUCORE Gruppe bearbeiten</b> oder wählen Sie im Menüband <b>Datei &gt; QUCORE Gruppe bearbeiten...</b>. Das Plugin scannt automatisch das Projekt nach allen reaktivierbaren QUCORE-Gruppen. Wählen Sie die gewünschte Gruppe aus – der vollständige Planungszustand wird sofort 1:1 wiederhergestellt, inklusive aller individuellen Wegpunkthöhen, Geschwindigkeiten, FG-Breiten und sämtlicher SORA-Berechnungsparameter.</li>
+            <li><b>Änderungen sichern (Überschreiben)</b>: Um Ihre vorgenommenen Anpassungen dauerhaft zu behalten, vergessen Sie nicht, die Planung wieder über <b>Datei &gt; Planung als persistenten Layer (GeoPackage) speichern...</b> abzuspeichern. Das Plugin schlägt Ihnen dabei automatisch den ursprünglichen Dateipfad und Gruppennamen als Standardwert vor, sodass Sie die vorherige GeoPackage-Datei mit wenigen Klicks einfach überschreiben können.</li>
         </ol>
 
         <div class="alert alert-tip">

@@ -1282,5 +1282,45 @@
     "msg_different_manoeuvres_warning": {
         "de": "⚠️ <b>Compliance-Hinweis (Manöverkonzepte):</b><br>Sie haben das Fallschirm-Manöver für das Contingency Volume gewählt, nutzen aber ein anderes Verfahren (ballistisch/Gleitflug) für die Flugbeendigung (GRB). Dies ist physikalisch widersprüchlich (da der Fallschirm bereits entfaltet ist) und wird vom offiziellen LBA-Excel-Tool gesperrt. Dieser Betriebszustand ist unter Umständen nicht konform und erfordert eine zusätzliche Begründung in Ihrem Betriebshandbuch (OM).",
         "en": "⚠️ <b>Compliance Notice (Manoeuvre Approaches):</b><br>You selected the parachute maneuver for the Contingency Volume but a different method (ballistic/glide) for the Ground Risk Buffer termination. This is physically contradictory (as the parachute is already deployed) and is blocked by the official LBA Excel tool. This configuration might not be compliant and requires an additional explanation in your Operations Manual (OM)."
+    },
+    "menu_reactivate_group": {
+        "de": "QUCORE Gruppe bearbeiten...",
+        "en": "Edit QUCORE group..."
+    },
+    "btn_reactivate_group": {
+        "de": "QUCORE Gruppe bearbeiten",
+        "en": "Edit QUCORE group"
+    },
+    "reactivate_dialog_title": {
+        "de": "Bestehende persistente QUCORE Gruppe auswählen",
+        "en": "Select existing QUCORE group"
+    },
+    "reactivate_dialog_label": {
+        "de": "Wählen Sie die QUCORE-Gruppe aus, die zum Bearbeiten reaktiviert werden soll:",
+        "en": "Select the QUCORE group to reactivate for editing:"
+    },
+    "reactivate_no_groups_title": {
+        "de": "Keine reaktivierbaren Gruppen",
+        "en": "No Reactivatable Groups"
+    },
+    "reactivate_no_groups_text": {
+        "de": "Es wurden keine persistenten QUCORE-Gruppen im aktuellen Projekt gefunden.\n\nSpeichern Sie zuerst eine Planung als persistenten Layer (GeoPackage).",
+        "en": "No persistent QUCORE groups were found in the current project.\n\nSave a planning as a persistent layer (GeoPackage) first."
+    },
+    "reactivate_confirm_title": {
+        "de": "QUCORE Gruppe reaktivieren?",
+        "en": "Reactivate QUCORE group?"
+    },
+    "reactivate_confirm_text": {
+        "de": "Möchten Sie die Planung aus der Gruppe '{name}' zum Bearbeiten reaktivieren?\n\nDie aktuelle Planung wird dabei ersetzt.",
+        "en": "Do you want to reactivate the planning from group '{name}' for editing?\n\nThe current planning will be replaced."
+    },
+    "msg_overwrite_confirm_title": {
+        "de": "Datei überschreiben?",
+        "en": "Overwrite File?"
+    },
+    "msg_overwrite_confirm_text": {
+        "de": "Die Datei '{name}' existiert bereits.\n\nMöchten Sie diese Datei überschreiben? Die bestehende Layer-Gruppe '{group}' in QGIS wird dabei aktualisiert.",
+        "en": "The file '{name}' already exists.\n\nDo you want to overwrite this file? The existing layer group '{group}' in QGIS will be updated."
     }
 }

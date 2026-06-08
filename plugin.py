@@ -694,6 +694,10 @@ class DroneCorridorPlanner(object):
         self.lyr_aga = None
         self.lyr_vlos = None
 
+        # Persistent group reactivation state
+        self.last_persistent_gpkg_path = None
+        self.last_persistent_group_name = None
+
     def load_config_params(self):
         """
         Loads parameters from config.json. If the file doesn't exist,
@@ -1002,6 +1006,9 @@ class DroneCorridorPlanner(object):
             self.save_persistent_action = self.file_menu.addAction("Planung als persistenten Layer (GeoPackage) speichern...")
             self.save_persistent_action.triggered.connect(self.save_as_persistent_layer)
             
+            self.reactivate_action = self.file_menu.addAction("QUCORE Gruppe bearbeiten...")
+            self.reactivate_action.triggered.connect(self.reactivate_persistent_group)
+            
             self.file_menu.addSeparator()
             
             self.reset_action = self.file_menu.addAction("Planung zurücksetzen")
@@ -1118,6 +1125,10 @@ class DroneCorridorPlanner(object):
             self.btn_load_active_layer = QPushButton("Aktivierten QGIS-Layer einlesen")
             self.btn_load_active_layer.clicked.connect(self.import_active_layer)
             lay_map.addWidget(self.btn_load_active_layer)
+            
+            self.btn_reactivate = QPushButton("QUCORE Gruppe bearbeiten")
+            self.btn_reactivate.clicked.connect(self.reactivate_persistent_group)
+            lay_map.addWidget(self.btn_reactivate)
             
             layout.addWidget(self.grp_map)
             
@@ -1337,6 +1348,8 @@ class DroneCorridorPlanner(object):
                 self.sora_export_action.setText(self.tr("menu_sora_export", "SORA Dokumentations-Export (.docx)..."))
             if hasattr(self, 'save_persistent_action'):
                 self.save_persistent_action.setText(self.tr("menu_save_persistent", "Planung als persistenten Layer (GeoPackage) speichern..."))
+            if hasattr(self, 'reactivate_action'):
+                self.reactivate_action.setText(self.tr("menu_reactivate_group", "QUCORE Gruppe bearbeiten..."))
             self.reset_action.setText(self.tr("menu_reset", "Planung zurücksetzen"))
             
             self.settings_menu.setTitle(self.tr("menu_settings", "Einstellungen"))
@@ -1387,6 +1400,8 @@ class DroneCorridorPlanner(object):
             self.btn_set_pilot.setText(self.tr("btn_set_pilot", "Pilotenposition setzen"))
             if hasattr(self, 'btn_load_active_layer'):
                 self.btn_load_active_layer.setText(self.tr("btn_load_active_layer", "Aktivierten QGIS-Layer einlesen"))
+            if hasattr(self, 'btn_reactivate'):
+                self.btn_reactivate.setText(self.tr("btn_reactivate_group", "QUCORE Gruppe bearbeiten"))
             self.btn_undo.setToolTip(self.tr("btn_undo_tooltip", "Rückgängig (Undo)"))
             self.btn_redo.setToolTip(self.tr("btn_redo_tooltip", "Wiederholen (Redo)"))
             
@@ -2815,7 +2830,7 @@ class DroneCorridorPlanner(object):
         and adds them permanently to the QGIS project.
         """
         from qgis.core import QgsProject, QgsVectorLayer
-        from PyQt5.QtWidgets import QFileDialog, QMessageBox
+        from PyQt5.QtWidgets import QFileDialog, QMessageBox, QInputDialog
         
         if not self.waypoints:
             QMessageBox.warning(
@@ -2833,9 +2848,13 @@ class DroneCorridorPlanner(object):
         settings = QgsSettings()
         last_dir = settings.value("/QUCORE/last_export_dir", "")
 
-        date_str = QDate.currentDate().toString("yyyyMMdd")
-        default_filename = f"QUCORE-Route_{date_str}.gpkg"
-        default_path = os.path.join(last_dir, default_filename) if last_dir else default_filename
+        # Use remembered gpkg path from reactivation if available, otherwise generate new default
+        if self.last_persistent_gpkg_path and os.path.exists(os.path.dirname(self.last_persistent_gpkg_path)):
+            default_path = self.last_persistent_gpkg_path
+        else:
+            date_str = QDate.currentDate().toString("yyyyMMdd")
+            default_filename = f"QUCORE-Route_{date_str}.gpkg"
+            default_path = os.path.join(last_dir, default_filename) if last_dir else default_filename
 
         file_path, _ = QFileDialog.getSaveFileName(
             self.gui,
@@ -2849,9 +2868,9 @@ class DroneCorridorPlanner(object):
         # Save the directory path for next time
         settings.setValue("/QUCORE/last_export_dir", os.path.dirname(file_path))
 
-        # Ask user for the layer group name
+        # Ask user for the layer group name, using remembered name from reactivation if available
         from PyQt5.QtWidgets import QLineEdit
-        default_group_name = "QUCORE-Persistente_Layer"
+        default_group_name = self.last_persistent_group_name if self.last_persistent_group_name else "QUCORE-Persistente_Layer"
         group_name, ok = QInputDialog.getText(
             self.gui,
             self.tr("group_name_dialog_title", "Layer-Gruppe benennen"),
@@ -2868,6 +2887,36 @@ class DroneCorridorPlanner(object):
 
         if not file_path.lower().endswith('.gpkg'):
             file_path += '.gpkg'
+
+        # Check if file exists and ask user for confirmation to overwrite and update the group
+        if os.path.exists(file_path):
+            reply = QMessageBox.question(
+                self.gui,
+                self.tr("msg_overwrite_confirm_title", "Datei überschreiben?"),
+                self.tr("msg_overwrite_confirm_text", "Die Datei '{name}' existiert bereits.\n\nMöchten Sie diese Datei überschreiben? Die bestehende Layer-Gruppe '{group}' in QGIS wird dabei aktualisiert.")
+                    .format(name=os.path.basename(file_path), group=group_name),
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if reply != QMessageBox.Yes:
+                return
+
+            # Remove layers referencing this GPKG file to avoid lock and duplicate layers
+            project = QgsProject.instance()
+            norm_file_path = os.path.abspath(file_path).lower().replace('\\', '/')
+            
+            layers_to_remove = []
+            for layer in project.mapLayers().values():
+                if not isinstance(layer, QgsVectorLayer):
+                    continue
+                source = layer.source()
+                lyr_file_path = source.split('|')[0] if '|' in source else source
+                norm_lyr_path = os.path.abspath(lyr_file_path).lower().replace('\\', '/')
+                if norm_lyr_path == norm_file_path:
+                    layers_to_remove.append(layer)
+                    
+            if layers_to_remove:
+                for lyr in layers_to_remove:
+                    project.removeMapLayer(lyr.id())
 
         success, error_msg = self.write_to_gpkg(file_path)
 
@@ -2914,12 +2963,148 @@ class DroneCorridorPlanner(object):
             gpkg_lyr.setRenderer(orig_lyr.renderer().clone())
             gpkg_lyr.triggerRepaint()
 
+        # Remember the path and group name for convenient re-save after reactivation
+        self.last_persistent_gpkg_path = file_path
+        self.last_persistent_group_name = group_name
+
         QMessageBox.information(
             self.gui,
             self.tr("msg_save_success_title", "Speichern erfolgreich"),
             self.tr("msg_save_success_text", "Die Korridorplanung wurde erfolgreich als dauerhafter GeoPackage-Layer gespeichert!\n\nDatei: {file_path}\n\nDie Layer wurden zur Gruppe '{group_name}' hinzugefügt.")
                 .format(file_path=file_path, group_name=group_name)
         )
+
+    def find_reactivatable_groups(self):
+        """
+        Scans the QGIS layer tree for groups containing layers with a 'qucore_state' attribute.
+        Returns a list of tuples: (group_name, qucore_state_json, gpkg_file_path)
+        """
+        from qgis.core import QgsProject, QgsLayerTreeNode, QgsVectorLayer, NULL
+
+        root = QgsProject.instance().layerTreeRoot()
+        results = []
+
+        for child in root.children():
+            if child.nodeType() != QgsLayerTreeNode.NodeGroup:
+                continue
+            group = child
+            group_name = group.name()
+
+            # Skip the active editing group
+            if group_name == "QUCORE-Korridorplanung":
+                continue
+
+            # Search all layers in this group for a qucore_state field
+            for layer_node in group.children():
+                if layer_node.nodeType() != QgsLayerTreeNode.NodeLayer:
+                    continue
+                layer = layer_node.layer()
+                if not layer or not isinstance(layer, QgsVectorLayer):
+                    continue
+
+                fields = layer.fields()
+                state_idx = fields.indexOf("qucore_state")
+                if state_idx == -1:
+                    continue
+
+                # Found a layer with qucore_state – extract the value
+                features = list(layer.getFeatures())
+                if not features:
+                    continue
+
+                state_json = features[0].attribute(state_idx)
+                if state_json and state_json != NULL and str(state_json) != 'NULL' and str(state_json).strip():
+                    # Extract the gpkg file path from the layer source
+                    gpkg_path = None
+                    source = layer.source()
+                    if '|' in source:
+                        gpkg_path = source.split('|')[0]
+                    elif source.lower().endswith('.gpkg'):
+                        gpkg_path = source
+
+                    results.append((group_name, str(state_json), gpkg_path))
+                    break  # Found state in this group, no need to check more layers
+
+        return results
+
+    def reactivate_persistent_group(self):
+        """
+        Finds all persistent QUCORE groups in the project and allows the user
+        to select one for reactivation. Restores the complete planning state
+        including all per-waypoint values and calculation parameters.
+        """
+        from PyQt5.QtWidgets import QMessageBox, QInputDialog
+
+        groups = self.find_reactivatable_groups()
+
+        if not groups:
+            QMessageBox.information(
+                self.gui,
+                self.tr("reactivate_no_groups_title", "Keine reaktivierbaren Gruppen"),
+                self.tr("reactivate_no_groups_text", "Es wurden keine persistenten QUCORE-Gruppen im aktuellen Projekt gefunden.\n\nSpeichern Sie zuerst eine Planung als persistenten Layer (GeoPackage).")
+            )
+            return
+
+        selected_group = None
+
+        if len(groups) == 1:
+            # Only one group found – ask for confirmation
+            group_name, state_json, gpkg_path = groups[0]
+            reply = QMessageBox.question(
+                self.gui,
+                self.tr("reactivate_confirm_title", "QUCORE Gruppe reaktivieren?"),
+                self.tr("reactivate_confirm_text", "Möchten Sie die Planung aus der Gruppe '{name}' zum Bearbeiten reaktivieren?\n\nDie aktuelle Planung wird dabei ersetzt.").format(name=group_name),
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                selected_group = groups[0]
+        else:
+            # Multiple groups – show selection dialog
+            group_names = [g[0] for g in groups]
+            chosen, ok = QInputDialog.getItem(
+                self.gui,
+                self.tr("reactivate_dialog_title", "Bestehende persistente QUCORE Gruppe auswählen"),
+                self.tr("reactivate_dialog_label", "Wählen Sie die QUCORE-Gruppe aus, die zum Bearbeiten reaktiviert werden soll:"),
+                group_names,
+                0,
+                False
+            )
+            if ok and chosen:
+                for g in groups:
+                    if g[0] == chosen:
+                        selected_group = g
+                        break
+
+        if selected_group is None:
+            return
+
+        group_name, state_json, gpkg_path = selected_group
+
+        try:
+            self.push_undo()
+            self.deserialize_state(state_json)
+
+            # Remember the gpkg path and group name for convenient re-save
+            if gpkg_path:
+                self.last_persistent_gpkg_path = gpkg_path
+            self.last_persistent_group_name = group_name
+
+            QMessageBox.information(
+                self.gui,
+                self.tr("msg_import_success_title", "Planung reaktiviert"),
+                self.tr("msg_reactivate_success", "Interaktive Drohnen-Korridorplanung erfolgreich aus Layer '{name}' reaktiviert!").format(name=group_name)
+            )
+        except Exception as e:
+            from qgis.core import QgsMessageLog, Qgis
+            QgsMessageLog.logMessage(
+                f"Fehler beim Reaktivieren der persistenten Gruppe '{group_name}': {e}",
+                "QUCORE", Qgis.Warning
+            )
+            QMessageBox.warning(
+                self.gui,
+                self.tr("msg_import_error_title", "Reaktivierungsfehler"),
+                self.tr("msg_reactivate_error", "Fehler beim Reaktivieren der Planung aus Layer:\n{error}").format(error=str(e))
+            )
 
     def capture_map_views(self):
         """
