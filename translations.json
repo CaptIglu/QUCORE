@@ -571,6 +571,38 @@
         "de": "Parameter für den Export festlegen",
         "en": "Define Parameters for Export"
     },
+    "dialog_export_qgc_desc": {
+        "de": "Bitte konfigurieren Sie die Export-Einstellungen für QGroundControl.\n\nWICHTIGER HINWEIS ZUR GESCHWINDIGKEIT:\nAus Sicherheitsgründen wird für jedes Flugsegment zwischen zwei Wegpunkten immer die niedrigere Geschwindigkeit der beiden angrenzenden Wegpunkte angewendet (min(V_A, V_B)). Dies stellt sicher, dass die Drohne den berechneten Ground Risk Buffer zu keinem Zeitpunkt verlässt.",
+        "en": "Please configure the export settings for QGroundControl.\n\nIMPORTANT NOTE ON VELOCITY:\nFor safety reasons, the lower velocity of the two adjacent waypoints (min(V_A, V_B)) is always applied to each flight segment between two waypoints. This ensures that the drone never leaves the calculated Ground Risk Buffer at any time."
+    },
+    "export_geofence_fg": {
+        "de": "Flight Geography",
+        "en": "Flight Geography"
+    },
+    "export_geofence_cv": {
+        "de": "Contingency Volume",
+        "en": "Contingency Volume"
+    },
+    "label_export_geofence": {
+        "de": "GeoFence für Export:",
+        "en": "GeoFence for Export:"
+    },
+    "label_export_resolution": {
+        "de": "Kreis-Auflösung (Stützpunkte pro 90° Bogen):",
+        "en": "Arc resolution (vertices per 90° arc):"
+    },
+    "checkbox_mp_compat": {
+        "de": "Integer-Werte (kompatibel zu MissionPlanner)",
+        "en": "Integer values (compatible with MissionPlanner)"
+    },
+    "warn_mp_compat_title": {
+        "de": "Kompatibilitäts-Warnung",
+        "en": "Compatibility Warning"
+    },
+    "warn_mp_compat_text": {
+        "de": "Wenn Sie Fließkommazahlen zulassen, verliert die Datei möglicherweise ihre Kompatibilität zu ArduPilot MissionPlanner.\nQGroundControl unterstützt Fließkommazahlen.",
+        "en": "If you allow floating-point numbers, the file may lose its compatibility with ArduPilot MissionPlanner.\nQGroundControl supports floating-point numbers."
+    },
     "dialog_export_desc": {
         "de": "Beim Exportieren einer dipul- oder flightplan-Datei müssen die veränderlichen Wegpunkt-Parameter (Höhe, Geschwindigkeit und Flight Geography Breite) in konstante Werte überführt werden, um den offiziellen Formatspezifikationen zu entsprechen. Bitte legen Sie diese konstanten Werte hier fest:",
         "en": "When exporting a dipul or flightplan file, the variable waypoint parameters (height, velocity, and Flight Geography width) must be converted into constant values to match the official format specifications. Please define these constant values here:"
@@ -1328,8 +1360,8 @@
         "en": "Planning Files (*.gpkg *.geojson *.kml *.dipul *.flightplan);;GeoPackage - Full State (*.gpkg);;GeoJSON - Full State (*.geojson);;KML Geometry - Full State (*.kml);;dipul Planning - Limited State (*.dipul);;SkyDemon Flightplan - Route Only (*.flightplan)"
     },
     "export_file_filter": {
-        "de": "GeoPackage - Voller Zustand (*.gpkg);;GeoJSON - Voller Zustand (*.geojson);;KML Geometriedatei - Voller Zustand (*.kml);;dipul Planungsdatei - Eingeschränkter Zustand (*.dipul);;SkyDemon Flugplan - Nur Route (*.flightplan);;SORA Dokumentation (*.docx)",
-        "en": "GeoPackage - Full State (*.gpkg);;GeoJSON - Full State (*.geojson);;KML Geometry - Full State (*.kml);;dipul Planning - Limited State (*.dipul);;SkyDemon Flightplan - Route Only (*.flightplan);;SORA Documentation (*.docx)"
+        "de": "GeoPackage - Voller Zustand (*.gpkg);;GeoJSON - Voller Zustand (*.geojson);;KML Geometriedatei - Voller Zustand (*.kml);;dipul Planungsdatei - Eingeschränkter Zustand (*.dipul);;SkyDemon Flugplan - Nur Route (*.flightplan);;QGroundControl Planungsdatei (*.plan);;SORA Dokumentation (*.docx)",
+        "en": "GeoPackage - Full State (*.gpkg);;GeoJSON - Full State (*.geojson);;KML Geometry - Full State (*.kml);;dipul Planning - Limited State (*.dipul);;SkyDemon Flightplan - Route Only (*.flightplan);;QGroundControl Planning File (*.plan);;SORA Documentation (*.docx)"
     },
     "dialog_formats_title": {
         "de": "QUCORE – Dateiformate im Vergleich",

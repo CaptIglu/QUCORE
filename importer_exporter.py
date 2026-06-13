@@ -2147,3 +2147,127 @@ class ImporterExporter:
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(geojson_data, f, indent=2)
 
+    @staticmethod
+    def export_plan(file_path, waypoints, pilot_pos, params, geometry_type="Corridor", geofence_type="FG", resolution=8, mp_compat=True):
+        from .buffer_calculator import BufferCalculator
+        
+        # Temporarily set resolution
+        orig_res = getattr(BufferCalculator, 'BUFFER_SEGMENTS', 8)
+        try:
+            import sys
+            if 'QUCORE.buffer_calculator' in sys.modules:
+                sys.modules['QUCORE.buffer_calculator'].BUFFER_SEGMENTS = resolution
+            BufferCalculator.BUFFER_SEGMENTS = resolution
+            fg_geom, cv_geom, grb_geom, aga_geom = BufferCalculator.generate_buffers(waypoints, params, geometry_type)
+        finally:
+            if 'QUCORE.buffer_calculator' in sys.modules:
+                sys.modules['QUCORE.buffer_calculator'].BUFFER_SEGMENTS = orig_res
+            BufferCalculator.BUFFER_SEGMENTS = orig_res
+
+        gf_geom = fg_geom if geofence_type == "FG" else cv_geom
+        polygon_coords = []
+        if gf_geom and not gf_geom.isEmpty():
+            if gf_geom.isMultipart():
+                gf_geom = gf_geom.asGeometryCollection()[0]
+            poly = gf_geom.asPolygon()
+            if poly and len(poly) > 0:
+                # QGC expects [Lat, Lon]
+                polygon_coords = [[pt.y(), pt.x()] for pt in poly[0]]
+
+        items = []
+        do_jump_id = 1
+        
+        if geometry_type == "Corridor" and waypoints:
+            home_lat, home_lon, home_alt = waypoints[0][1], waypoints[0][0], waypoints[0][2]
+            current_speed = -1
+            
+            for i, wp in enumerate(waypoints):
+                lon, lat, alt = wp[0], wp[1], wp[2]
+                v_current_wp = float(wp[3]) if len(wp) > 3 else float(params.get("maxOpsSpeedV0", 30.0))
+                
+                # Determine segment speed
+                if i < len(waypoints) - 1:
+                    next_wp = waypoints[i+1]
+                    v_next_wp = float(next_wp[3]) if len(next_wp) > 3 else float(params.get("maxOpsSpeedV0", 30.0))
+                    v_segment = min(v_current_wp, v_next_wp)
+                else:
+                    v_segment = v_current_wp
+                    
+                if mp_compat:
+                    v_segment = int(round(v_segment))
+                    alt = int(round(alt))
+                    
+                if abs(v_segment - current_speed) > 0.01:
+                    items.append({
+                        "autoContinue": True,
+                        "command": 178, # DO_CHANGE_SPEED
+                        "doJumpId": do_jump_id,
+                        "frame": 2,
+                        "params": [1, v_segment, -1, 0, 0, 0, 0],
+                        "type": "SimpleItem"
+                    })
+                    do_jump_id += 1
+                    current_speed = v_segment
+                    
+                items.append({
+                    "autoContinue": True,
+                    "command": 16, # NAV_WAYPOINT
+                    "doJumpId": do_jump_id,
+                    "frame": 3,
+                    "params": [0, 0, 0, 0, lat, lon, alt],
+                    "type": "SimpleItem"
+                })
+                do_jump_id += 1
+        else:
+            if waypoints:
+                # For polygon/circle, calculate center for home pos
+                avg_lat = sum(w[1] for w in waypoints) / len(waypoints)
+                avg_lon = sum(w[0] for w in waypoints) / len(waypoints)
+                avg_alt = waypoints[0][2]
+                home_lat, home_lon, home_alt = avg_lat, avg_lon, avg_alt
+            elif pilot_pos:
+                home_lat, home_lon, home_alt = pilot_pos.y(), pilot_pos.x(), float(params.get("maxFlightHeight", 100.0))
+            else:
+                home_lat, home_lon, home_alt = 0.0, 0.0, 0.0
+
+        if mp_compat:
+            home_alt = int(round(home_alt))
+            
+        cruise_spd = float(params.get("maxOpsSpeedV0", 15.0))
+        hover_spd = 5.0
+        if mp_compat:
+            cruise_spd = int(round(cruise_spd))
+            hover_spd = int(round(hover_spd))
+
+        plan_data = {
+            "fileType": "Plan",
+            "version": 1,
+            "geoFence": {
+                "circles": [],
+                "polygons": [
+                    {
+                        "inclusion": True,
+                        "polygon": polygon_coords,
+                        "version": 1
+                    }
+                ] if polygon_coords else [],
+                "version": 2
+            },
+            "groundStation": "QGroundControl",
+            "mission": {
+                "cruiseSpeed": cruise_spd,
+                "firmwareType": 12,
+                "hoverSpeed": hover_spd,
+                "items": items,
+                "plannedHomePosition": [home_lat, home_lon, home_alt],
+                "vehicleType": 2,
+                "version": 2
+            },
+            "rallyPoints": {
+                "points": [],
+                "version": 2
+            }
+        }
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(plan_data, f, indent=4)

@@ -297,7 +297,7 @@
         </ol>
 
         <h3>📊 3.2. EASA SORA-Volumen Visualisierung (Widget)</h3>
-        <p>Um die räumliche Beziehung zwischen den berechneten EASA SORA Sicherheitsvolumina unmittelbar verständlich zu machen, integriert das Plugin eine fortschrittliche grafische Anzeige direkt in das Bedienpanel:</p>
+        <p>Um die räumliche Beziehung zwischen den berechneten EASA SORA Sicherheitsvolumina unmittelbar verständlich zu machen, integriert das Plugin eine grafische Anzeige direkt in das Bedienpanel:</p>
         <ul>
             <li><b>Zwei Perspektiven</b>: Das Widget zeichnet in Echtzeit sowohl eine <b>Draufsicht (Top-Down-Ansicht)</b> als auch eine <b>Seitenansicht (Vertikalprofil)</b> der Schutzbereiche.</li>
             <li><b>Proportionale Skalierung</b>: Die Schachtelung der Volumina (Flight Geography $\rightarrow$ Contingency Volume $\rightarrow$ Ground Risk Buffer) wird maßstabsgetreu und proportional zueinander gerendert.</li>
@@ -324,7 +324,7 @@
 
         <div class="alert alert-tip">
             <b>⚡ Echtzeit-Kartenupdate & Excel-Tabelle kopieren</b><br>
-            Änderungen in der Tabelle aktualisieren die Korridorpuffer <b>sofort live auf der QGIS-Karte</b>. Verwenden Sie den Button <b>Tabelle kopieren (für Excel)</b> oder <code>Ctrl+C</code>, um die gesamte Tabelle im TSV-Format zu kopieren und nahtlos in MS Excel einzufügen. Klicken Sie auf <b>Abbrechen</b>, um alle Änderungen rückgängig zu machen.
+            Änderungen in der Tabelle aktualisieren die Korridorpuffer <b>sofort live auf der QGIS-Karte</b>. Verwenden Sie den Button <b>Tabelle kopieren (für Excel)</b> oder <code>Ctrl+C</code>, um die gesamte Tabelle im CSV-Format zu kopieren und nahtlos in MS Excel einzufügen. Klicken Sie auf <b>Abbrechen</b>, um alle Änderungen rückgängig zu machen.
         </div>
 
         <div class="alert alert-important">
@@ -367,7 +367,7 @@
             <li>Wird ein Fallschirmmanöver gewählt, werden die Roll- und Nickwinkel-Felder automatisch ausgegraut, da sie für das Manöver rechnerisch irrelevant sind. Bei Standard-Manövern werden sie typgerecht (Fixed-Wing oder Multikopter) aktiviert.</li>
             <li><b>Überziehgeschwindigkeit (stallVelocity)</b>: Dieses Eingabefeld im Reiter <i>„UAS Eigenschaften“</i> wird automatisch <b>ausgegraut (deaktiviert)</b>, wenn als UAS-Typ <i>„Multikopter“</i> ausgewählt wird. Da Multikopter über keine aerodynamische Überziehgeschwindigkeit verfügen, schützt dies vor irreführenden Parametrisierungen.</li>
             <li><b>Gleitflug-Methode bei Multikoptern (GRB)</b>: Die Option <i>„Antrieb aus mit Gleitflug“</i> im Reiter <i>„Ground Risk Buffer“</i> wird automatisch <b>ausgegraut (deaktiviert)</b>, wenn der UAS-Typ <i>„Multikopter“</i> aktiv ist. Da Multikopter nicht antriebslos gleiten können, ist diese Methode für sie gesperrt.</li>
-            <li><b>Standardwerte-Hilfe</b>: Zur besseren Orientierung sind alle offiziellen physikalischen Standard- bzw. Richtwerte (aus dem BMVD/dipul Helgoland-Szenario) direkt im Label der Eingabefelder in Klammern aufgeführt. Zudem wurden alle Fallschirm-Öffnungszeiten einheitlich auf den sicheren Defaultwert von <b>2.0 s</b> normiert.</li>
+            <li><b>Standardwerte-Hilfe</b>: Zur besseren Orientierung sind alle offiziellen physikalischen Standard- bzw. Richtwerte (von der BMV/dipul Website) direkt im Label der Eingabefelder in Klammern aufgeführt. Zudem wurden alle Fallschirm-Öffnungszeiten einheitlich auf den sicheren Defaultwert von <b>2.0 s</b> normiert.</li>
         </ul>
         <p>Das Plugin unterstützt umfangreiche Datei-Schnittstellen für den flexiblen Datenaustausch und die direkte Integration in GIS-Workflows:</p>
         
@@ -625,13 +625,13 @@
                     <td><code>maxVelocity</code></td>
                     <td>Float</td>
                     <td><code>20.0</code></td>
-                    <td>Maximale Betriebsgeschwindigkeit ($v_0$) in m/s (zuvor 30.0).</td>
+                    <td>Maximale Betriebsgeschwindigkeit ($v_0$) in m/s .</td>
                 </tr>
                 <tr>
                     <td><code>maxCharacteristicDimension</code></td>
                     <td>Float</td>
                     <td><code>1.2</code></td>
-                    <td>Charakteristische Dimension des UAS ($CD$) in Metern (z. B. Spannweite) (zuvor 3.6).</td>
+                    <td>Charakteristische Dimension des UAS ($CD$) in Metern (z. B. Spannweite)</td>
                 </tr>
                 <tr>
                     <td><code>stallVelocity</code></td>
@@ -942,11 +942,10 @@
 
         <div class="alert alert-tip">
             <strong>💡 Best Practice: 1:1 Planungs-Sicherung und Reaktivierung (Round-Trip)</strong><br>
-            Das QUCORE-Plugin verfügt über ein intelligentes, verlustfreies Speicher- und Reaktivierungssystem (Round-Trip), mit dem Sie Ihre Drohnen-Korridorplanungen jederzeit nahtlos sichern und exakt wiederherstellen können. Nutzen Sie hierfür bevorzugt diese drei voll unterstützten Kanäle:
+            Das QUCORE-Plugin verfügt über ein intelligentes, verlustfreies Speicher- und Reaktivierungssystem (Round-Trip), mit dem Sie Ihre Drohnen-Korridorplanungen jederzeit nahtlos sichern und exakt wiederherstellen können. Nutzen Sie hierfür bevorzugt folgende Formate:
             <ul style="margin-top: 8px; margin-bottom: 0;">
-                <li><strong>1. Das offizielle <code>.dipul</code>-Dateiformat (SORA-Austausch):</strong> Beim KML/DIPUL-Export wird die komplette Planungskonfiguration als unsichtbarer <code>qucore_state</code>-Payload in den JSON-Eigenschaften abgelegt. Der DIPUL-Import liest diesen Zustand automatisch aus und stellt alle Tabellenwerte, Wegpunkte und Regler sofort 1:1 wieder her.</li>
-                <li><strong>2. Das GeoPackage (<code>.gpkg</code>) Datenbank-Format:</strong> Beim Speichern als persistenten Layer wird ein verstecktes Textfeld namens <code>qucore_state</code> in den Wegpunkte-Layer injiziert. Das Einlesen dieses Wegpunkte-Layers aus Ihrem persistenten GeoPackage reaktiviert die interaktive Planung sofort.</li>
-                <li><strong>3. Die QGIS-Projektdatei (<code>.qgz</code> / <code>.qgs</code>):</strong> Ihre interaktive Sitzung wird bei jeder Wegpunkt- oder Parameteränderung vollautomatisch in den Projektmetadaten gesichert. Nach dem erneuten Öffnen der Projektdatei fährt das Plugin exakt an der letzten Position fort.</li>
+                <li><strong>1. Das GeoPackage (<code>.gpkg</code>) Datenbank-Format:</strong> Beim Speichern als persistenten Layer wird ein verstecktes Textfeld namens <code>qucore_state</code> in den Wegpunkte-Layer injiziert. Das Einlesen dieses Wegpunkte-Layers aus Ihrem persistenten GeoPackage reaktiviert die interaktive Planung sofort.</li>
+                <li><strong>2. Die QGIS-Projektdatei (<code>.qgz</code> / <code>.qgs</code>):</strong> Ihre interaktive Sitzung wird bei jeder Wegpunkt- oder Parameteränderung vollautomatisch in den Projektmetadaten gesichert. Nach dem erneuten Öffnen der Projektdatei fährt das Plugin exakt an der letzten Position fort.</li>
             </ul>
         </div>
 
@@ -983,7 +982,7 @@
         </div>
 
         <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
-        <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">UAS-Sicherheitskorridor-Berechnungstool &copy; 2026. Alle Rechte vorbehalten.</p>
+        <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">QUCORE - Variable UAS Corridor Planning &copy; 2026. Alle Rechte vorbehalten.</p>
     </div>
 </body>
 </html>

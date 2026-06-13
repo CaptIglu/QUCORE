@@ -6,17 +6,22 @@ from PyQt5.QtWidgets import (
     QDialog,
     QFormLayout,
     QDoubleSpinBox,
+    QSpinBox,
+    QComboBox,
     QDialogButtonBox,
     QLabel,
-    QVBoxLayout
+    QVBoxLayout,
+    QCheckBox,
+    QMessageBox
 )
 
 class ExportSettingsDialog(QDialog):
-    def __init__(self, parent=None, default_height=100.0, default_speed=30.0, default_fg_width=50.0, params=None):
+    def __init__(self, parent=None, default_height=100.0, default_speed=30.0, default_fg_width=50.0, params=None, is_qgc_plan=False):
         super(ExportSettingsDialog, self).__init__(parent)
         self.resize(350, 220)
         self.setModal(True)
         self.params = params if params is not None else {}
+        self.is_qgc_plan = is_qgc_plan
         
         # Load translations
         self.tr_strings = {}
@@ -40,6 +45,16 @@ class ExportSettingsDialog(QDialog):
                     "(Höhe, Geschwindigkeit und Flight Geography Breite) in konstante Werte überführt werden, um den "
                     "offiziellen Formatspezifikationen zu entsprechen. Bitte legen Sie diese konstanten Werte hier fest:")
         )
+        if self.is_qgc_plan:
+            info_label.setText(
+                self.tr("dialog_export_qgc_desc", 
+                        "Bitte konfigurieren Sie die Export-Einstellungen für QGroundControl.\n\n"
+                        "WICHTIGER HINWEIS ZUR GESCHWINDIGKEIT:\n"
+                        "Aus Sicherheitsgründen wird für jedes Flugsegment zwischen zwei Wegpunkten immer die niedrigere "
+                        "Geschwindigkeit der beiden angrenzenden Wegpunkte angewendet (min(V_A, V_B)). Dies stellt sicher, "
+                        "dass die Drohne den berechneten Ground Risk Buffer zu keinem Zeitpunkt verlässt.")
+            )
+            
         info_label.setWordWrap(True)
         info_label.setStyleSheet("QLabel { margin-bottom: 10px; font-size: 11px; }")
         main_layout.addWidget(info_label)
@@ -47,33 +62,51 @@ class ExportSettingsDialog(QDialog):
         # Form Layout
         form_layout = QFormLayout()
         
-        self.spin_height = QDoubleSpinBox()
-        self.spin_height.setRange(0.0, 2000.0)
-        self.spin_height.setDecimals(1)
-        self.spin_height.setSingleStep(5.0)
-        self.spin_height.setValue(default_height)
-        self.spin_height.setSuffix(" m")
-        self.spin_height.setStyleSheet("QDoubleSpinBox { padding: 4px; font-weight: bold; }")
-        form_layout.addRow(self.tr("label_export_height", "Konstante Flughöhe (m):"), self.spin_height)
-        
-        self.spin_speed = QDoubleSpinBox()
-        self.spin_speed.setRange(0.1, 200.0)
-        self.spin_speed.setDecimals(1)
-        self.spin_speed.setSingleStep(1.0)
-        self.spin_speed.setValue(default_speed)
-        self.spin_speed.setSuffix(" m/s")
-        self.spin_speed.setStyleSheet("QDoubleSpinBox { padding: 4px; font-weight: bold; }")
-        form_layout.addRow(self.tr("label_export_speed", "Konstante Geschwindigkeit (m/s):"), self.spin_speed)
-        
-        self.spin_fg_width = QDoubleSpinBox()
-        self.spin_fg_width.setRange(1.0, 5000.0)
-        self.spin_fg_width.setDecimals(1)
-        self.spin_fg_width.setSingleStep(5.0)
-        self.spin_fg_width.setValue(default_fg_width)
-        self.spin_fg_width.setSuffix(" m")
-        self.spin_fg_width.setStyleSheet("QDoubleSpinBox { padding: 4px; font-weight: bold; }")
-        form_layout.addRow(self.tr("label_export_fg_width", "Konstante FG-Breite (m):"), self.spin_fg_width)
-        
+        if not self.is_qgc_plan:
+            self.spin_height = QDoubleSpinBox()
+            self.spin_height.setRange(0.0, 2000.0)
+            self.spin_height.setDecimals(1)
+            self.spin_height.setSingleStep(5.0)
+            self.spin_height.setValue(default_height)
+            self.spin_height.setSuffix(" m")
+            self.spin_height.setStyleSheet("QDoubleSpinBox { padding: 4px; font-weight: bold; }")
+            form_layout.addRow(self.tr("label_export_height", "Konstante Flughöhe (m):"), self.spin_height)
+            
+            self.spin_speed = QDoubleSpinBox()
+            self.spin_speed.setRange(0.1, 200.0)
+            self.spin_speed.setDecimals(1)
+            self.spin_speed.setSingleStep(1.0)
+            self.spin_speed.setValue(default_speed)
+            self.spin_speed.setSuffix(" m/s")
+            self.spin_speed.setStyleSheet("QDoubleSpinBox { padding: 4px; font-weight: bold; }")
+            form_layout.addRow(self.tr("label_export_speed", "Konstante Geschwindigkeit (m/s):"), self.spin_speed)
+            
+            self.spin_fg_width = QDoubleSpinBox()
+            self.spin_fg_width.setRange(1.0, 5000.0)
+            self.spin_fg_width.setDecimals(1)
+            self.spin_fg_width.setSingleStep(5.0)
+            self.spin_fg_width.setValue(default_fg_width)
+            self.spin_fg_width.setSuffix(" m")
+            self.spin_fg_width.setStyleSheet("QDoubleSpinBox { padding: 4px; font-weight: bold; }")
+            form_layout.addRow(self.tr("label_export_fg_width", "Konstante FG-Breite (m):"), self.spin_fg_width)
+        else:
+            self.combo_geofence = QComboBox()
+            self.combo_geofence.addItem(self.tr("export_geofence_fg", "Flight Geography"), "FG")
+            self.combo_geofence.addItem(self.tr("export_geofence_cv", "Contingency Volume"), "CV")
+            self.combo_geofence.setStyleSheet("QComboBox { padding: 4px; font-weight: bold; }")
+            form_layout.addRow(self.tr("label_export_geofence", "GeoFence für Export:"), self.combo_geofence)
+            
+            self.spin_resolution = QSpinBox()
+            self.spin_resolution.setRange(3, 8)
+            self.spin_resolution.setValue(8)
+            self.spin_resolution.setStyleSheet("QSpinBox { padding: 4px; font-weight: bold; }")
+            form_layout.addRow(self.tr("label_export_resolution", "Kreis-Auflösung (Stützpunkte pro 90° Bogen):"), self.spin_resolution)
+            
+            self.check_mp_compat = QCheckBox(self.tr("checkbox_mp_compat", "Integer-Werte (kompatibel zu MissionPlanner)"))
+            self.check_mp_compat.setChecked(True)
+            self.check_mp_compat.stateChanged.connect(self.on_mp_compat_changed)
+            form_layout.addRow("", self.check_mp_compat)
+            
         main_layout.addLayout(form_layout)
         
         # Buttons
@@ -88,4 +121,16 @@ class ExportSettingsDialog(QDialog):
         return self.tr_strings.get(key, {}).get(lang, default)
         
     def get_values(self):
-        return self.spin_height.value(), self.spin_speed.value(), self.spin_fg_width.value()
+        if not self.is_qgc_plan:
+            return self.spin_height.value(), self.spin_speed.value(), self.spin_fg_width.value()
+        else:
+            return self.combo_geofence.currentData(), self.spin_resolution.value(), self.check_mp_compat.isChecked()
+
+    def on_mp_compat_changed(self, state):
+        if state != Qt.Checked:
+            QMessageBox.warning(
+                self,
+                self.tr("warn_mp_compat_title", "Kompatibilitäts-Warnung"),
+                self.tr("warn_mp_compat_text", "Wenn Sie Fließkommazahlen zulassen, verliert die Datei möglicherweise ihre Kompatibilität zu ArduPilot MissionPlanner.\nQGroundControl unterstützt Fließkommazahlen.")
+            )
+
