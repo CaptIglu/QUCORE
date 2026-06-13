@@ -516,7 +516,15 @@ class AboutDialog(QDialog):
             bg_color = "#e8f8f5"
             border_color = "#2ecc71"
             title_text = self.tr("license_activated", "Aktiviert (Kommerzielle Lizenz)")
-            sub_text = f"Registrierte E-Mail: {saved_key.split(':', 1)[0] if ':' in saved_key else 'In Konfigurationsdatei freigeschaltet'}"
+            
+            # Extract email if possible
+            display_email = "In Konfigurationsdatei freigeschaltet"
+            if '|' in saved_key:
+                display_email = saved_key.split('|', 1)[0]
+            elif ':' in saved_key: # legacy fallback display
+                display_email = saved_key.split(':', 1)[0]
+                
+            sub_text = f"Registrierte E-Mail: {display_email}"
             btn_text = self.tr("btn_change_license_key", "Lizenzschlüssel ändern...")
             status_style = "color: #27ae60; font-weight: bold; font-size: 11px;"
         elif remaining_days < 0:
@@ -545,21 +553,42 @@ class AboutDialog(QDialog):
         self.btn_license.setText(btn_text)
 
     def on_license_button_clicked(self):
-        from PyQt5.QtWidgets import QInputDialog, QMessageBox
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QDialogButtonBox, QMessageBox
         from PyQt5.QtCore import QSettings
         
-        key, ok = QInputDialog.getText(
-            self,
-            self.tr("license_prompt_title", "Lizenzschlüssel eingeben"),
-            self.tr("license_prompt_label", "Bitte geben Sie Ihren Lizenzschlüssel ein (Format: E-Mail:Schlüssel):"),
-            text=""
-        )
-        if ok:
-            key_clean = key.strip()
-            if verify_license_key(key_clean):
+        dlg = QDialog(self)
+        dlg.setWindowTitle(self.tr("license_prompt_title", "Lizenzschlüssel eingeben"))
+        layout = QVBoxLayout(dlg)
+        
+        lbl_email = QLabel(self.tr("license_prompt_email", "E-Mail (Registrierter Nutzer):"))
+        le_email = QLineEdit()
+        layout.addWidget(lbl_email)
+        layout.addWidget(le_email)
+        
+        lbl_key = QLabel(self.tr("license_prompt_key", "Lizenzschlüssel (z.B. ABCD-1234-...):"))
+        le_key = QLineEdit()
+        layout.addWidget(lbl_key)
+        layout.addWidget(le_key)
+        
+        btn_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        btn_box.accepted.connect(dlg.accept)
+        btn_box.rejected.connect(dlg.reject)
+        layout.addWidget(btn_box)
+        
+        if dlg.exec_() == QDialog.Accepted:
+            email = le_email.text().strip()
+            key = le_key.text().strip()
+            
+            if not email or not key:
+                QMessageBox.warning(self, "Fehler", self.tr("license_empty_error", "Bitte E-Mail und Schlüssel eingeben."))
+                return
+                
+            saved_val = f"{email}|{key}"
+            
+            if verify_license_key(saved_val):
                 # Save key in settings
                 settings = QSettings()
-                settings.setValue("QUCORE/license_key", key_clean)
+                settings.setValue("QUCORE/license_key", saved_val)
                 
                 # Update plugin params
                 self.plugin.params["commercial_unlocked"] = True
@@ -582,28 +611,46 @@ class AboutDialog(QDialog):
                 QMessageBox.warning(
                     self,
                     self.tr("license_invalid_title", "Ungültiger Lizenzschlüssel"),
-                    self.tr("license_invalid_text", "Ungültiger Lizenzschlüssel. Bitte geben Sie den Schlüssel im Format 'E-Mail:Schlüssel' ein. Wenden Sie sich bei Fragen an tim.strohbach@gmx.de.")
+                    self.tr("license_invalid_text", "Ungültiger Lizenzschlüssel oder falsche E-Mail-Adresse. Wenden Sie sich bei Fragen an tim.strohbach@gmx.de.")
                 )
 
 
-def verify_license_key(key_str):
+def get_major_version():
+    """Extracts the major version from metadata.txt in the plugin directory."""
+    import os
+    plugin_dir = os.path.dirname(__file__)
+    metadata_path = os.path.join(plugin_dir, 'metadata.txt')
+    try:
+        with open(metadata_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                if line.startswith('version='):
+                    version_str = line.split('=')[1].strip()
+                    return version_str.split('.')[0]
+    except Exception:
+        pass
+    return "1"
+
+def verify_license_key(saved_val):
     """
-    Verifies if a license key is a valid SHA-256 hash of an email and secret salt.
-    Format of license key is expected to be 'email:signature'
+    Verifies if a license key is valid for the current major version.
+    Format of saved_val is expected to be 'email|key'
     """
-    if not key_str or ":" not in key_str:
+    if not saved_val or "|" not in saved_val:
         return False
     try:
-        email, signature = key_str.split(":", 1)
-        email = email.strip().lower()
-        signature = signature.strip()
+        email, entered_key = saved_val.split("|", 1)
+        email_clean = email.lower().strip()
+        major_version = get_major_version()
+        salt = "DC_2026"
         
         import hashlib
-        secret_salt = "QUCORE-SALT-2026-SECRET"
-        data = f"{email}:{secret_salt}".encode('utf-8')
-        expected_sig = hashlib.sha256(data).hexdigest()[:16]
+        raw_str = f"{email_clean}|{major_version}|{salt}"
+        hash_obj = hashlib.sha256(raw_str.encode('utf-8'))
+        short_hex = hash_obj.hexdigest()[:16].upper()
+        expected_key = f"{short_hex[:4]}-{short_hex[4:8]}-{short_hex[8:12]}-{short_hex[12:16]}"
         
-        return signature == expected_sig
+        entered_key_clean = entered_key.upper().strip()
+        return entered_key_clean == expected_key
     except Exception:
         return False
 
