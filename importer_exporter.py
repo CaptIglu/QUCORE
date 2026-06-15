@@ -12,15 +12,10 @@ _tr_strings = {}
 def tr(key, default=""):
     global _tr_strings
     plugin_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(plugin_dir, "config.json")
-    lang = "de"
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                cfg = json.load(f)
-                lang = cfg.get("language", "de")
-        except Exception:
-            pass
+    try:
+        lang = ConfigManager.get_default("language")
+    except KeyError:
+        lang = "de"
             
     if not _tr_strings:
         tr_path = os.path.join(plugin_dir, "translations.json")
