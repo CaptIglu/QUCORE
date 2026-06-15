@@ -371,7 +371,7 @@ class AboutDialog(QDialog):
         title_layout.setSpacing(4)
         
         name = self.metadata.get('name', 'QUCORE (Variable UAS Corridor Planning)')
-        version = self.metadata.get('version', '0.7.1')
+        version = self.metadata.get('version', '0.7.2')
         
         lbl_name = QLabel(f'<span style="font-size: 16px; font-weight: bold; color: #2c3e50;">{name}</span>')
         lbl_version = QLabel(f'<span style="font-size: 12px; color: #7f8c8d; font-weight: 500;">Version {version}</span>')
