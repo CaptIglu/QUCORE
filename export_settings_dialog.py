@@ -16,12 +16,13 @@ from PyQt5.QtWidgets import (
 )
 
 class ExportSettingsDialog(QDialog):
-    def __init__(self, parent=None, default_height=100.0, default_speed=30.0, default_fg_width=50.0, params=None, is_qgc_plan=False):
+    def __init__(self, parent=None, default_height=100.0, default_speed=30.0, default_fg_width=50.0, params=None, is_qgc_plan=False, is_waypoints_export=False):
         super(ExportSettingsDialog, self).__init__(parent)
         self.resize(350, 220)
         self.setModal(True)
         self.params = params if params is not None else {}
         self.is_qgc_plan = is_qgc_plan
+        self.is_waypoints_export = is_waypoints_export
         
         # Load translations
         self.tr_strings = {}
@@ -45,10 +46,10 @@ class ExportSettingsDialog(QDialog):
                     "(Höhe, Geschwindigkeit und Flight Geography Breite) in konstante Werte überführt werden, um den "
                     "offiziellen Formatspezifikationen zu entsprechen. Bitte legen Sie diese konstanten Werte hier fest:")
         )
-        if self.is_qgc_plan:
+        if self.is_qgc_plan or self.is_waypoints_export:
             info_label.setText(
                 self.tr("dialog_export_qgc_desc", 
-                        "Bitte konfigurieren Sie die Export-Einstellungen für QGroundControl.\n\n"
+                        "Bitte konfigurieren Sie die Export-Einstellungen.\n\n"
                         "WICHTIGER HINWEIS ZUR GESCHWINDIGKEIT:\n"
                         "Aus Sicherheitsgründen wird für jedes Flugsegment zwischen zwei Wegpunkten immer die niedrigere "
                         "Geschwindigkeit der beiden angrenzenden Wegpunkte angewendet (min(V_A, V_B)). Dies stellt sicher, "
@@ -62,7 +63,7 @@ class ExportSettingsDialog(QDialog):
         # Form Layout
         form_layout = QFormLayout()
         
-        if not self.is_qgc_plan:
+        if not self.is_qgc_plan and not self.is_waypoints_export:
             self.spin_height = QDoubleSpinBox()
             self.spin_height.setRange(0.0, 2000.0)
             self.spin_height.setDecimals(1)
@@ -90,9 +91,22 @@ class ExportSettingsDialog(QDialog):
             self.spin_fg_width.setStyleSheet("QDoubleSpinBox { padding: 4px; font-weight: bold; }")
             form_layout.addRow(self.tr("label_export_fg_width", "Konstante FG-Breite (m):"), self.spin_fg_width)
         else:
+            if self.is_waypoints_export:
+                self.check_flightplan = QCheckBox(self.tr("checkbox_export_flightplan", "Flugweg exportieren"))
+                self.check_flightplan.setChecked(True)
+                form_layout.addRow("", self.check_flightplan)
+                
+                self.check_geofence = QCheckBox(self.tr("checkbox_export_geofence", "GeoFence exportieren"))
+                self.check_geofence.setChecked(True)
+                self.check_geofence.stateChanged.connect(self.on_geofence_check_changed)
+                form_layout.addRow("", self.check_geofence)
+
             self.combo_geofence = QComboBox()
             self.combo_geofence.addItem(self.tr("export_geofence_fg", "Flight Geography"), "FG")
             self.combo_geofence.addItem(self.tr("export_geofence_cv", "Contingency Volume"), "CV")
+            if self.is_waypoints_export:
+                self.combo_geofence.addItem(self.tr("export_geofence_grb", "Ground Risk Buffer"), "GRB")
+
             self.combo_geofence.setStyleSheet("QComboBox { padding: 4px; font-weight: bold; }")
             form_layout.addRow(self.tr("label_export_geofence", "GeoFence für Export:"), self.combo_geofence)
             
@@ -126,10 +140,22 @@ class ExportSettingsDialog(QDialog):
         return self.tr_strings.get(key, {}).get(lang, default)
         
     def get_values(self):
-        if not self.is_qgc_plan:
+        if not self.is_qgc_plan and not self.is_waypoints_export:
             return self.spin_height.value(), self.spin_speed.value(), self.spin_fg_width.value()
-        else:
+        elif self.is_qgc_plan:
             return self.combo_geofence.currentData(), self.spin_resolution.value(), self.check_mp_compat.isChecked()
+        else:
+            # is_waypoints_export
+            return (self.check_flightplan.isChecked(), 
+                    self.check_geofence.isChecked(), 
+                    self.combo_geofence.currentData(), 
+                    self.spin_resolution.value(), 
+                    self.check_mp_compat.isChecked())
+
+    def on_geofence_check_changed(self, state):
+        enabled = (state == Qt.Checked)
+        self.combo_geofence.setEnabled(enabled)
+        self.spin_resolution.setEnabled(enabled)
 
     def on_mp_compat_changed(self, state):
         if state != Qt.Checked:

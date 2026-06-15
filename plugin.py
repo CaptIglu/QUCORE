@@ -371,7 +371,7 @@ class AboutDialog(QDialog):
         title_layout.setSpacing(4)
         
         name = self.metadata.get('name', 'QUCORE (Variable UAS Corridor Planning)')
-        version = self.metadata.get('version', '0.7.0')
+        version = self.metadata.get('version', '0.7.1')
         
         lbl_name = QLabel(f'<span style="font-size: 16px; font-weight: bold; color: #2c3e50;">{name}</span>')
         lbl_version = QLabel(f'<span style="font-size: 12px; color: #7f8c8d; font-weight: 500;">Version {version}</span>')
@@ -3544,7 +3544,7 @@ class DroneCorridorPlanner(object):
             self.gui, 
             self.tr("dialog_export_file_title", "Datei exportieren"), 
             default_path, 
-            self.tr("export_file_filter", "GeoPackage - Voller Zustand (*.gpkg);;GeoJSON - Voller Zustand (*.geojson);;KML Geometriedatei - Voller Zustand (*.kml);;dipul Planungsdatei - Eingeschränkter Zustand (*.dipul);;SkyDemon Flugplan - Nur Route (*.flightplan);;QGroundControl Planungsdatei (*.plan);;SORA Dokumentation (*.docx)")
+            self.tr("export_file_filter", "GeoPackage - Voller Zustand (*.gpkg);;GeoJSON - Voller Zustand (*.geojson);;KML Geometriedatei - Voller Zustand (*.kml);;dipul Planungsdatei - Eingeschränkter Zustand (*.dipul);;SkyDemon Flugplan - Nur Route (*.flightplan);;QGroundControl Planungsdatei (*.plan);;MissionPlanner / Ardupilot Wegpunkte (*.waypoints);;SORA Dokumentation (*.docx)")
         )
         if not file_path:
             return
@@ -3558,6 +3558,7 @@ class DroneCorridorPlanner(object):
         is_gpkg = file_path.lower().endswith('.gpkg') or "gpkg" in selected_filter.lower()
         is_docx = file_path.lower().endswith('.docx') or "docx" in selected_filter.lower()
         is_plan = file_path.lower().endswith('.plan') or "planungsdatei (*.plan)" in selected_filter.lower()
+        is_waypoints = file_path.lower().endswith('.waypoints') or "waypoints" in selected_filter.lower()
         
         if is_kml and not file_path.lower().endswith('.kml'):
             file_path += '.kml'
@@ -3571,7 +3572,9 @@ class DroneCorridorPlanner(object):
             file_path += '.docx'
         elif is_plan and not file_path.lower().endswith('.plan'):
             file_path += '.plan'
-        elif not is_kml and not is_flightplan and not is_docx and not is_geojson and not is_gpkg and not is_plan and not file_path.lower().endswith('.dipul'):
+        elif is_waypoints and not file_path.lower().endswith('.waypoints'):
+            file_path += '.waypoints'
+        elif not is_kml and not is_flightplan and not is_docx and not is_geojson and not is_gpkg and not is_plan and not is_waypoints and not file_path.lower().endswith('.dipul'):
             file_path += '.dipul'
             
         if is_gpkg:
@@ -3694,7 +3697,8 @@ class DroneCorridorPlanner(object):
                 default_fg = Counter(fgs).most_common(1)[0][0]
                 
         is_qgc_plan = file_path.lower().endswith('.plan')
-        dialog = ExportSettingsDialog(self.gui, default_h, default_spd, default_fg, params=self.params, is_qgc_plan=is_qgc_plan)
+        is_waypoints_export = file_path.lower().endswith('.waypoints')
+        dialog = ExportSettingsDialog(self.gui, default_h, default_spd, default_fg, params=self.params, is_qgc_plan=is_qgc_plan, is_waypoints_export=is_waypoints_export)
         if dialog.exec_() != QDialog.Accepted:
             return
             
@@ -3702,22 +3706,38 @@ class DroneCorridorPlanner(object):
             
         try:
             params_export = self.params.copy()
-            if not is_qgc_plan:
+            if not is_qgc_plan and not is_waypoints_export:
                 const_height, const_speed, const_fg_width = values
                 params_export["corridorWidth"] = const_fg_width
                 if file_path.lower().endswith('.flightplan'):
                     ImporterExporter.export_flightplan(file_path, self.waypoints, const_height)
                 else:
                     ImporterExporter.export_dipul(file_path, self.waypoints, self.pilot_pos, const_height, const_speed, params_export, self.geometry_type)
-            else:
+                
+                QMessageBox.information(
+                    self.gui, 
+                    self.tr("msg_export_success_title", "Export erfolgreich"), 
+                    self.tr("msg_export_success_text", "Die Datei wurde erfolgreich exportiert unter:\n{path}").format(path=file_path)
+                )
+            elif is_qgc_plan:
                 geofence_type, resolution, mp_compat = values
                 ImporterExporter.export_plan(file_path, self.waypoints, self.pilot_pos, params_export, self.geometry_type, geofence_type, resolution, mp_compat)
                 
-            QMessageBox.information(
-                self.gui, 
-                self.tr("msg_export_success_title", "Export erfolgreich"), 
-                self.tr("msg_export_success_text", "Die Datei wurde erfolgreich exportiert unter:\n{path}").format(path=file_path)
-            )
+                QMessageBox.information(
+                    self.gui, 
+                    self.tr("msg_export_success_title", "Export erfolgreich"), 
+                    self.tr("msg_export_success_text", "Die Datei wurde erfolgreich exportiert unter:\n{path}").format(path=file_path)
+                )
+            elif is_waypoints_export:
+                export_mission, export_fence, geofence_type, resolution, mp_compat = values
+                created_files = ImporterExporter.export_waypoints(file_path, self.waypoints, self.pilot_pos, params_export, self.geometry_type, export_mission, export_fence, geofence_type, resolution, mp_compat)
+                
+                msg_files = "\n".join(created_files)
+                QMessageBox.information(
+                    self.gui, 
+                    self.tr("msg_export_success_title", "Export erfolgreich"), 
+                    self.tr("msg_export_success_text", "Die Dateien wurden erfolgreich exportiert unter:\n{path}").format(path=msg_files)
+                )
         except Exception as e:
             QMessageBox.critical(
                 self.gui, 
