@@ -491,7 +491,7 @@ class AltitudeTableDialog(QDialog):
             # Validation for Speed (col 3)
             elif col == 3:
                 item_spd = self.table.item(row, col)
-                max_vel = float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
+                max_vel = float(self.params.get("maxCommandableSpeedVmax", self.params.get("maxVelocityVmax", self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))))
                 uas_type = self.params.get("uas_type", "FixedWing")
                 stall_vel = float(self.params.get("stallVelocity", 10.0))
                 
@@ -503,7 +503,7 @@ class AltitudeTableDialog(QDialog):
                             title = self.tr("msg_speed_limit_title", "Geschwindigkeit überschritten")
                             text = self.tr("msg_speed_limit_text", 
                                            "Die eingegebene Geschwindigkeit ({spd_val:.1f} m/s) darf die maximale "
-                                           "Betriebsgeschwindigkeit des UAS ({max_vel:.1f} m/s) nicht überschreiten.\n"
+                                           "kommandierbare Geschwindigkeit des UAS ({max_vel:.1f} m/s) nicht überschreiten.\n"
                                            "Der Wert wurde automatisch auf {max_vel:.1f} m/s zurückgesetzt.").format(spd_val=spd_val, max_vel=max_vel)
                             QMessageBox.warning(self, title, text)
                             item_spd.setText(f"{max_vel:.1f}")
