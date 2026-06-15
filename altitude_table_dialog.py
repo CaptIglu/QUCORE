@@ -137,6 +137,12 @@ class AltitudeTableDialog(QDialog):
             item_fg.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.table.setItem(idx, 4, item_fg)
             
+        # Initialize total label early so recalculate_distances_and_durations can update it
+        self.lbl_total = QLabel("")
+        self.lbl_total.setStyleSheet("font-weight: bold;")
+        if self.geometry_type in ["Circle", "Polygon"]:
+            self.lbl_total.setVisible(False)
+
         # Run recalculation for each row initially to populate CV/GRB columns
         self.table.blockSignals(True)
         for r in range(len(self.waypoints)):
@@ -173,8 +179,6 @@ class AltitudeTableDialog(QDialog):
         
         lay_options.addStretch()
         
-        self.lbl_total = QLabel("")
-        self.lbl_total.setStyleSheet("font-weight: bold;")
         lay_options.addWidget(self.lbl_total)
         
         layout.addLayout(lay_options)
