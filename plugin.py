@@ -992,13 +992,13 @@ class DroneCorridorPlanner(object):
 
     def remove_layers_and_group(self):
         """
-        Removes the QUCORE-Korridorplanung group and all its memory layers from the map canvas and registry.
+        Removes the Aktive QUCORE-Korridorplanung group and all its memory layers from the map canvas and registry.
         """
         try:
             from qgis.core import QgsProject, QgsLayerTreeNode
             root = QgsProject.instance().layerTreeRoot()
-            group = root.findGroup("QUCORE-Korridorplanung")
-            if group:
+            groups = [g for g in root.findGroups() if g.name() == "Active QUCORE-Plan"]
+            for group in groups:
                 # Remove all child layers in the group from the map layer registry
                 for child in list(group.children()):
                     if child.nodeType() == QgsLayerTreeNode.NodeLayer:
@@ -1635,20 +1635,19 @@ class DroneCorridorPlanner(object):
         """
         self._force_restyle = force_restyle
         root = QgsProject.instance().layerTreeRoot()
-        self.layer_group = root.findGroup("QUCORE-Korridorplanung")
+        self.layer_group = root.findGroup("Active QUCORE-Plan")
         if self.layer_group is None:
-            self.layer_group = root.insertGroup(0, "QUCORE-Korridorplanung")
+            self.layer_group = root.insertGroup(0, "Active QUCORE-Plan")
             self.layer_group.setItemVisibilityChecked(True)
         else:
             # Ensure it is at the very top (index 0) of the layer tree
-            if root.children() and root.children()[0] != self.layer_group:
+            parent = self.layer_group.parent()
+            if parent and (parent != root or (root.children() and root.children()[0].name() != self.layer_group.name())):
                 try:
-                    parent = self.layer_group.parent()
-                    if parent:
-                        cloned_group = self.layer_group.clone()
-                        root.insertChildNode(0, cloned_group)
-                        parent.removeChildNode(self.layer_group)
-                        self.layer_group = cloned_group
+                    cloned_group = self.layer_group.clone()
+                    parent.removeChildNode(self.layer_group)
+                    root.insertChildNode(0, cloned_group)
+                    self.layer_group = cloned_group
                 except Exception as e:
                     from qgis.core import QgsMessageLog, Qgis
                     QgsMessageLog.logMessage(
@@ -2081,7 +2080,7 @@ class DroneCorridorPlanner(object):
 
     def remove_planning_layers(self):
         """
-        Removes the QUCORE-Korridorplanung layer group and all its layers from the QGIS project.
+        Removes the Aktive QUCORE-Korridorplanung layer group and all its layers from the QGIS project.
         """
         from qgis.core import QgsProject, QgsLayerTreeNode
         
@@ -2095,14 +2094,16 @@ class DroneCorridorPlanner(object):
                 
         # 2. Clean up group and any leftover layers in it
         root = project.layerTreeRoot()
-        layer_group = root.findGroup("QUCORE-Korridorplanung")
-        if layer_group:
+        groups = [g for g in root.findGroups() if g.name() == "Active QUCORE-Plan"]
+        for layer_group in groups:
             for child in list(layer_group.children()):
                 if child.nodeType() == QgsLayerTreeNode.NodeLayer:
                     layer = child.layer()
                     if layer:
                         project.removeMapLayer(layer.id())
-            root.removeChildNode(layer_group)
+            parent = layer_group.parent()
+            if parent:
+                parent.removeChildNode(layer_group)
             
         self.layer_group = None
         self.lyr_waypoints = None
@@ -3221,7 +3222,7 @@ class DroneCorridorPlanner(object):
             group_name = group.name()
 
             # Skip the active editing group
-            if group_name == "QUCORE-Korridorplanung":
+            if group_name == "Active QUCORE-Plan":
                 continue
 
             # Search all layers in this group for a qucore_state field

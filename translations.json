@@ -1411,18 +1411,54 @@
         "de": "<i>* Hinweis: GeoPackage, GeoJSON und aus QUCORE exportierte KML-Dateien speichern den 100% exakten Zustand Ihrer Planung (einschließlich aller SORA-Parameter) für die spätere Weiterbearbeitung.</i>",
         "en": "<i>* Note: GeoPackage, GeoJSON and KML files exported from QUCORE save the 100% exact state of your planning (including all SORA parameters) for later editing.</i>"
     },
-    "matrix_col_format": { "de": "Format", "en": "Format" },
-    "matrix_col_geom": { "de": "Geometrie", "en": "Geometry" },
-    "matrix_col_height": { "de": "Wegpunkt-Höhen", "en": "Waypoint Altitudes" },
-    "matrix_col_speed": { "de": "Wegpunkt-Geschw.", "en": "Waypoint Speeds" },
-    "matrix_col_params": { "de": "Berechnungsparameter", "en": "Calculation Params" },
-    "matrix_col_roundtrip": { "de": "Round-Trip fähig?", "en": "Round-Trip Support?" },
-    "yes": { "de": "Ja", "en": "Yes" },
-    "no": { "de": "Nein", "en": "No" },
-    "yes_full": { "de": "Ja (Vollständig)", "en": "Yes (Full)" },
-    "limited_qucore": { "de": "Eingeschränkt (Vollständig bei QUCORE-Dateien)", "en": "Limited (Full with QUCORE files)" },
-    "global_only": { "de": "Nur global", "en": "Global only" },
-    "route_only": { "de": "Nur Route / Wegpunkte", "en": "Route / Waypoints only" },
+    "matrix_col_format": {
+        "de": "Format",
+        "en": "Format"
+    },
+    "matrix_col_geom": {
+        "de": "Geometrie",
+        "en": "Geometry"
+    },
+    "matrix_col_height": {
+        "de": "Wegpunkt-Höhen",
+        "en": "Waypoint Altitudes"
+    },
+    "matrix_col_speed": {
+        "de": "Wegpunkt-Geschw.",
+        "en": "Waypoint Speeds"
+    },
+    "matrix_col_params": {
+        "de": "Berechnungsparameter",
+        "en": "Calculation Params"
+    },
+    "matrix_col_roundtrip": {
+        "de": "Round-Trip fähig?",
+        "en": "Round-Trip Support?"
+    },
+    "yes": {
+        "de": "Ja",
+        "en": "Yes"
+    },
+    "no": {
+        "de": "Nein",
+        "en": "No"
+    },
+    "yes_full": {
+        "de": "Ja (Vollständig)",
+        "en": "Yes (Full)"
+    },
+    "limited_qucore": {
+        "de": "Eingeschränkt (Vollständig bei QUCORE-Dateien)",
+        "en": "Limited (Full with QUCORE files)"
+    },
+    "global_only": {
+        "de": "Nur global",
+        "en": "Global only"
+    },
+    "route_only": {
+        "de": "Nur Route / Wegpunkte",
+        "en": "Route / Waypoints only"
+    },
     "menu_formats_matrix": {
         "de": "Dateiformate im Vergleich...",
         "en": "File Format Comparison..."
