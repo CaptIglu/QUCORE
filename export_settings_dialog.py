@@ -107,6 +107,11 @@ class ExportSettingsDialog(QDialog):
             self.check_mp_compat.stateChanged.connect(self.on_mp_compat_changed)
             form_layout.addRow("", self.check_mp_compat)
             
+            warn_vcv_label = QLabel(self.tr("warn_vertical_cv_text", "WICHTIG ZUM VERTIKALEN CV:\nDas vertikale Contingency Volume (das 'Dach' des Korridors) ist in dieser Datei NICHT enthalten! Da MAVLink derzeit keine sichere Methode bietet, Geofence-Höhen pro Wegpunkt dynamisch zu setzen, müssen Sie ein sicheres Höhenlimit (z.B. FENCE_ALT_MAX) manuell in QGC/MissionPlanner festlegen."))
+            warn_vcv_label.setWordWrap(True)
+            warn_vcv_label.setStyleSheet("QLabel { margin-top: 10px; color: #b71c1c; font-size: 11px; }")
+            form_layout.addRow(warn_vcv_label)
+            
         main_layout.addLayout(form_layout)
         
         # Buttons
