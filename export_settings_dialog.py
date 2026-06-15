@@ -102,7 +102,7 @@ class ExportSettingsDialog(QDialog):
             self.spin_resolution.setStyleSheet("QSpinBox { padding: 4px; font-weight: bold; }")
             form_layout.addRow(self.tr("label_export_resolution", "Kreis-Auflösung (Stützpunkte pro 90° Bogen):"), self.spin_resolution)
             
-            self.check_mp_compat = QCheckBox(self.tr("checkbox_mp_compat", "Integer-Werte (kompatibel zu MissionPlanner)"))
+            self.check_mp_compat = QCheckBox(self.tr("checkbox_mp_compat", "Integer-Werte (verbesserte Kompatibilität)"))
             self.check_mp_compat.setChecked(True)
             self.check_mp_compat.stateChanged.connect(self.on_mp_compat_changed)
             form_layout.addRow("", self.check_mp_compat)
@@ -136,6 +136,6 @@ class ExportSettingsDialog(QDialog):
             QMessageBox.warning(
                 self,
                 self.tr("warn_mp_compat_title", "Kompatibilitäts-Warnung"),
-                self.tr("warn_mp_compat_text", "Wenn Sie Fließkommazahlen zulassen, verliert die Datei möglicherweise ihre Kompatibilität zu ArduPilot MissionPlanner.\nQGroundControl unterstützt Fließkommazahlen.")
+                self.tr("warn_mp_compat_text", "QGroundControl unterstützt Fließkommazahlen. Andere Bodenstationen benötigen jedoch möglicherweise Integer-Werte für Geschwindigkeit und Höhe.")
             )
 

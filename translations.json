@@ -592,16 +592,16 @@
         "en": "Arc resolution (vertices per 90° arc):"
     },
     "checkbox_mp_compat": {
-        "de": "Integer-Werte (kompatibel zu MissionPlanner)",
-        "en": "Integer values (compatible with MissionPlanner)"
+        "de": "Integer-Werte (verbesserte Kompatibilität)",
+        "en": "Integer values (improved compatibility)"
     },
     "warn_mp_compat_title": {
         "de": "Kompatibilitäts-Warnung",
         "en": "Compatibility Warning"
     },
     "warn_mp_compat_text": {
-        "de": "Wenn Sie Fließkommazahlen zulassen, verliert die Datei möglicherweise ihre Kompatibilität zu ArduPilot MissionPlanner.\nQGroundControl unterstützt Fließkommazahlen.",
-        "en": "If you allow floating-point numbers, the file may lose its compatibility with ArduPilot MissionPlanner.\nQGroundControl supports floating-point numbers."
+        "de": "QGroundControl unterstützt Fließkommazahlen. Andere Bodenstationen benötigen jedoch möglicherweise Integer-Werte für Geschwindigkeit und Höhe.",
+        "en": "QGroundControl supports floating-point numbers. But some ground stations may require integer values for speed and altitude."
     },
     "warn_vertical_cv_text": {
         "de": "WICHTIG ZUM VERTIKALEN CV:\nDas vertikale Contingency Volume (das 'Dach' des Korridors) ist in dieser Datei NICHT enthalten! Da MAVLink derzeit keine sichere Methode bietet, Geofence-Höhen pro Wegpunkt dynamisch zu setzen, müssen Sie ein sicheres Höhenlimit (z.B. FENCE_ALT_MAX) manuell in QGC/MissionPlanner festlegen.",

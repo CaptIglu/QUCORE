@@ -2238,6 +2238,8 @@ class ImporterExporter:
         if mp_compat:
             cruise_spd = int(round(cruise_spd))
             hover_spd = int(round(hover_spd))
+            
+        fw_type = 3 if mp_compat else 12
 
         plan_data = {
             "fileType": "Plan",
@@ -2256,7 +2258,7 @@ class ImporterExporter:
             "groundStation": "QGroundControl",
             "mission": {
                 "cruiseSpeed": cruise_spd,
-                "firmwareType": 12,
+                "firmwareType": fw_type,
                 "hoverSpeed": hover_spd,
                 "items": items,
                 "plannedHomePosition": [home_lat, home_lon, home_alt],
