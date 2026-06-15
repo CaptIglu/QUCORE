@@ -708,8 +708,8 @@
         "en": "Velocity Limit Exceeded"
     },
     "msg_speed_limit_text": {
-        "de": "Die eingegebene Geschwindigkeit ({spd_val:.1f} m/s) darf die maximale Betriebsgeschwindigkeit des UAS ({max_vel:.1f} m/s) nicht überschreiten.\nDer Wert wurde automatisch auf {max_vel:.1f} m/s zurückgesetzt.",
-        "en": "The entered velocity ({spd_val:.1f} m/s) must not exceed the maximum operating velocity of the UAS ({max_vel:.1f} m/s).\nThe value was automatically reset to {max_vel:.1f} m/s."
+        "de": "Die eingegebene Geschwindigkeit ({spd_val:.1f} m/s) darf die maximal kommandierbare Geschwindigkeit des UAS ({max_vel:.1f} m/s) nicht überschreiten.\nDer Wert wurde automatisch auf {max_vel:.1f} m/s zurückgesetzt.",
+        "en": "The entered velocity ({spd_val:.1f} m/s) must not exceed the maximum commandable velocity of the UAS ({max_vel:.1f} m/s).\nThe value was automatically reset to {max_vel:.1f} m/s."
     },
     "msg_stall_limit_title": {
         "de": "Unterschreitung der Stall-Speed",
