@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import (
     QDialogButtonBox,
     QCheckBox
 )
+from .config_manager import ConfigManager
 
 class ParameterDialog(QDialog):
     def __init__(self, parent=None, current_params=None, waypoints=None):
@@ -52,35 +53,7 @@ class ParameterDialog(QDialog):
         # ----------------------------------------------------
         # DEFAULT PARAMETERS FROM HELGOLAND DIPUL
         # ----------------------------------------------------
-        self.params = {
-            "uas_type": "FixedWing",
-            "altimetry": "GPS",
-            "maxOpsSpeedV0": 30.0,
-            "maxCommandableSpeedVmax": 30.0,
-            "maxCharacteristicDimension": 3.6,
-            "maxRollAngle": 30.0,
-            "maxPitchAngle": 30.0,
-            "glideRatioDenominator": 10.0,
-            "maxWindVelocity": 3.0,
-            "stallVelocity": 10.0,
-            "gpsInaccuracy": 3.0,
-            "positionError": 3.0,
-            "mapError": 1.0,
-            "reactionTime": 1.0,
-            "altitudeErrorGps": 4.0,
-            "altitudeErrorBarometric": 1.0,
-            "corridorWidth": 50.0,
-            "maxFlightHeight": 100.0,
-            "groundRiskBufferMethod": "Simplified",
-            "lateralContingencyManoeuvreType": "Default",
-            "verticalContingencyManoeuvreType": "Default",
-            "parachuteOpeningTimeLateral": 2.0,
-            "parachuteOpeningTimeVertical": 2.0,
-            "parachuteOpeningTimeGRB": 2.0,
-            "parachuteDescentRate": 2.0,
-            "additionalErrorLateral": 0.0,
-            "additionalErrorVertical": 0.0
-        }
+        self.params = ConfigManager.get_instance()._defaults.copy()
 
         # Apply config defaults to baseline params
         if self.config_defaults:

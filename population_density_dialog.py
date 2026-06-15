@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import json
+from .config_manager import ConfigManager
+import json
 from PyQt5.QtCore import Qt, QVariant
 from PyQt5.QtWidgets import (
     QDialog,
@@ -54,7 +56,7 @@ class PopulationDensityDialog(QDialog):
         self.update_aa_area_display()
 
     def tr(self, key, default=""):
-        lang = self.params.get("language", "de")
+        lang = ConfigManager.get_param(self.params, "language")
         return self.tr_strings.get(key, {}).get(lang, default)
 
     def init_ui(self):

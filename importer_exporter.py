@@ -5,6 +5,7 @@ import uuid
 import xml.etree.ElementTree as ET
 from qgis.core import QgsPointXY, QgsGeometry, QgsMessageLog, Qgis
 from .buffer_calculator import BufferCalculator
+from .config_manager import ConfigManager
 
 _tr_strings = {}
 
@@ -62,8 +63,8 @@ class ImporterExporter:
                 if "maxCommandableSpeedVmax" not in params:
                     params["maxCommandableSpeedVmax"] = params.get("maxVelocityVmax", params.get("maxCommandSpeedVmax", params.get("maxOpsSpeedV0", 30.0)))
             geom_type = qucore_state.get("geometry_type", "Corridor")
-            width = float(params.get("corridorWidth", 50.0))
-            max_height = float(params.get("maxFlightHeight", 100.0))
+            width = float(ConfigManager.get_param(params, "corridorWidth"))
+            max_height = float(ConfigManager.get_param(params, "maxFlightHeight"))
             return waypoints, pilot_pos, width, max_height, params, geom_type
 
         geometry = payload.get("geometry", {})
@@ -113,7 +114,7 @@ class ImporterExporter:
         params["maxFlightHeight"] = max_height
         
         # 4. Waypoints with loaded maxFlightHeight and maxVelocity
-        max_velocity = float(params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))
+        max_velocity = float(ConfigManager.get_param(params, "maxOpsSpeedV0"))
         waypoints = []
         
         if geom_type == "Circle":
@@ -169,11 +170,11 @@ class ImporterExporter:
             lateral_block["width"] = width
             
         # Normalize UAS type (Multikopter -> Rotorcraft, otherwise FixedWing)
-        uas_type_raw = params.get("uas_type", "FixedWing")
+        uas_type_raw = ConfigManager.get_param(params, "uas_type")
         uas_type = "Rotorcraft" if uas_type_raw in ["Multikopter", "Rotorcraft"] else "FixedWing"
         
         # Normalize Altimetry (Baro -> Barometric, otherwise GPS)
-        altimetry_raw = params.get("altimetry", "GPS")
+        altimetry_raw = ConfigManager.get_param(params, "altimetry")
         altimetry = "Barometric" if altimetry_raw in ["Baro", "Barometric"] else "GPS"
         
         # Dynamically build uasProperties values matching the strict DIPUL schema
@@ -186,18 +187,18 @@ class ImporterExporter:
         }
         
         if uas_type == "FixedWing":
-            uas_values["maxRollAngle"] = float(params.get("maxRollAngle", 30.0))
-            uas_values["glideRatioDenominator"] = float(params.get("glideRatioDenominator", 10.0))
-            uas_values["stallVelocity"] = float(params.get("stallVelocity", 10.0))
+            uas_values["maxRollAngle"] = float(ConfigManager.get_param(params, "maxRollAngle"))
+            uas_values["glideRatioDenominator"] = float(ConfigManager.get_param(params, "glideRatioDenominator"))
+            uas_values["stallVelocity"] = float(ConfigManager.get_param(params, "stallVelocity"))
         else: # Rotorcraft
             uas_values["maxPitchAngle"] = float(params.get("maxPitchAngle", 30.0))
 
         # Dynamically build settings block to match presence/absence of pilotPosition
         settings_block = {
             "bufferDirection": "Outward",
-            "groundRiskBufferMethod": params.get("groundRiskBufferMethod", "Simplified"),
-            "lateralContingencyManoeuvreType": params.get("lateralContingencyManoeuvreType", "Default"),
-            "verticalContingencyManoeuvreType": params.get("verticalContingencyManoeuvreType", "Default")
+            "groundRiskBufferMethod": ConfigManager.get_param(params, "groundRiskBufferMethod"),
+            "lateralContingencyManoeuvreType": ConfigManager.get_param(params, "lateralContingencyManoeuvreType"),
+            "verticalContingencyManoeuvreType": ConfigManager.get_param(params, "verticalContingencyManoeuvreType")
         }
         if pilot_coords:
             settings_block["pilotPosition"] = pilot_coords
@@ -219,14 +220,14 @@ class ImporterExporter:
             "payload": {
                 "assumptions": {
                     "values": {
-                        "gpsInaccuracy": float(params.get("gpsInaccuracy", 3.0)),
-                        "positionError": float(params.get("positionError", 3.0)),
-                        "mapError": float(params.get("mapError", 1.0)),
-                        "reactionTime": float(params.get("reactionTime", 1.0)),
-                        "altitudeErrorGps": float(params.get("altitudeErrorGps", 4.0)),
-                        "altitudeErrorBarometric": float(params.get("altitudeErrorBarometric", 1.0)),
-                        "additionalErrorLateral": float(params.get("additionalErrorLateral", 0.0)),
-                        "additionalErrorVertical": float(params.get("additionalErrorVertical", 0.0))
+                        "gpsInaccuracy": float(ConfigManager.get_param(params, "gpsInaccuracy")),
+                        "positionError": float(ConfigManager.get_param(params, "positionError")),
+                        "mapError": float(ConfigManager.get_param(params, "mapError")),
+                        "reactionTime": float(ConfigManager.get_param(params, "reactionTime")),
+                        "altitudeErrorGps": float(ConfigManager.get_param(params, "altitudeErrorGps")),
+                        "altitudeErrorBarometric": float(ConfigManager.get_param(params, "altitudeErrorBarometric")),
+                        "additionalErrorLateral": float(ConfigManager.get_param(params, "additionalErrorLateral")),
+                        "additionalErrorVertical": float(ConfigManager.get_param(params, "additionalErrorVertical"))
                     },
                     "rationales": {
                         "gpsInaccuracy": "", "positionError": "", "mapError": "", "reactionTime": "",
@@ -332,8 +333,8 @@ class ImporterExporter:
                             if "maxCommandableSpeedVmax" not in params:
                                 params["maxCommandableSpeedVmax"] = params.get("maxVelocityVmax", params.get("maxCommandSpeedVmax", params.get("maxOpsSpeedV0", 30.0)))
                         geom_type = state.get("geometry_type", "Corridor")
-                        width = float(params.get("corridorWidth", 50.0))
-                        max_height = float(params.get("maxFlightHeight", 100.0))
+                        width = float(ConfigManager.get_param(params, "corridorWidth"))
+                        max_height = float(ConfigManager.get_param(params, "maxFlightHeight"))
                         return waypoints, pilot_pos, width, max_height, params, geom_type
                     except Exception as e:
                         QgsMessageLog.logMessage(f"Failed to restore state from KML qucore_state: {e}", "QUCORE", Qgis.Warning)
@@ -499,7 +500,7 @@ class ImporterExporter:
         centerline_xml = ""
         if geometry_type == "Circle":
             w0 = waypoints[0]
-            alt = w0[2] if len(w0) > 2 else float(params.get("maxFlightHeight", 100.0))
+            alt = w0[2] if len(w0) > 2 else float(ConfigManager.get_param(params, "maxFlightHeight"))
             centerline_xml = f"""      <Placemark id="{str(uuid.uuid4())}">
         <name>Center</name>
 {extended_data_xml}
@@ -511,11 +512,11 @@ class ImporterExporter:
         else:
             route_coord_strs = []
             for w in waypoints:
-                alt = w[2] if len(w) > 2 else float(params.get("maxFlightHeight", 100.0))
+                alt = w[2] if len(w) > 2 else float(ConfigManager.get_param(params, "maxFlightHeight"))
                 route_coord_strs.append(f"{w[0]:.14f},{w[1]:.14f},{alt:.2f}")
             if geometry_type == "Polygon" and waypoints:
                 w0 = waypoints[0]
-                alt0 = w0[2] if len(w0) > 2 else float(params.get("maxFlightHeight", 100.0))
+                alt0 = w0[2] if len(w0) > 2 else float(ConfigManager.get_param(params, "maxFlightHeight"))
                 route_coord_strs.append(f"{w0[0]:.14f},{w0[1]:.14f},{alt0:.2f}")
             route_coords = " ".join(route_coord_strs)
             
@@ -874,7 +875,7 @@ class ImporterExporter:
         import uuid
         from datetime import datetime
         
-        lang = params.get("language", "de")
+        lang = ConfigManager.get_param(params, "language")
         if lang not in ["de", "en"]:
             lang = "de"
         is_en = (lang == "en")
@@ -985,28 +986,28 @@ class ImporterExporter:
             comment_str = fallback_comment
             
         # UAS Properties
-        uas_type = params.get("uas_type", "FixedWing")
+        uas_type = ConfigManager.get_param(params, "uas_type")
         is_copter = uas_type == "Multikopter" or "kopter" in str(uas_type).lower()
         if is_en:
             uas_type_str = "Multicopter" if is_copter else "Fixed Wing"
-            altimetry = params.get("altimetry", "GPS")
+            altimetry = ConfigManager.get_param(params, "altimetry")
             altimetry_str = "GPS-based" if altimetry == "GPS" else "Barometric"
         else:
             uas_type_str = "Multikopter" if is_copter else "Flächenflieger (Fixed Wing)"
-            altimetry = params.get("altimetry", "GPS")
+            altimetry = ConfigManager.get_param(params, "altimetry")
             altimetry_str = "GPS-basiert" if altimetry == "GPS" else "Barometrisch"
         
-        v0 = params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0))
-        vmax = params.get("maxCommandableSpeedVmax", params.get("maxVelocityVmax", params.get("maxCommandSpeedVmax", v0)))
-        v_wind = params.get("maxWindVelocity", 10.0)
-        cd = params.get("maxCharacteristicDimension", 1.5)
+        v0 = ConfigManager.get_param(params, "maxOpsSpeedV0")
+        vmax = ConfigManager.get_param(params, "maxCommandableSpeedVmax")
+        v_wind = ConfigManager.get_param(params, "maxWindVelocity")
+        cd = ConfigManager.get_param(params, "maxCharacteristicDimension")
         
         uas_spec_fields = []
         is_fixed_wing = not is_copter
         if is_fixed_wing:
-            glide = params.get("glideRatioDenominator", 10.0)
-            roll = params.get("maxRollAngle", 30.0)
-            v_stall = params.get("stallVelocity", 10.0)
+            glide = ConfigManager.get_param(params, "glideRatioDenominator")
+            roll = ConfigManager.get_param(params, "maxRollAngle")
+            v_stall = ConfigManager.get_param(params, "stallVelocity")
             if is_en:
                 uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Glide Ratio: {glide:.1f}</w:t></w:r></w:p>')
                 uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Maximum Roll Angle: {roll:.1f}°</w:t></w:r></w:p>')
@@ -1016,16 +1017,16 @@ class ImporterExporter:
                 uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Maximaler Rollwinkel: {roll:.1f}°</w:t></w:r></w:p>')
                 uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Geschwindigkeit bei Strömungsabriss (v_stall): {v_stall:.1f} m/s</w:t></w:r></w:p>')
         else:
-            pitch = params.get("maxPitchAngle", 45.0)
+            pitch = ConfigManager.get_param(params, "maxPitchAngle")
             if is_en:
                 uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Maximum Pitch Angle: {pitch:.1f}°</w:t></w:r></w:p>')
             else:
                 uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Maximaler Nickwinkel: {pitch:.1f}°</w:t></w:r></w:p>')
             
-        grb_method = params.get("groundRiskBufferMethod", "Simplified")
+        grb_method = ConfigManager.get_param(params, "groundRiskBufferMethod")
         if grb_method == "Parachute" or "parachute" in str(grb_method).lower():
-            t_para_grb = params.get("parachuteOpeningTimeGRB", 1.0)
-            v_z = params.get("parachuteDescentRate", 2.0)
+            t_para_grb = ConfigManager.get_param(params, "parachuteOpeningTimeGRB")
+            v_z = ConfigManager.get_param(params, "parachuteDescentRate")
             if is_en:
                 uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Parachute Opening Time (GRB): {t_para_grb:.1f} s</w:t></w:r></w:p>')
                 uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Parachute Descent Rate (vZ): {v_z:.1f} m/s</w:t></w:r></w:p>')
@@ -1033,17 +1034,17 @@ class ImporterExporter:
                 uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Öffnungszeit (GRB): {t_para_grb:.1f} s</w:t></w:r></w:p>')
                 uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Sinkgeschwindigkeit (vZ): {v_z:.1f} m/s</w:t></w:r></w:p>')
             
-        lat_man_type = params.get("lateralContingencyManoeuvreType", "Default")
+        lat_man_type = ConfigManager.get_param(params, "lateralContingencyManoeuvreType")
         if lat_man_type == "Parachute" or "parachute" in str(lat_man_type).lower():
-            t_para_lat = params.get("parachuteOpeningTimeLateral", 2.0)
+            t_para_lat = ConfigManager.get_param(params, "parachuteOpeningTimeLateral")
             if is_en:
                 uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Parachute Opening Time (horizontal): {t_para_lat:.1f} s</w:t></w:r></w:p>')
             else:
                 uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Fallschirm Öffnungszeit (horizontal): {t_para_lat:.1f} s</w:t></w:r></w:p>')
             
-        vert_man_type = params.get("verticalContingencyManoeuvreType", "Default")
+        vert_man_type = ConfigManager.get_param(params, "verticalContingencyManoeuvreType")
         if vert_man_type == "Parachute" or "parachute" in str(vert_man_type).lower():
-            t_para_vert = params.get("parachuteOpeningTimeVertical", 2.0)
+            t_para_vert = ConfigManager.get_param(params, "parachuteOpeningTimeVertical")
             if is_en:
                 uas_spec_fields.append(f'<w:p><w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">Parachute Opening Time (vertical): {t_para_vert:.1f} s</w:t></w:r></w:p>')
             else:
@@ -1064,8 +1065,8 @@ class ImporterExporter:
             else:
                 method_str = str(grb_method)
                 
-            lat_man = "Turn / Hover" if params.get("lateralContingencyManoeuvreType") == "Default" else "Parachute Deployment"
-            vert_man = "Descent / Climb" if params.get("verticalContingencyManoeuvreType") == "Default" else "Parachute Deployment"
+            lat_man = "Turn / Hover" if ConfigManager.get_param(params, "lateralContingencyManoeuvreType") == "Default" else "Parachute Deployment"
+            vert_man = "Descent / Climb" if ConfigManager.get_param(params, "verticalContingencyManoeuvreType") == "Default" else "Parachute Deployment"
         else:
             if grb_method == "Simplified":
                 method_str = "Vereinfachter Ansatz (1:1 Regel)"
@@ -1078,18 +1079,18 @@ class ImporterExporter:
             else:
                 method_str = str(grb_method)
                 
-            lat_man = "Kurve / Anhalten" if params.get("lateralContingencyManoeuvreType") == "Default" else "Auslösen des Fallschirms"
-            vert_man = "Sinkflug / Climb" if params.get("verticalContingencyManoeuvreType") == "Default" else "Auslösen des Fallschirms"
+            lat_man = "Kurve / Anhalten" if ConfigManager.get_param(params, "lateralContingencyManoeuvreType") == "Default" else "Auslösen des Fallschirms"
+            vert_man = "Sinkflug / Climb" if ConfigManager.get_param(params, "verticalContingencyManoeuvreType") == "Default" else "Auslösen des Fallschirms"
         
         # Assumptions
-        gps_inacc = params.get("gpsInaccuracy", 3.0)
-        pos_err = params.get("positionError", 3.0)
-        map_err = params.get("mapError", 1.0)
-        reaction = params.get("reactionTime", 1.0)
-        alt_baro = params.get("altitudeErrorBarometric", 1.0)
-        alt_gps = params.get("altitudeErrorGps", 4.0)
-        add_horiz = params.get("additionalErrorLateral", 0.0)
-        add_vert = params.get("additionalErrorVertical", 0.0)
+        gps_inacc = ConfigManager.get_param(params, "gpsInaccuracy")
+        pos_err = ConfigManager.get_param(params, "positionError")
+        map_err = ConfigManager.get_param(params, "mapError")
+        reaction = ConfigManager.get_param(params, "reactionTime")
+        alt_baro = ConfigManager.get_param(params, "altitudeErrorBarometric")
+        alt_gps = ConfigManager.get_param(params, "altitudeErrorGps")
+        add_horiz = ConfigManager.get_param(params, "additionalErrorLateral")
+        add_vert = ConfigManager.get_param(params, "additionalErrorVertical")
         
         # 3. Build dynamic table & Calculate min/max ranges
         is_poly = (geometry_type == "Polygon")
@@ -1125,9 +1126,9 @@ class ImporterExporter:
         for i, wp in enumerate(waypoints):
             idx_str = f"WP {i+1}"
             lat_lon_str = f"{wp[1]:.5f}, {wp[0]:.5f}"
-            h = wp[2] if len(wp) > 2 else float(params.get("maxFlightHeight", 100.0))
-            spd = wp[3] if len(wp) > 3 else float(params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))
-            fg_w = wp[4] if len(wp) > 4 else float(params.get("corridorWidth", 50.0))
+            h = wp[2] if len(wp) > 2 else float(ConfigManager.get_param(params, "maxFlightHeight"))
+            spd = wp[3] if len(wp) > 3 else float(ConfigManager.get_param(params, "maxOpsSpeedV0"))
+            fg_w = wp[4] if len(wp) > 4 else float(ConfigManager.get_param(params, "corridorWidth"))
             
             # Recalculate
             params_wp = params.copy()
@@ -1204,16 +1205,16 @@ class ImporterExporter:
 
             
         # Format custom parameter block values
-        h_fg_val = params.get("maxFlightHeight", 100.0)
+        h_fg_val = ConfigManager.get_param(params, "maxFlightHeight")
         if is_en:
             h_fg_str = f"{float(h_fg_val):.1f} m"
             
-            if params.get("lateralContingencyManoeuvreType") == "Default":
+            if ConfigManager.get_param(params, "lateralContingencyManoeuvreType") == "Default":
                 lat_man_text = "180° Turn" if is_fixed_wing else "Hover"
             else:
                 lat_man_text = "Parachute Deployment"
                 
-            if params.get("verticalContingencyManoeuvreType") == "Default":
+            if ConfigManager.get_param(params, "verticalContingencyManoeuvreType") == "Default":
                 vert_man_text = "Transition to Descent"
             else:
                 vert_man_text = "Parachute Deployment"
@@ -1231,12 +1232,12 @@ class ImporterExporter:
         else:
             h_fg_str = f"{float(h_fg_val):.1f}".replace('.', ',') + " m"
             
-            if params.get("lateralContingencyManoeuvreType") == "Default":
+            if ConfigManager.get_param(params, "lateralContingencyManoeuvreType") == "Default":
                 lat_man_text = "180° Kurve" if is_fixed_wing else "Anhalten"
             else:
                 lat_man_text = "Auslösen des Fallschirms"
                 
-            if params.get("verticalContingencyManoeuvreType") == "Default":
+            if ConfigManager.get_param(params, "verticalContingencyManoeuvreType") == "Default":
                 vert_man_text = "Übergang in den Sinkflug"
             else:
                 vert_man_text = "Auslösen des Fallschirms"
@@ -1885,9 +1886,9 @@ class ImporterExporter:
                     coords = geom.get("coordinates")
                     if coords and len(coords) >= 2:
                         props = feat.get("properties", {})
-                        h = float(props.get("altitude", props.get("height", 100.0)))
-                        spd = float(props.get("speed", props.get("velocity", 30.0)))
-                        w = float(props.get("fg_width", props.get("width", 50.0)))
+                        h = float(props.get("altitude", props.get("height", ConfigManager.get_default("maxFlightHeight"))))
+                        spd = float(props.get("speed", props.get("velocity", ConfigManager.get_default("maxOpsSpeedV0"))))
+                        w = float(props.get("fg_width", props.get("width", ConfigManager.get_default("corridorWidth"))))
                         waypoints.append((float(coords[0]), float(coords[1]), h, spd, w))
         
         # If no explicit waypoints were found, fall back to "Centerline" or "Flight Geography" or any LineString/Polygon
@@ -1991,9 +1992,9 @@ class ImporterExporter:
             
         # 3. Waypoint Features
         for i, wp in enumerate(waypoints):
-            h = wp[2] if len(wp) > 2 else float(params.get("maxFlightHeight", 100.0))
-            spd = wp[3] if len(wp) > 3 else float(params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))
-            fg_w = wp[4] if len(wp) > 4 else float(params.get("corridorWidth", 50.0))
+            h = wp[2] if len(wp) > 2 else float(ConfigManager.get_param(params, "maxFlightHeight"))
+            spd = wp[3] if len(wp) > 3 else float(ConfigManager.get_param(params, "maxOpsSpeedV0"))
+            fg_w = wp[4] if len(wp) > 4 else float(ConfigManager.get_param(params, "corridorWidth"))
             
             features.append({
                 "type": "Feature",
@@ -2150,6 +2151,7 @@ class ImporterExporter:
     @staticmethod
     def export_plan(file_path, waypoints, pilot_pos, params, geometry_type="Corridor", geofence_type="FG", resolution=8, mp_compat=True):
         from .buffer_calculator import BufferCalculator
+        from .config_manager import ConfigManager
         
         # Temporarily set resolution
         orig_res = getattr(BufferCalculator, 'BUFFER_SEGMENTS', 8)
@@ -2183,12 +2185,12 @@ class ImporterExporter:
             
             for i, wp in enumerate(waypoints):
                 lon, lat, alt = wp[0], wp[1], wp[2]
-                v_current_wp = float(wp[3]) if len(wp) > 3 else float(params.get("maxOpsSpeedV0", 30.0))
+                v_current_wp = float(wp[3]) if len(wp) > 3 else float(ConfigManager.get_param(params, "maxOpsSpeedV0"))
                 
                 # Determine segment speed
                 if i < len(waypoints) - 1:
                     next_wp = waypoints[i+1]
-                    v_next_wp = float(next_wp[3]) if len(next_wp) > 3 else float(params.get("maxOpsSpeedV0", 30.0))
+                    v_next_wp = float(next_wp[3]) if len(next_wp) > 3 else float(ConfigManager.get_param(params, "maxOpsSpeedV0"))
                     v_segment = min(v_current_wp, v_next_wp)
                 else:
                     v_segment = v_current_wp
@@ -2226,14 +2228,14 @@ class ImporterExporter:
                 avg_alt = waypoints[0][2]
                 home_lat, home_lon, home_alt = avg_lat, avg_lon, avg_alt
             elif pilot_pos:
-                home_lat, home_lon, home_alt = pilot_pos.y(), pilot_pos.x(), float(params.get("maxFlightHeight", 100.0))
+                home_lat, home_lon, home_alt = pilot_pos.y(), pilot_pos.x(), float(ConfigManager.get_param(params, "maxFlightHeight"))
             else:
                 home_lat, home_lon, home_alt = 0.0, 0.0, 0.0
 
         if mp_compat:
             home_alt = int(round(home_alt))
             
-        cruise_spd = float(params.get("maxOpsSpeedV0", 15.0))
+        cruise_spd = float(ConfigManager.get_param(params, "maxOpsSpeedV0"))
         hover_spd = 5.0
         if mp_compat:
             cruise_spd = int(round(cruise_spd))
@@ -2278,6 +2280,7 @@ class ImporterExporter:
     def export_waypoints(file_path, waypoints, pilot_pos, params, geometry_type="Corridor", export_mission=True, export_fence=True, geofence_type="FG", resolution=8, mp_compat=True):
         import os
         from .buffer_calculator import BufferCalculator
+        from .config_manager import ConfigManager
         
         base_path = file_path
         if base_path.lower().endswith('.waypoints'):
@@ -2302,11 +2305,11 @@ class ImporterExporter:
                 
                 for i, wp in enumerate(waypoints):
                     lon, lat, alt = wp[0], wp[1], wp[2]
-                    v_current_wp = float(wp[3]) if len(wp) > 3 else float(params.get("maxOpsSpeedV0", 30.0))
+                    v_current_wp = float(wp[3]) if len(wp) > 3 else float(ConfigManager.get_param(params, "maxOpsSpeedV0"))
                     
                     if i < len(waypoints) - 1:
                         next_wp = waypoints[i+1]
-                        v_next_wp = float(next_wp[3]) if len(next_wp) > 3 else float(params.get("maxOpsSpeedV0", 30.0))
+                        v_next_wp = float(next_wp[3]) if len(next_wp) > 3 else float(ConfigManager.get_param(params, "maxOpsSpeedV0"))
                         v_segment = min(v_current_wp, v_next_wp)
                     else:
                         v_segment = v_current_wp

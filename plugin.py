@@ -39,6 +39,7 @@ from qgis.gui import QgsMapToolEmitPoint, QgsMapTool, QgsMapMouseEvent, QgsVerte
 
 import json
 from .buffer_calculator import BufferCalculator
+from .config_manager import ConfigManager
 from .parameter_dialog import ParameterDialog
 from .altitude_table_dialog import AltitudeTableDialog
 from .importer_exporter import ImporterExporter
@@ -196,14 +197,14 @@ class WaypointMapTool(QgsMapTool):
                     w1 = self.plugin.waypoints[idx1]
                     w2 = self.plugin.waypoints[idx2]
                     
-                    alt1 = w1[2] if len(w1) > 2 else float(self.plugin.params.get("maxFlightHeight", 100.0))
-                    alt2 = w2[2] if len(w2) > 2 else float(self.plugin.params.get("maxFlightHeight", 100.0))
+                    alt1 = w1[2] if len(w1) > 2 else float(ConfigManager.get_param(self.plugin.params, "maxFlightHeight"))
+                    alt2 = w2[2] if len(w2) > 2 else float(ConfigManager.get_param(self.plugin.params, "maxFlightHeight"))
                     
-                    spd1 = w1[3] if len(w1) > 3 else float(self.plugin.params.get("maxOpsSpeedV0", self.plugin.params.get("maxVelocity", 30.0)))
-                    spd2 = w2[3] if len(w2) > 3 else float(self.plugin.params.get("maxOpsSpeedV0", self.plugin.params.get("maxVelocity", 30.0)))
+                    spd1 = w1[3] if len(w1) > 3 else float(ConfigManager.get_param(self.plugin.params, "maxOpsSpeedV0"))
+                    spd2 = w2[3] if len(w2) > 3 else float(ConfigManager.get_param(self.plugin.params, "maxOpsSpeedV0"))
                     
-                    fg1 = w1[4] if len(w1) > 4 else float(self.plugin.params.get("corridorWidth", 50.0))
-                    fg2 = w2[4] if len(w2) > 4 else float(self.plugin.params.get("corridorWidth", 50.0))
+                    fg1 = w1[4] if len(w1) > 4 else float(ConfigManager.get_param(self.plugin.params, "corridorWidth"))
+                    fg2 = w2[4] if len(w2) > 4 else float(ConfigManager.get_param(self.plugin.params, "corridorWidth"))
                     
                     new_alt = (alt1 + alt2) / 2.0
                     new_spd = (spd1 + spd2) / 2.0
@@ -228,13 +229,13 @@ class WaypointMapTool(QgsMapTool):
                         
                     # Not close to any existing waypoint -> add a new waypoint
                     pt_wgs = self.plugin.transform_to_wgs84(e.mapPoint())
-                    def_alt = float(self.plugin.params.get("maxFlightHeight", 100.0))
-                    def_spd = float(self.plugin.params.get("maxOpsSpeedV0", self.plugin.params.get("maxVelocity", 30.0)))
+                    def_alt = float(ConfigManager.get_param(self.plugin.params, "maxFlightHeight"))
+                    def_spd = float(ConfigManager.get_param(self.plugin.params, "maxOpsSpeedV0"))
                     
                     if self.plugin.geometry_type == "Circle":
                         def_fg = self.plugin.spn_circle_radius.value()
                     else:
-                        def_fg = float(self.plugin.params.get("corridorWidth", 50.0))
+                        def_fg = float(ConfigManager.get_param(self.plugin.params, "corridorWidth"))
                         
                     self.plugin.push_undo() # Push state before adding waypoint
                     self.plugin.waypoints.append((pt_wgs.x(), pt_wgs.y(), def_alt, def_spd, def_fg))
@@ -250,9 +251,9 @@ class WaypointMapTool(QgsMapTool):
             # Dragging: update coordinates of the selected waypoint
             pt_wgs = self.plugin.transform_to_wgs84(e.mapPoint())
             w = self.plugin.waypoints[self.dragging_idx]
-            alt = w[2] if len(w) > 2 else float(self.plugin.params.get("maxFlightHeight", 100.0))
-            spd = w[3] if len(w) > 3 else float(self.plugin.params.get("maxOpsSpeedV0", self.plugin.params.get("maxVelocity", 30.0)))
-            fg = w[4] if len(w) > 4 else float(self.plugin.params.get("corridorWidth", 50.0))
+            alt = w[2] if len(w) > 2 else float(ConfigManager.get_param(self.plugin.params, "maxFlightHeight"))
+            spd = w[3] if len(w) > 3 else float(ConfigManager.get_param(self.plugin.params, "maxOpsSpeedV0"))
+            fg = w[4] if len(w) > 4 else float(ConfigManager.get_param(self.plugin.params, "corridorWidth"))
             
             self.plugin.waypoints[self.dragging_idx] = (pt_wgs.x(), pt_wgs.y(), alt, spd, fg)
             
@@ -371,7 +372,7 @@ class AboutDialog(QDialog):
         title_layout.setSpacing(4)
         
         name = self.metadata.get('name', 'QUCORE (Variable UAS Corridor Planning)')
-        version = self.metadata.get('version', '0.7.2')
+        version = self.metadata.get('version', '0.7.3')
         
         lbl_name = QLabel(f'<span style="font-size: 16px; font-weight: bold; color: #2c3e50;">{name}</span>')
         lbl_version = QLabel(f'<span style="font-size: 12px; color: #7f8c8d; font-weight: 500;">Version {version}</span>')
@@ -836,7 +837,7 @@ class DroneCorridorPlanner(object):
         pass
 
     def tr(self, key, default=""):
-        lang = self.params.get("language", "de")
+        lang = ConfigManager.get_param(self.params, "language")
         return self.tr_strings.get(key, {}).get(lang, default)
 
     def initGui(self):
@@ -1089,7 +1090,7 @@ class DroneCorridorPlanner(object):
             self.lang_en_action.triggered.connect(lambda: self.change_language("en"))
             
             # Check the active language
-            active_lang = self.params.get("language", "de")
+            active_lang = ConfigManager.get_param(self.params, "language")
             self.lang_de_action.setChecked(active_lang == "de")
             self.lang_en_action.setChecked(active_lang == "en")
             
@@ -1349,9 +1350,9 @@ class DroneCorridorPlanner(object):
                         geom = f.geometry()
                         if geom and not geom.isEmpty():
                             pt = geom.asPoint()
-                            alt_val = get_attr_safe(f, "altitude", float(self.params.get("maxFlightHeight", 100.0)))
-                            spd_val = get_attr_safe(f, "speed", float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0))))
-                            fg_val = get_attr_safe(f, "fg_width", float(self.params.get("corridorWidth", 50.0)))
+                            alt_val = get_attr_safe(f, "altitude", float(ConfigManager.get_param(self.params, "maxFlightHeight")))
+                            spd_val = get_attr_safe(f, "speed", float(ConfigManager.get_param(self.params, "maxOpsSpeedV0")))
+                            fg_val = get_attr_safe(f, "fg_width", float(ConfigManager.get_param(self.params, "corridorWidth")))
                             loaded_wps.append((pt.x(), pt.y(), alt_val, spd_val, fg_val))
                     if loaded_wps:
                         self.waypoints = loaded_wps
@@ -1615,14 +1616,14 @@ class DroneCorridorPlanner(object):
 
     def on_circle_radius_changed(self, val):
         if self.geometry_type == "Circle" and self.waypoints:
-            cd = float(self.params.get("maxCharacteristicDimension", 3.6))
+            cd = float(ConfigManager.get_param(self.params, "maxCharacteristicDimension"))
             min_radius = 3.0 * cd
             if val < min_radius:
                 val = min_radius
             self.push_undo()
             w = self.waypoints[0]
-            alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
-            spd = w[3] if len(w) > 3 else float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
+            alt = w[2] if len(w) > 2 else float(ConfigManager.get_param(self.params, "maxFlightHeight"))
+            spd = w[3] if len(w) > 3 else float(ConfigManager.get_param(self.params, "maxOpsSpeedV0"))
             self.waypoints[0] = (w[0], w[1], alt, spd, val)
             self.rebuild_and_calculate()
 
@@ -1683,24 +1684,24 @@ class DroneCorridorPlanner(object):
         # (Restore logic has been moved to run() to prevent side-effects during clear/reset planning)
 
         # Get linewidths from self.params
-        lw_route = float(self.params.get("linewidth_route", 1.0))
-        lw_fg = float(self.params.get("linewidth_fg", 1.0))
-        lw_cv = float(self.params.get("linewidth_cv", 1.0))
-        lw_grb = float(self.params.get("linewidth_grb", 1.0))
-        lw_aga = float(self.params.get("linewidth_adjacentarea", 1.0))
+        lw_route = float(ConfigManager.get_param(self.params, "linewidth_route"))
+        lw_fg = float(ConfigManager.get_param(self.params, "linewidth_fg"))
+        lw_cv = float(ConfigManager.get_param(self.params, "linewidth_cv"))
+        lw_grb = float(ConfigManager.get_param(self.params, "linewidth_grb"))
+        lw_aga = float(ConfigManager.get_param(self.params, "linewidth_adjacentarea"))
 
         # (Nested hex conversion helper functions have been refactored to module-level)
 
-        color_route = self.params.get("color_route", "#50505a")
-        color_fg = self.params.get("color_fg", "#397c59")
-        color_cv = self.params.get("color_cv", "#f7bb3d")
-        color_grb = self.params.get("color_grb", "#eb5757")
-        color_adj = self.params.get("color_adjacentarea", "#2980b9")
+        color_route = ConfigManager.get_param(self.params, "color_route")
+        color_fg = ConfigManager.get_param(self.params, "color_fg")
+        color_cv = ConfigManager.get_param(self.params, "color_cv")
+        color_grb = ConfigManager.get_param(self.params, "color_grb")
+        color_adj = ConfigManager.get_param(self.params, "color_adjacentarea")
 
-        opacity_fg = self.params.get("opacity_fg", 15)
-        opacity_cv = self.params.get("opacity_cv", 15)
-        opacity_grb = self.params.get("opacity_grb", 15)
-        opacity_adj = self.params.get("opacity_adjacentarea", 0)
+        opacity_fg = ConfigManager.get_param(self.params, "opacity_fg")
+        opacity_cv = ConfigManager.get_param(self.params, "opacity_cv")
+        opacity_grb = ConfigManager.get_param(self.params, "opacity_grb")
+        opacity_adj = ConfigManager.get_param(self.params, "opacity_adjacentarea")
 
         # 1. Ground Risk Buffer (GRB)
         self.lyr_grb = self.setup_layer(self.lyr_grb, "Polygon?crs=EPSG:4326", "Ground Risk Buffer (GRB)", self.style_polygon_layer, hex_to_rgba(color_grb, opacity_grb), hex_to_border_rgba(color_grb), lw_grb)
@@ -1868,9 +1869,9 @@ class DroneCorridorPlanner(object):
         """
         Styles the VLOS range circle: thin blue dash-dot outline, no fill.
         """
-        color_hex = self.params.get("color_vlos", "#2d9cdb")
-        opacity_pct = self.params.get("opacity_vlos", 0)
-        border_width = self.params.get("linewidth_vlos", 0.8)
+        color_hex = ConfigManager.get_param(self.params, "color_vlos")
+        opacity_pct = ConfigManager.get_param(self.params, "opacity_vlos")
+        border_width = ConfigManager.get_param(self.params, "linewidth_vlos")
 
         props = {
             'color': hex_to_rgba(color_hex, opacity_pct),
@@ -1973,7 +1974,7 @@ class DroneCorridorPlanner(object):
         self.params.update(state.get("params", {}))
         
         # Sync language menu checkmarks and apply translations immediately
-        lang = self.params.get("language", "de")
+        lang = ConfigManager.get_param(self.params, "language")
         if hasattr(self, 'lang_de_action') and hasattr(self, 'lang_en_action'):
             self.lang_de_action.setChecked(lang == "de")
             self.lang_en_action.setChecked(lang == "en")
@@ -2035,7 +2036,7 @@ class DroneCorridorPlanner(object):
             pt_wgs = self.transform_to_wgs84(point)
             
             # Set default altitude to params default altitude
-            def_alt = float(self.params.get("maxFlightHeight", 100.0))
+            def_alt = float(ConfigManager.get_param(self.params, "maxFlightHeight"))
             self.waypoints.append((pt_wgs.x(), pt_wgs.y(), def_alt))
             
             # Recalculate
@@ -2163,18 +2164,18 @@ class DroneCorridorPlanner(object):
             
         # Hide/show circle radius controls and disable parameter dialog if not Corridor
         show_circle = (self.geometry_type == "Circle")
-        cd = float(self.params.get("maxCharacteristicDimension", 3.6))
+        cd = float(ConfigManager.get_param(self.params, "maxCharacteristicDimension"))
         min_radius = 3.0 * cd
         
         if hasattr(self, 'spn_circle_radius'):
             self.spn_circle_radius.setMinimum(min_radius)
             if show_circle and self.waypoints:
                 w = self.waypoints[0]
-                rad = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
+                rad = w[4] if len(w) > 4 else float(ConfigManager.get_param(self.params, "corridorWidth"))
                 if rad < min_radius:
                     rad = min_radius
-                    alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
-                    spd = w[3] if len(w) > 3 else float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
+                    alt = w[2] if len(w) > 2 else float(ConfigManager.get_param(self.params, "maxFlightHeight"))
+                    spd = w[3] if len(w) > 3 else float(ConfigManager.get_param(self.params, "maxOpsSpeedV0"))
                     self.waypoints[0] = (w[0], w[1], alt, spd, rad)
                 # Sync spinbox value without triggering recursive events
                 self.spn_circle_radius.blockSignals(True)
@@ -2193,9 +2194,9 @@ class DroneCorridorPlanner(object):
         wp_features = []
         for idx, w in enumerate(self.waypoints):
             lon, lat = w[0], w[1]
-            alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
-            spd = w[3] if len(w) > 3 else float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
-            fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
+            alt = w[2] if len(w) > 2 else float(ConfigManager.get_param(self.params, "maxFlightHeight"))
+            spd = w[3] if len(w) > 3 else float(ConfigManager.get_param(self.params, "maxOpsSpeedV0"))
+            fg = w[4] if len(w) > 4 else float(ConfigManager.get_param(self.params, "corridorWidth"))
             
             f = QgsFeature(self.lyr_waypoints.fields())
             f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(lon, lat)))
@@ -2356,8 +2357,8 @@ class DroneCorridorPlanner(object):
             # Uses the exact same UTM buffer pattern as BufferCalculator.generate_buffers (Circle mode)
             if self.is_layer_valid(self.lyr_vlos):
                 try:
-                    uas_type = self.params.get("uas_type", "FixedWing")
-                    cd = float(self.params.get("maxCharacteristicDimension", 3.6))
+                    uas_type = ConfigManager.get_param(self.params, "uas_type")
+                    cd = float(ConfigManager.get_param(self.params, "maxCharacteristicDimension"))
                     is_mc = (uas_type in ["Multikopter", "Rotorcraft"])
                     
                     # ALOS calculation (same formula as VlosCalculatorDialog)
@@ -2428,6 +2429,7 @@ class DroneCorridorPlanner(object):
         
         try:
             from .buffer_calculator import BufferCalculator
+            from .config_manager import ConfigManager
             
             r_fg_list = []
             r_cv_list = []
@@ -2438,9 +2440,9 @@ class DroneCorridorPlanner(object):
             h_cv_list = []
             
             for w in self.waypoints:
-                h = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
-                spd = w[3] if len(w) > 3 else float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
-                fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
+                h = w[2] if len(w) > 2 else float(ConfigManager.get_param(self.params, "maxFlightHeight"))
+                spd = w[3] if len(w) > 3 else float(ConfigManager.get_param(self.params, "maxOpsSpeedV0"))
+                fg = w[4] if len(w) > 4 else float(ConfigManager.get_param(self.params, "corridorWidth"))
                 
                 params_wp = self.params.copy()
                 params_wp["geometry_type"] = self.geometry_type
@@ -2514,16 +2516,16 @@ class DroneCorridorPlanner(object):
             self.rebuild_and_calculate()
 
     def on_parameter_dialog_changed(self, new_params):
-        old_h = self.params.get("maxFlightHeight", 100.0)
-        old_v0 = self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0))
-        old_w = self.params.get("corridorWidth", 50.0)
+        old_h = ConfigManager.get_param(self.params, "maxFlightHeight")
+        old_v0 = ConfigManager.get_param(self.params, "maxOpsSpeedV0")
+        old_w = ConfigManager.get_param(self.params, "corridorWidth")
         
         self.params.update(new_params)
         
-        new_h = self.params.get("maxFlightHeight", 100.0)
-        new_v0 = self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0))
-        new_w = self.params.get("corridorWidth", 50.0)
-        new_cd = self.params.get("maxCharacteristicDimension", 3.6)
+        new_h = ConfigManager.get_param(self.params, "maxFlightHeight")
+        new_v0 = ConfigManager.get_param(self.params, "maxOpsSpeedV0")
+        new_w = ConfigManager.get_param(self.params, "corridorWidth")
+        new_cd = ConfigManager.get_param(self.params, "maxCharacteristicDimension")
         min_fg = 3.0 * new_cd
         
         override_h = new_params.get("override_heights", True)
@@ -2556,15 +2558,15 @@ class DroneCorridorPlanner(object):
         self.update_pilot_layer()
 
     def open_advanced_settings_dialog(self):
-        dialog = AdvancedSettingsDialog(self.gui, self.config_path, self.params.get("stepSize", 50.0), current_params=self.params)
+        dialog = AdvancedSettingsDialog(self.gui, self.config_path, ConfigManager.get_param(self.params, "stepSize"), current_params=self.params)
         if dialog.exec_() == QDialog.Accepted:
             self.push_undo()
             self.params.update(dialog.get_all_params())
             self.rebuild_and_calculate(force_restyle=True)
 
     def open_vlos_calculator(self):
-        uas_type = self.params.get("uas_type", "FixedWing")
-        cd = float(self.params.get("maxCharacteristicDimension", 3.6))
+        uas_type = ConfigManager.get_param(self.params, "uas_type")
+        cd = float(ConfigManager.get_param(self.params, "maxCharacteristicDimension"))
         
         # Save a single undo state when opening the dialog
         self.push_undo()
@@ -2577,9 +2579,9 @@ class DroneCorridorPlanner(object):
             min_fg = 3.0 * new_cd
             for idx in range(len(self.waypoints)):
                 w = self.waypoints[idx]
-                alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
-                spd = w[3] if len(w) > 3 else float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
-                fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
+                alt = w[2] if len(w) > 2 else float(ConfigManager.get_param(self.params, "maxFlightHeight"))
+                spd = w[3] if len(w) > 3 else float(ConfigManager.get_param(self.params, "maxOpsSpeedV0"))
+                fg = w[4] if len(w) > 4 else float(ConfigManager.get_param(self.params, "corridorWidth"))
                 if fg < min_fg:
                     fg = min_fg
                 self.waypoints[idx] = (w[0], w[1], alt, spd, fg)
@@ -2807,9 +2809,9 @@ class DroneCorridorPlanner(object):
             dest_crs = QgsCoordinateReferenceSystem("EPSG:4326")
             transform = QgsCoordinateTransform(src_crs, dest_crs, QgsProject.instance())
 
-            default_alt = float(self.params.get("maxFlightHeight", 100.0))
-            default_spd = float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
-            default_fg = float(self.params.get("corridorWidth", 50.0))
+            default_alt = float(ConfigManager.get_param(self.params, "maxFlightHeight"))
+            default_spd = float(ConfigManager.get_param(self.params, "maxOpsSpeedV0"))
+            default_fg = float(ConfigManager.get_param(self.params, "corridorWidth"))
 
             raw_waypoints = []
 
@@ -3680,9 +3682,9 @@ class DroneCorridorPlanner(object):
             return
             
         # Display unified PyQt5 ExportSettingsDialog
-        default_h = float(self.params.get("maxFlightHeight", 100.0))
-        default_spd = float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
-        default_fg = float(self.params.get("corridorWidth", 50.0))
+        default_h = float(ConfigManager.get_param(self.params, "maxFlightHeight"))
+        default_spd = float(ConfigManager.get_param(self.params, "maxOpsSpeedV0"))
+        default_fg = float(ConfigManager.get_param(self.params, "corridorWidth"))
         
         # If there are waypoints, we pre-populate using the most frequently occurring (mode/cruise) values
         if self.waypoints:

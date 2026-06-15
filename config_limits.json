@@ -119,6 +119,12 @@
     "step": 0.5,
     "decimals": 1
   },
+  "radius": {
+    "min": 1.0,
+    "max": 50000.0,
+    "step": 10.0,
+    "decimals": 1
+  },
   "corridorWidth": {
     "min": 1.0,
     "max": 50000.0,

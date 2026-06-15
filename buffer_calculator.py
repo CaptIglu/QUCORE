@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import math
+from .config_manager import ConfigManager
 from qgis.core import (
     QgsPointXY,
     QgsGeometry,
@@ -41,20 +42,20 @@ class BufferCalculator:
         # ----------------------------------------------------
         # 1. READ PARAMETERS & DEFAULTS
         # ----------------------------------------------------
-        uas_type = params.get("uas_type", "FixedWing") # "FixedWing" or "Multikopter"
-        altimetry = params.get("altimetry", "GPS") # "GPS" or "Baro"
+        uas_type = ConfigManager.get_param(params, "uas_type")
+        altimetry = ConfigManager.get_param(params, "altimetry")
         
         # Enforce positive bounds to avoid singularities or negative scaling
-        v0 = max(0.1, float(params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0))))
-        CD = max(0.1, float(params.get("maxCharacteristicDimension", 3.6)))
+        v0 = ConfigManager.get_param(params, "maxOpsSpeedV0")
+        CD = ConfigManager.get_param(params, "maxCharacteristicDimension")
         
-        gps_inaccuracy = max(0.0, float(params.get("gpsInaccuracy", 3.0)))
-        pos_error = max(0.0, float(params.get("positionError", 3.0)))
-        map_error = max(0.0, float(params.get("mapError", 1.0)))
-        t_rz = max(0.1, float(params.get("reactionTime", 1.0)))
+        gps_inaccuracy = ConfigManager.get_param(params, "gpsInaccuracy")
+        pos_error = ConfigManager.get_param(params, "positionError")
+        map_error = ConfigManager.get_param(params, "mapError")
+        t_rz = ConfigManager.get_param(params, "reactionTime")
         
-        alt_err_gps = max(0.0, float(params.get("altitudeErrorGps", 4.0)))
-        alt_err_baro = max(0.0, float(params.get("altitudeErrorBarometric", 1.0)))
+        alt_err_gps = ConfigManager.get_param(params, "altitudeErrorGps")
+        alt_err_baro = ConfigManager.get_param(params, "altitudeErrorBarometric")
         
         # Altimetry vertical error
         h_delta = alt_err_gps if altimetry == "GPS" else alt_err_baro
@@ -66,30 +67,26 @@ class BufferCalculator:
         s_rz = v0 * t_rz
         
         # Contingency Manoeuvre distance (SCM)
-        lat_manoeuvre = params.get("lateralContingencyManoeuvreType", "Default")
+        lat_manoeuvre = ConfigManager.get_param(params, "lateralContingencyManoeuvreType")
         s_cm = 0.0
         
         if lat_manoeuvre == "Default" or lat_manoeuvre == "Anhalten":
             # For Multikopter: Stop manoeuvre
             if uas_type == "Multikopter":
-                angle = float(params.get("maxPitchAngle", 30.0))
-                # Clamp pitch angle between 1.0 and 85.0 degrees to avoid tangent singularities
-                angle = max(1.0, min(85.0, angle))
+                angle = ConfigManager.get_param(params, "maxPitchAngle")
                 rad = math.radians(angle)
                 s_cm = (0.5 * v0 * v0) / (g * math.tan(rad)) if rad > 0 else 0
             else:
                 # For Fixed Wing: Turnaround curve
-                angle = float(params.get("maxRollAngle", 30.0))
-                # Clamp roll angle between 1.0 and 85.0 degrees
-                angle = max(1.0, min(85.0, angle))
+                angle = ConfigManager.get_param(params, "maxRollAngle")
                 rad = math.radians(angle)
                 s_cm = (v0 * v0) / (g * math.tan(rad)) if rad > 0 else 0
         elif lat_manoeuvre == "Parachute" or lat_manoeuvre == "Auslösen des Fallschirms":
-            t_parachute = max(0.1, float(params.get("parachuteOpeningTimeLateral", 2.0)))
+            t_parachute = ConfigManager.get_param(params, "parachuteOpeningTimeLateral")
             s_cm = v0 * t_parachute
             
         # Lateral CV extension
-        add_horiz = max(0.0, float(params.get("additionalErrorLateral", 0.0)))
+        add_horiz = ConfigManager.get_param(params, "additionalErrorLateral")
         s_cv = gps_inaccuracy + pos_error + map_error + s_rz + s_cm + add_horiz
         
         # ----------------------------------------------------
@@ -99,7 +96,7 @@ class BufferCalculator:
         h_rz = 0.7 * v0 * t_rz
         
         # Vertical Manoeuvre height (HCM)
-        vert_manoeuvre = params.get("verticalContingencyManoeuvreType", "Default")
+        vert_manoeuvre = ConfigManager.get_param(params, "verticalContingencyManoeuvreType")
         h_cm = 0.0
         
         if vert_manoeuvre == "Default":
@@ -110,17 +107,17 @@ class BufferCalculator:
                 # Fixed Wing: 45 degree climb via circular path to horizontal flight
                 h_cm = 0.3 * (v0 * v0) / g
         elif vert_manoeuvre == "Parachute" or vert_manoeuvre == "Auslösen des Fallschirms":
-            t_para_vert = max(0.1, float(params.get("parachuteOpeningTimeVertical", 2.0)))
+            t_para_vert = ConfigManager.get_param(params, "parachuteOpeningTimeVertical")
             h_cm = 0.7 * v0 * t_para_vert
             
         # Absolute height of CV ceiling
-        add_vert = max(0.0, float(params.get("additionalErrorVertical", 0.0)))
+        add_vert = ConfigManager.get_param(params, "additionalErrorVertical")
         h_cv = h + h_delta + h_rz + h_cm + add_vert
         
         # ----------------------------------------------------
         # 4. GROUND RISK BUFFER (GRB) LATERAL
         # ----------------------------------------------------
-        grb_method = params.get("groundRiskBufferMethod", "Simplified") # "Simplified", "Ballistic", "Glide", "Parachute"
+        grb_method = ConfigManager.get_param(params, "groundRiskBufferMethod")
         s_grb = 0.0
         
         if grb_method == "Simplified" or grb_method == "Vereinfachter Ansatz (1:1 Regel)":
@@ -130,19 +127,19 @@ class BufferCalculator:
             s_grb = v0 * math.sqrt(2 * h_cv / g) + 0.5 * CD
             
         elif grb_method == "Glide" or grb_method == "Antrieb wird ausgeschaltet mit Gleitflug":
-            glide_ratio = max(0.1, float(params.get("glideRatioDenominator", 10.0)))
+            glide_ratio = ConfigManager.get_param(params, "glideRatioDenominator")
             s_grb = h_cv * glide_ratio
             
         elif grb_method == "Parachute" or grb_method == "Terminierung mit Auslösen des Fallschirms":
-            t_para_grb = max(0.1, float(params.get("parachuteOpeningTimeGRB", 1.0)))
-            v_wind = max(0.0, float(params.get("maxWindVelocity", 3.0)))
-            v_z = max(0.1, float(params.get("parachuteDescentRate", 2.0)))
+            t_para_grb = ConfigManager.get_param(params, "parachuteOpeningTimeGRB")
+            v_wind = ConfigManager.get_param(params, "maxWindVelocity")
+            v_z = ConfigManager.get_param(params, "parachuteDescentRate")
             s_grb = v0 * t_para_grb + v_wind * (h_cv / v_z) if v_z > 0 else 0
             
         # ----------------------------------------------------
         # 5. RADIUS FROM CENTERLINE
         # ----------------------------------------------------
-        corridor_width = float(params.get("corridorWidth", 50.0))
+        corridor_width = ConfigManager.get_param(params, "corridorWidth")
         
         # Enforce minimum Flight Geography size dynamically
         if params.get("geometry_type") == "Circle":
@@ -172,9 +169,9 @@ class BufferCalculator:
 
         # Parse waypoints to robust format, clamp coordinates, and filter out coincident duplicates
         parsed_wpts = []
-        def_h = max(1.0, float(params.get("maxFlightHeight", 100.0)))
-        def_spd = max(0.1, float(params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0))))
-        def_fg = max(0.1, float(params.get("corridorWidth", 50.0)))
+        def_h = ConfigManager.get_param(params, "maxFlightHeight")
+        def_spd = ConfigManager.get_param(params, "maxOpsSpeedV0")
+        def_fg = ConfigManager.get_param(params, "corridorWidth")
         
         for w in waypoints:
             try:
@@ -228,7 +225,7 @@ class BufferCalculator:
             r_fg, r_cv, r_grb, _h_cv = cls.calculate_buffer_widths(h, params_wp)
             
             # Calculate Adjacent Area width: S_AGA = max(5000, min(35000, 180 * vmax))
-            vmax = float(params.get("maxCommandableSpeedVmax", params.get("maxVelocityVmax", params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))))
+            vmax = ConfigManager.get_param(params, "maxCommandableSpeedVmax")
             s_aga = 180.0 * vmax
             if s_aga < 5000.0:
                 s_aga = 5000.0
@@ -312,7 +309,7 @@ class BufferCalculator:
                 fg_polygon_wgs.transform(inverse_transform)
                 
                 # Calculate Adjacent Area width: S_AGA = max(5000, min(35000, 180 * vmax))
-                vmax = float(params.get("maxCommandableSpeedVmax", params.get("maxVelocityVmax", params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))))
+                vmax = ConfigManager.get_param(params, "maxCommandableSpeedVmax")
                 s_aga = 180.0 * vmax
                 if s_aga < 5000.0:
                     s_aga = 5000.0
@@ -452,7 +449,7 @@ class BufferCalculator:
                 lon, lat, h, spd, radius = parsed_wpts[0]
                 r_fg, r_cv, r_grb, _h_cv = radii[0]
                 
-                vmax = float(params.get("maxCommandableSpeedVmax", params.get("maxVelocityVmax", params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))))
+                vmax = ConfigManager.get_param(params, "maxCommandableSpeedVmax")
                 s_aga = 180.0 * vmax
                 if s_aga < 5000.0:
                     s_aga = 5000.0
@@ -541,7 +538,7 @@ class BufferCalculator:
                 return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
                 
             # Determine Adjacent Area width S_AGA based on max commandable speed
-            vmax = float(params.get("maxCommandableSpeedVmax", params.get("maxVelocityVmax", params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0)))))
+            vmax = ConfigManager.get_param(params, "maxCommandableSpeedVmax")
             s_aga = 180.0 * vmax
             if s_aga < 5000.0:
                 s_aga = 5000.0
