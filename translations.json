@@ -711,6 +711,14 @@
         "de": "Die eingegebene Geschwindigkeit ({spd_val:.1f} m/s) darf die maximale Betriebsgeschwindigkeit des UAS ({max_vel:.1f} m/s) nicht überschreiten.\nDer Wert wurde automatisch auf {max_vel:.1f} m/s zurückgesetzt.",
         "en": "The entered velocity ({spd_val:.1f} m/s) must not exceed the maximum operating velocity of the UAS ({max_vel:.1f} m/s).\nThe value was automatically reset to {max_vel:.1f} m/s."
     },
+    "msg_stall_limit_title": {
+        "de": "Unterschreitung der Stall-Speed",
+        "en": "Velocity Below Stall Speed"
+    },
+    "msg_stall_limit_text": {
+        "de": "Die eingegebene Geschwindigkeit ({spd_val:.1f} m/s) darf die eingestellte Stall-Speed des Flächenflugzeugs ({stall_vel:.1f} m/s) nicht unterschreiten.\nDer Wert wurde automatisch auf {stall_vel:.1f} m/s gesetzt.",
+        "en": "The entered velocity ({spd_val:.1f} m/s) must not fall below the configured stall speed of the fixed-wing UAS ({stall_vel:.1f} m/s).\nThe value was automatically set to {stall_vel:.1f} m/s."
+    },
     "msg_speed_ops_vs_cmd_title": {
         "de": "Ungültige Geschwindigkeitseinstellung",
         "en": "Invalid Velocity Setting"

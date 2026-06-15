@@ -488,6 +488,9 @@ class AltitudeTableDialog(QDialog):
             elif col == 3:
                 item_spd = self.table.item(row, col)
                 max_vel = float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
+                uas_type = self.params.get("uas_type", "FixedWing")
+                stall_vel = float(self.params.get("stallVelocity", 10.0))
+                
                 if item_spd:
                     try:
                         spd_val = float(item_spd.text().replace(',', '.'))
@@ -500,10 +503,22 @@ class AltitudeTableDialog(QDialog):
                                            "Der Wert wurde automatisch auf {max_vel:.1f} m/s zurückgesetzt.").format(spd_val=spd_val, max_vel=max_vel)
                             QMessageBox.warning(self, title, text)
                             item_spd.setText(f"{max_vel:.1f}")
+                        elif uas_type == "FixedWing" and spd_val < stall_vel:
+                            from PyQt5.QtWidgets import QMessageBox
+                            title = self.tr("msg_stall_limit_title", "Unterschreitung der Stall-Speed")
+                            text = self.tr("msg_stall_limit_text", 
+                                           "Die eingegebene Geschwindigkeit ({spd_val:.1f} m/s) darf die eingestellte "
+                                           "Stall-Speed des Flächenflugzeugs ({stall_vel:.1f} m/s) nicht unterschreiten.\n"
+                                           "Der Wert wurde automatisch auf {stall_vel:.1f} m/s gesetzt.").format(spd_val=spd_val, stall_vel=stall_vel)
+                            QMessageBox.warning(self, title, text)
+                            item_spd.setText(f"{stall_vel:.1f}")
                         elif spd_val < 0.1:
                             item_spd.setText("0.1")
                     except ValueError:
-                        item_spd.setText("0.1")
+                        if uas_type == "FixedWing":
+                            item_spd.setText(f"{stall_vel:.1f}")
+                        else:
+                            item_spd.setText("0.1")
             
             # Validation for FG Width (col 4)
             elif col == 4:
