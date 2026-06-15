@@ -683,6 +683,18 @@
         "de": "h_CV (m)",
         "en": "h_CV (m)"
     },
+    "col_dist": {
+        "de": "Distanz",
+        "en": "Distance"
+    },
+    "col_dur": {
+        "de": "Dauer (mm:ss)",
+        "en": "Duration (mm:ss)"
+    },
+    "lbl_total_dist_dur": {
+        "de": "Gesamtdistanz: {dist}   |   Gesamtdauer: {dur}",
+        "en": "Total Distance: {dist}   |   Total Duration: {dur}"
+    },
     "btn_copy_excel": {
         "de": "Tabelle kopieren (für Excel)",
         "en": "Copy Table (for Excel)"

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import json
+import math
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QBrush
 from PyQt5.QtWidgets import (
@@ -20,7 +21,7 @@ from PyQt5.QtWidgets import (
 class AltitudeTableDialog(QDialog):
     def __init__(self, parent=None, waypoints=None, params=None, on_change_callback=None, geometry_type="Corridor", waypoints_layer=None, canvas=None):
         super(AltitudeTableDialog, self).__init__(parent)
-        self.resize(980, 450) # increased width to fit all 8 columns beautifully
+        self.resize(1150, 450) # increased width to fit all 10 columns beautifully
         self.setModal(False)
         
         # self.waypoints is a list of tuples: (lon, lat, height, speed, fg_width)
@@ -85,7 +86,7 @@ class AltitudeTableDialog(QDialog):
         
         # Table Widget
         self.table = QTableWidget()
-        self.table.setColumnCount(8)
+        self.table.setColumnCount(10)
         self.table.setHorizontalHeaderLabels([
             self.tr("col_wp", "Wegpunkt"), 
             self.tr("col_pos", "Position (Lat, Lon)"),
@@ -94,7 +95,9 @@ class AltitudeTableDialog(QDialog):
             self.tr("col_fg", "S_FG (Breite) (m)"), 
             self.tr("col_cv", "S_CV (Breite) (m)"), 
             self.tr("col_grb", "S_GRB (Breite) (m)"),
-            self.tr("col_hcv", "h_CV (m)")
+            self.tr("col_hcv", "h_CV (m)"),
+            self.tr("col_dist", "Distanz"),
+            self.tr("col_dur", "Dauer (mm:ss)")
         ])
         self.table.setRowCount(len(self.waypoints))
         if self.geometry_type == "Polygon":
@@ -138,6 +141,7 @@ class AltitudeTableDialog(QDialog):
         self.table.blockSignals(True)
         for r in range(len(self.waypoints)):
             self.recalculate_buffers(r)
+        self.recalculate_distances_and_durations()
         self.table.blockSignals(False)
         
         # Resize columns to fit headers and contents beautifully
@@ -159,12 +163,21 @@ class AltitudeTableDialog(QDialog):
         
         layout.addWidget(self.table)
         
-        # Checkbox for showing waypoint numbers on map
+        # Checkbox for showing waypoint numbers on map and total label
+        lay_options = QHBoxLayout()
         self.chk_show_wp_nums = QCheckBox(self.tr("chk_show_wp_nums", "Wegpunkt-Nummern auf Karte anzeigen"))
         self.chk_show_wp_nums.setChecked(False)
         self.chk_show_wp_nums.toggled.connect(self.toggle_waypoint_numbers)
         self.chk_show_wp_nums.setEnabled(self.waypoints_layer is not None)
-        layout.addWidget(self.chk_show_wp_nums)
+        lay_options.addWidget(self.chk_show_wp_nums)
+        
+        lay_options.addStretch()
+        
+        self.lbl_total = QLabel("")
+        self.lbl_total.setStyleSheet("font-weight: bold;")
+        lay_options.addWidget(self.lbl_total)
+        
+        layout.addLayout(lay_options)
         
         # Bottom Layout with Copy Button and OK/Cancel Button Box
         lay_buttons = QHBoxLayout()
@@ -265,11 +278,115 @@ class AltitudeTableDialog(QDialog):
             if item_wp:
                 item_wp.setText(f"{self.tr('col_wp', 'Wegpunkt')} {r + 1}")
         
+        self.recalculate_distances_and_durations()
         self.table.blockSignals(False)
         
         # Fire real-time map update
         if self.on_change_callback is not None:
             self.on_change_callback()
+
+    def _haversine(self, lon1, lat1, lon2, lat2):
+        R = 6371000.0  # Radius of Earth in meters
+        phi1 = math.radians(lat1)
+        phi2 = math.radians(lat2)
+        delta_phi = math.radians(lat2 - lat1)
+        delta_lambda = math.radians(lon2 - lon1)
+        a = math.sin(delta_phi / 2.0) ** 2 + \
+            math.cos(phi1) * math.cos(phi2) * \
+            math.sin(delta_lambda / 2.0) ** 2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        return R * c
+
+    def recalculate_distances_and_durations(self):
+        bg_color = QColor(240, 240, 240)
+        
+        prev_lon, prev_lat = None, None
+        total_dist = 0.0
+        total_duration_s = 0.0
+        
+        for r in range(self.table.rowCount()):
+            # Get Position
+            item_pos = self.table.item(r, 1)
+            lon, lat = 0.0, 0.0
+            if item_pos:
+                try:
+                    parts = [x.strip() for x in item_pos.text().split(",")]
+                    if len(parts) == 2:
+                        lat = float(parts[0])
+                        lon = float(parts[1])
+                except ValueError:
+                    pass
+                    
+            # Calculate distance
+            dist = 0.0
+            if prev_lon is not None and prev_lat is not None:
+                dist = self._haversine(prev_lon, prev_lat, lon, lat)
+            
+            total_dist += dist
+            prev_lon, prev_lat = lon, lat
+            
+            # Format distance
+            if dist >= 10000:
+                dist_str = f"{dist/1000.0:.1f} km"
+            else:
+                dist_str = f"{dist:.0f}"
+                
+            # Update Distance Column (col 8)
+            item_dist = self.table.item(r, 8)
+            if not item_dist:
+                item_dist = QTableWidgetItem()
+                item_dist.setFlags(item_dist.flags() & ~Qt.ItemIsEditable)
+                item_dist.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                item_dist.setBackground(QBrush(bg_color))
+                self.table.setItem(r, 8, item_dist)
+            item_dist.setText(dist_str)
+            
+            # Get Speed
+            item_spd = self.table.item(r, 3)
+            spd = 30.0
+            if item_spd:
+                try:
+                    spd = float(item_spd.text().replace(',', '.'))
+                except ValueError:
+                    pass
+            
+            if spd < 0.1:
+                spd = 0.1
+                
+            # Calculate Duration
+            duration_s = dist / spd
+            total_duration_s += duration_s
+            minutes = int(duration_s // 60)
+            seconds = int(duration_s % 60)
+            dur_str = f"{minutes:02d}:{seconds:02d}"
+            
+            # Update Duration Column (col 9)
+            item_dur = self.table.item(r, 9)
+            if not item_dur:
+                item_dur = QTableWidgetItem()
+                item_dur.setFlags(item_dur.flags() & ~Qt.ItemIsEditable)
+                item_dur.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                item_dur.setBackground(QBrush(bg_color))
+                self.table.setItem(r, 9, item_dur)
+            item_dur.setText(dur_str)
+
+        # Update Total Label
+        if total_dist >= 10000:
+            total_dist_str = f"{total_dist/1000.0:.1f} km"
+        else:
+            total_dist_str = f"{total_dist:.0f} m"
+            
+        t_hours = int(total_duration_s // 3600)
+        t_minutes = int((total_duration_s % 3600) // 60)
+        t_seconds = int(total_duration_s % 60)
+        if t_hours > 0:
+            total_dur_str = f"{t_hours:02d}:{t_minutes:02d}:{t_seconds:02d}"
+        else:
+            total_dur_str = f"{t_minutes:02d}:{t_seconds:02d}"
+            
+        total_text = self.tr("lbl_total_dist_dur", "Gesamtdistanz: {dist}   |   Gesamtdauer: {dur}").format(dist=total_dist_str, dur=total_dur_str)
+        if hasattr(self, 'lbl_total'):
+            self.lbl_total.setText(total_text)
 
     def recalculate_buffers(self, row):
         # Read values from table row
@@ -409,6 +526,7 @@ class AltitudeTableDialog(QDialog):
                         item_fg.setText(f"{min_fg:.1f}")
             
             self.recalculate_buffers(row)
+            self.recalculate_distances_and_durations()
             self.table.blockSignals(False)
             
             # Fire real-time map updates!
