@@ -2134,6 +2134,8 @@ class DroneCorridorPlanner(object):
             
         if not self.waypoints and not self.pilot_pos:
             self.remove_planning_layers()
+            if hasattr(self, 'wp_tool') and self.wp_tool:
+                self.wp_tool.clear_midpoint_markers()
             if hasattr(self, 'cmb_geom_type'):
                 self.cmb_geom_type.setEnabled(True)
             if hasattr(self, 'lbl_circle_rad'):
