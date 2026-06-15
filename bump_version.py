@@ -4,6 +4,13 @@ import sys
 import re
 
 def main():
+    if "-h" in sys.argv or "--help" in sys.argv:
+        print("Usage: python bump_version.py <new_version>")
+        print("\nDescription:")
+        print("  Updates the version number in metadata.txt and plugin.py")
+        print("  to the specified semantic version (e.g. 0.7.2).")
+        sys.exit(0)
+
     if len(sys.argv) < 2:
         print("Usage: python bump_version.py <new_version>")
         sys.exit(1)
