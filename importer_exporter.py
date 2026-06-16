@@ -1305,7 +1305,8 @@ class ImporterExporter:
             v0_str = v0_str.replace('.', ',')
             vmax_str = vmax_str.replace('.', ',')
             
-        xml_content = xml_content.replace("__NAME__", name)
+        escaped_name = name.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;").replace("'", "&apos;")
+        xml_content = xml_content.replace("__NAME__", escaped_name)
         xml_content = xml_content.replace("__DATE__", date_str)
         xml_content = xml_content.replace("__CENTER_COORDS__", center_str)
         xml_content = xml_content.replace("__PILOT_COORDS__", pilot_str)
