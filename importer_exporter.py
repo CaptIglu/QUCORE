@@ -2043,9 +2043,6 @@ class ImporterExporter:
         def get_geojson_coordinates(geom):
             if not geom:
                 return []
-            if hasattr(geom, '_mock_name') or 'MagicMock' in str(type(geom)):
-                # Mock fallback for test environment
-                return [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 0.0]]
             try:
                 if geom.isEmpty():
                     return []

@@ -26,7 +26,11 @@ class RealMockQgsGeometry:
     def isEmpty(self):
         return self.empty
     def asPolygon(self):
-        return [[RealMockQgsPointXY(8.751481, 53.841847), RealMockQgsPointXY(8.336079, 54.006354)]]
+        return [[RealMockQgsPointXY(0.0, 0.0), RealMockQgsPointXY(1.0, 0.0), RealMockQgsPointXY(1.0, 1.0), RealMockQgsPointXY(0.0, 1.0), RealMockQgsPointXY(0.0, 0.0)]]
+    def isMultipart(self):
+        return False
+    def asMultiPolygon(self):
+        return [self.asPolygon()]
     def isGeosValid(self):
         return RealMockQgsGeometry.is_valid_mock_geom
     def area(self):
@@ -745,11 +749,10 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             self.assertEqual(wpts_in[1][3], 25.0)
             self.assertEqual(wpts_in[1][4], 60.0)
             
-            # Pilot Position (skip x()/y() checks if pilot_in is a MagicMock, which returns MagicMock coordinate)
+            # Pilot Position
             self.assertIsNotNone(pilot_in)
-            if not hasattr(pilot_in, '_mock_name') and 'MagicMock' not in str(type(pilot_in)):
-                self.assertAlmostEqual(pilot_in.x(), 8.751481, places=6)
-                self.assertAlmostEqual(pilot_in.y(), 53.841847, places=6)
+            self.assertAlmostEqual(pilot_in.x(), 8.751481, places=6)
+            self.assertAlmostEqual(pilot_in.y(), 53.841847, places=6)
             
             # General parameters
             self.assertEqual(params_in.get("uas_type"), "FixedWing")
@@ -1381,7 +1384,9 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         mock_project = MagicMock()
         mock_root = MagicMock()
         mock_project.layerTreeRoot.return_value = mock_root
-        mock_root.findGroup.return_value = planner.layer_group
+        mock_root.findGroups.return_value = [planner.layer_group]
+        planner.layer_group.name.return_value = "Active QUCORE-Plan"
+        planner.layer_group.parent.return_value = mock_root
         
         # Set layer IDs for removal verification
         for lyr_name in ['lyr_waypoints', 'lyr_route', 'lyr_fg', 'lyr_cv', 'lyr_grb', 'lyr_pilot', 'lyr_vlos', 'lyr_aga']:
