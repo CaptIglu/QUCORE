@@ -931,7 +931,8 @@ class ImporterExporter:
         template_name = f"report_template_{lang}.docx"
         template_path = os.path.join(plugin_dir, template_name)
         
-        has_logo = False
+        if not os.path.exists(template_path):
+            raise FileNotFoundError(f"Template DOCX file not found in plugin directory: {template_path}")
                     
         # Check for template's native headers and footers relationships to preserve them,
         # and also dynamically parse existing relationship IDs to prevent collisions
@@ -986,9 +987,6 @@ class ImporterExporter:
         for rid in footer_rids:
             header_footer_xml.append(f'<w:footerReference w:type="default" r:id="{rid}"/>')
         header_footer_xml_str = "".join(header_footer_xml)
-        
-        if not os.path.exists(template_path):
-            raise FileNotFoundError(f"Template DOCX file not found in plugin directory: {template_path}")
             
         # 2. Extract and format variables
         name = os.path.splitext(os.path.basename(file_path))[0]
