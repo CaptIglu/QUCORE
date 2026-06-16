@@ -70,7 +70,7 @@ class BufferCalculator:
         lat_manoeuvre = ConfigManager.get_param(params, "lateralContingencyManoeuvreType")
         s_cm = 0.0
         
-        if lat_manoeuvre == "Default" or lat_manoeuvre == "Anhalten":
+        if lat_manoeuvre == "Default":
             # For Multikopter: Stop manoeuvre
             if uas_type == "Multikopter":
                 angle = ConfigManager.get_param(params, "maxPitchAngle")
@@ -81,7 +81,7 @@ class BufferCalculator:
                 angle = ConfigManager.get_param(params, "maxRollAngle")
                 rad = math.radians(angle)
                 s_cm = (v0 * v0) / (g * math.tan(rad)) if rad > 0 else 0
-        elif lat_manoeuvre == "Parachute" or lat_manoeuvre == "Auslösen des Fallschirms":
+        elif lat_manoeuvre == "Parachute":
             t_parachute = ConfigManager.get_param(params, "parachuteOpeningTimeLateral")
             s_cm = v0 * t_parachute
             
@@ -106,7 +106,7 @@ class BufferCalculator:
             else:
                 # Fixed Wing: 45 degree climb via circular path to horizontal flight
                 h_cm = 0.3 * (v0 * v0) / g
-        elif vert_manoeuvre == "Parachute" or vert_manoeuvre == "Auslösen des Fallschirms":
+        elif vert_manoeuvre == "Parachute":
             t_para_vert = ConfigManager.get_param(params, "parachuteOpeningTimeVertical")
             h_cm = 0.7 * v0 * t_para_vert
             
@@ -120,17 +120,17 @@ class BufferCalculator:
         grb_method = ConfigManager.get_param(params, "groundRiskBufferMethod")
         s_grb = 0.0
         
-        if grb_method == "Simplified" or grb_method == "Vereinfachter Ansatz (1:1 Regel)":
+        if grb_method == "Simplified":
             s_grb = h_cv + 0.5 * CD
             
-        elif grb_method == "Ballistic" or grb_method == "Ballistischer Ansatz":
+        elif grb_method == "Ballistic":
             s_grb = v0 * math.sqrt(2 * h_cv / g) + 0.5 * CD
             
-        elif grb_method == "Glide" or grb_method == "Antrieb wird ausgeschaltet mit Gleitflug":
+        elif grb_method == "Glide":
             glide_ratio = ConfigManager.get_param(params, "glideRatioDenominator")
             s_grb = h_cv * glide_ratio
             
-        elif grb_method == "Parachute" or grb_method == "Terminierung mit Auslösen des Fallschirms":
+        elif grb_method == "Parachute":
             t_para_grb = ConfigManager.get_param(params, "parachuteOpeningTimeGRB")
             v_wind = ConfigManager.get_param(params, "maxWindVelocity")
             v_z = ConfigManager.get_param(params, "parachuteDescentRate")

@@ -267,7 +267,7 @@ class ParameterDialog(QDialog):
         
         self.combo_lat_man = QComboBox()
         self.combo_lat_man.addItems([self.tr("man_default_lat", "Standard (Kurve / Anhalten)"), self.tr("man_parachute", "Auslösen des Fallschirms")])
-        if self.params["lateralContingencyManoeuvreType"] in ["Parachute", "Auslösen des Fallschirms"]:
+        if self.params["lateralContingencyManoeuvreType"] == "Parachute":
             self.combo_lat_man.setCurrentIndex(1)
         else:
             self.combo_lat_man.setCurrentIndex(0)
@@ -299,7 +299,7 @@ class ParameterDialog(QDialog):
         
         self.combo_vert_man = QComboBox()
         self.combo_vert_man.addItems([self.tr("man_default_vert", "Standard (Energiewandlung / Climb)"), self.tr("man_parachute", "Auslösen des Fallschirms")])
-        if self.params["verticalContingencyManoeuvreType"] in ["Parachute", "Auslösen des Fallschirms"]:
+        if self.params["verticalContingencyManoeuvreType"] == "Parachute":
             self.combo_vert_man.setCurrentIndex(1)
         else:
             self.combo_vert_man.setCurrentIndex(0)
@@ -327,13 +327,13 @@ class ParameterDialog(QDialog):
             self.tr("grb_parachute", "Terminierung mit Auslösen des Fallschirms")
         ])
         
-        m_map = {
-            "Simplified": 0, "Vereinfachter Ansatz (1:1 Regel)": 0,
-            "Ballistic": 1, "Ballistischer Ansatz": 1,
-            "Glide": 2, "Antrieb wird ausgeschaltet mit Gleitflug": 2,
-            "Parachute": 3, "Terminierung mit Auslösen des Fallschirms": 3
+        grb_map = {
+            "Simplified": 0,
+            "Ballistic": 1,
+            "Glide": 2,
+            "Parachute": 3
         }
-        self.combo_grb_method.setCurrentIndex(m_map.get(self.params["groundRiskBufferMethod"], 0))
+        self.combo_grb_method.setCurrentIndex(grb_map.get(self.params["groundRiskBufferMethod"], 0))
         grb_layout.addRow(self.tr("label_grb_method", "Terminierungsmethode (GRB):"), self.combo_grb_method)
         
         self.spin_glide = QDoubleSpinBox()
@@ -537,19 +537,19 @@ class ParameterDialog(QDialog):
                 self.combo_altimetry.setCurrentIndex(1 if altimetry in ["Baro", "barometrisch"] else 0)
                 
                 lat_man = ConfigManager.get_default("lateralContingencyManoeuvreType")
-                self.combo_lat_man.setCurrentIndex(1 if lat_man in ["Parachute", "Auslösen des Fallschirms"] else 0)
+                self.combo_lat_man.setCurrentIndex(1 if lat_man == "Parachute" else 0)
                 
                 vert_man = ConfigManager.get_default("verticalContingencyManoeuvreType")
-                self.combo_vert_man.setCurrentIndex(1 if vert_man in ["Parachute", "Auslösen des Fallschirms"] else 0)
+                self.combo_vert_man.setCurrentIndex(1 if vert_man == "Parachute" else 0)
                 
                 grb_method = ConfigManager.get_default("groundRiskBufferMethod")
-                m_map = {
-                    "Simplified": 0, "Vereinfachter Ansatz (1:1 Regel)": 0,
-                    "Ballistic": 1, "Ballistischer Ansatz": 1,
-                    "Glide": 2, "Antrieb wird ausgeschaltet mit Gleitflug": 2,
-                    "Parachute": 3, "Terminierung mit Auslösen des Fallschirms": 3
+                grb_map = {
+                    "Simplified": 0,
+                    "Ballistic": 1,
+                    "Glide": 2,
+                    "Parachute": 3
                 }
-                self.combo_grb_method.setCurrentIndex(m_map.get(grb_method, 0))
+                self.combo_grb_method.setCurrentIndex(grb_map.get(grb_method, 0))
                 
                 self.spin_v0.setValue(ConfigManager.get_default("maxOpsSpeedV0"))
                 self.spin_vmax.setValue(ConfigManager.get_default("maxCommandableSpeedVmax"))
