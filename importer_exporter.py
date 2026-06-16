@@ -30,6 +30,23 @@ def tr(key, default=""):
     return _tr_strings.get(key, {}).get(lang, default)
 
 
+def unpack_waypoint(w, params=None):
+    """
+    Standardizes unpacking of a waypoint list/tuple.
+    Returns: (lon, lat, alt) as floats.
+    """
+    lon, lat = float(w[0]), float(w[1])
+    
+    if len(w) > 2:
+        alt = float(w[2])
+    elif params:
+        alt = float(ConfigManager.get_param(params, "maxFlightHeight"))
+    else:
+        alt = 0.0
+        
+    return lon, lat, alt
+
+
 class ImporterExporter:
     @staticmethod
     def import_dipul(file_path):
@@ -175,16 +192,17 @@ class ImporterExporter:
         
         if geometry_type == "Circle":
             w0 = waypoints[0]
-            lateral_block["center"] = [w0[0], w0[1]]
+            lon0, lat0, _ = unpack_waypoint(w0, params)
+            lateral_block["center"] = [lon0, lat0]
             # Use specific circle radius if present, otherwise fall back to width
             lateral_block["radius"] = float(w0[4]) if len(w0) > 4 else width
         elif geometry_type == "Polygon":
-            coords = [[w[0], w[1]] for w in waypoints]
+            coords = [[lon, lat] for lon, lat, _ in (unpack_waypoint(w, params) for w in waypoints)]
             if coords and coords[0] != coords[-1]:
                 coords.append(coords[0])
             lateral_block["coordinates"] = [coords]
         else: # Corridor
-            coords = [[w[0], w[1]] for w in waypoints]
+            coords = [[lon, lat] for lon, lat, _ in (unpack_waypoint(w, params) for w in waypoints)]
             lateral_block["coordinates"] = coords
             lateral_block["width"] = width
             
@@ -534,25 +552,23 @@ class ImporterExporter:
         # Route centerline KML representation with heights and altitudeMode
         centerline_xml = ""
         if geometry_type == "Circle":
-            w0 = waypoints[0]
-            alt = w0[2] if len(w0) > 2 else float(ConfigManager.get_param(params, "maxFlightHeight"))
+            lon0, lat0, alt0 = unpack_waypoint(waypoints[0], params)
             centerline_xml = f"""      <Placemark id="{str(uuid.uuid4())}">
         <name>Center</name>
 {extended_data_xml}
         <Point>
           <altitudeMode>relativeToGround</altitudeMode>
-          <coordinates>{w0[0]:.14f},{w0[1]:.14f},{alt:.2f}</coordinates>
+          <coordinates>{lon0:.14f},{lat0:.14f},{alt0:.2f}</coordinates>
         </Point>
       </Placemark>"""
         else:
             route_coord_strs = []
             for w in waypoints:
-                alt = w[2] if len(w) > 2 else float(ConfigManager.get_param(params, "maxFlightHeight"))
-                route_coord_strs.append(f"{w[0]:.14f},{w[1]:.14f},{alt:.2f}")
+                lon, lat, alt = unpack_waypoint(w, params)
+                route_coord_strs.append(f"{lon:.14f},{lat:.14f},{alt:.2f}")
             if geometry_type == "Polygon" and waypoints:
-                w0 = waypoints[0]
-                alt0 = w0[2] if len(w0) > 2 else float(ConfigManager.get_param(params, "maxFlightHeight"))
-                route_coord_strs.append(f"{w0[0]:.14f},{w0[1]:.14f},{alt0:.2f}")
+                lon0, lat0, alt0 = unpack_waypoint(waypoints[0], params)
+                route_coord_strs.append(f"{lon0:.14f},{lat0:.14f},{alt0:.2f}")
             route_coords = " ".join(route_coord_strs)
             
             centerline_xml = f"""      <Placemark id="{str(uuid.uuid4())}">
@@ -807,14 +823,16 @@ class ImporterExporter:
         level_feet = int(round(const_height * 3.28084))
         
         w0 = waypoints[0]
-        start_dms = f"{decimal_to_dms(w0[1], True)} {decimal_to_dms(w0[0], False)}"
+        lon0, lat0, _ = unpack_waypoint(w0)
+        start_dms = f"{decimal_to_dms(lat0, True)} {decimal_to_dms(lon0, False)}"
         
         xml_content = f'<?xml version="1.0" encoding="utf-8"?>\n'
         xml_content += '<DivelementsFlightPlanner>\n'
         xml_content += f'  <PrimaryRoute CourseType="GreatCircle" Start="{start_dms}" StartType="Unknown" Level="{level_feet}" Rules="Vfr" PlannedFuel="1.000000">\n'
         
         for w in waypoints[1:]:
-            to_dms = f"{decimal_to_dms(w[1], True)} {decimal_to_dms(w[0], False)}"
+            lon, lat, _ = unpack_waypoint(w)
+            to_dms = f"{decimal_to_dms(lat, True)} {decimal_to_dms(lon, False)}"
             xml_content += f'    <RhumbLineRoute To="{to_dms}" ToType="Unknown" Level="MSL" LevelChange="B" />\n'
             
         xml_content += '    <ReferencedAirfields />\n'
@@ -2066,12 +2084,13 @@ class ImporterExporter:
         # 4. Route Centerline
         centerline_geom = None
         if geometry_type == "Circle" and waypoints:
+            lon0, lat0, _ = unpack_waypoint(waypoints[0], params)
             centerline_geom = {
                 "type": "Point",
-                "coordinates": [float(waypoints[0][0]), float(waypoints[0][1])]
+                "coordinates": [lon0, lat0]
             }
         elif geometry_type == "Polygon" and waypoints:
-            coords = [[float(w[0]), float(w[1])] for w in waypoints]
+            coords = [[lon, lat] for lon, lat, _ in (unpack_waypoint(w, params) for w in waypoints)]
             if coords and coords[0] != coords[-1]:
                 coords.append(coords[0])
             centerline_geom = {
@@ -2079,7 +2098,7 @@ class ImporterExporter:
                 "coordinates": [coords]
             }
         elif waypoints:
-            coords = [[float(w[0]), float(w[1])] for w in waypoints]
+            coords = [[lon, lat] for lon, lat, _ in (unpack_waypoint(w, params) for w in waypoints)]
             centerline_geom = {
                 "type": "LineString",
                 "coordinates": coords
@@ -2271,9 +2290,9 @@ class ImporterExporter:
         else:
             if waypoints:
                 # For polygon/circle, calculate center for home pos
-                avg_lat = sum(w[1] for w in waypoints) / len(waypoints)
-                avg_lon = sum(w[0] for w in waypoints) / len(waypoints)
-                avg_alt = waypoints[0][2]
+                avg_lat = sum(unpack_waypoint(w, params)[1] for w in waypoints) / len(waypoints)
+                avg_lon = sum(unpack_waypoint(w, params)[0] for w in waypoints) / len(waypoints)
+                _, _, avg_alt = unpack_waypoint(waypoints[0], params)
                 home_lat, home_lon, home_alt = avg_lat, avg_lon, avg_alt
             elif pilot_pos:
                 home_lat, home_lon, home_alt = pilot_pos.y(), pilot_pos.x(), float(ConfigManager.get_param(params, "maxFlightHeight"))
