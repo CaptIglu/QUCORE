@@ -44,8 +44,10 @@ class RealMockQgsGeometry:
         if args:
             try:
                 res._area = 1000.0 * float(args[0])
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError) as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in test_suite.py (line 47): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
         return res
     def convexHull(self):
         return self

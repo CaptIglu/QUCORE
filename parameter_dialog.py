@@ -37,8 +37,10 @@ class ParameterDialog(QDialog):
             try:
                 with open(config_path, 'r', encoding='utf-8') as f:
                     self.config_defaults = json.load(f)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in parameter_dialog.py (line 40): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
         # Load config_limits.json for dynamic min/max/step/decimals of spinboxes
         self.config_limits = {}
@@ -47,8 +49,10 @@ class ParameterDialog(QDialog):
             try:
                 with open(limits_path, 'r', encoding='utf-8') as f:
                     self.config_limits = json.load(f)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in parameter_dialog.py (line 50): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
         # ----------------------------------------------------
         # DEFAULT PARAMETERS FROM HELGOLAND DIPUL
@@ -73,8 +77,10 @@ class ParameterDialog(QDialog):
             try:
                 with open(tr_path, 'r', encoding='utf-8') as f:
                     self.tr_strings = json.load(f)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in parameter_dialog.py (line 76): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
         self.setWindowTitle(self.tr("dialog_calc_params_title", "UAS Korridor Berechnungsparameter"))
         self.init_ui()

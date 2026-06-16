@@ -78,8 +78,10 @@ class WaypointMapTool(QgsMapTool):
                             self.canvas.scene().removeItem(marker)
                         if not sip.isdeleted(marker):
                             sip.delete(marker)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        from qgis.core import QgsMessageLog, Qgis
+                        import traceback
+                        QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 81): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
             self.midpoint_markers = []
 
     def cleanup(self):
@@ -372,7 +374,7 @@ class AboutDialog(QDialog):
         title_layout.setSpacing(4)
         
         name = self.metadata.get('name', 'QUCORE (Variable UAS Corridor Planning)')
-        version = self.metadata.get('version', '0.7.3')
+        version = self.metadata.get('version', '0.7.4')
         
         lbl_name = QLabel(f'<span style="font-size: 16px; font-weight: bold; color: #2c3e50;">{name}</span>')
         lbl_version = QLabel(f'<span style="font-size: 12px; color: #7f8c8d; font-weight: 500;">Version {version}</span>')
@@ -627,8 +629,10 @@ def get_major_version():
                 if line.startswith('version='):
                     version_str = line.split('=')[1].strip()
                     return version_str.split('.')[0]
-    except Exception:
-        pass
+    except Exception as e:
+        from qgis.core import QgsMessageLog, Qgis
+        import traceback
+        QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 630): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
     return "1"
 
 def verify_license_key(saved_val):
@@ -886,22 +890,30 @@ class DroneCorridorPlanner(object):
         if hasattr(self, 'gui') and self.gui:
             try:
                 self.gui.finished.disconnect(self.on_gui_finished)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 889): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
             try:
                 self.gui.close()
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 893): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
             try:
                 self.gui.deleteLater()
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 897): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
         # Remove layers and group silently on unload
         try:
             self.remove_layers_and_group()
-        except Exception:
-            pass
+        except Exception as e:
+            from qgis.core import QgsMessageLog, Qgis
+            import traceback
+            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 903): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
         # 1. Disconnect UI action triggers
         if self.action:
@@ -926,8 +938,10 @@ class DroneCorridorPlanner(object):
             try:
                 from qgis.core import QgsApplication
                 QgsApplication.instance().aboutToQuit.disconnect(self.gui.reject)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 929): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
         # 3. Disconnect and clean up map tools
         if hasattr(self, 'pilot_tool') and self.pilot_tool:
@@ -946,15 +960,19 @@ class DroneCorridorPlanner(object):
         if hasattr(self, 'wp_tool') and self.wp_tool:
             try:
                 self.wp_tool.cleanup()
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 949): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
         # Disconnect project cleared signal
         try:
             from qgis.core import QgsProject
             QgsProject.instance().cleared.disconnect(self.on_project_cleared)
-        except Exception:
-            pass
+        except Exception as e:
+            from qgis.core import QgsMessageLog, Qgis
+            import traceback
+            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 956): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
         # 6. Nullify references to trigger Python Garbage Collection
         self.wp_tool = None
@@ -1010,8 +1028,10 @@ class DroneCorridorPlanner(object):
                 parent = group.parent()
                 if parent:
                     parent.removeChildNode(group)
-        except Exception:
-            pass
+        except Exception as e:
+            from qgis.core import QgsMessageLog, Qgis
+            import traceback
+            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 1013): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
     def run(self):
         """
@@ -1304,8 +1324,10 @@ class DroneCorridorPlanner(object):
             if y_pos < qgis_geom.y():
                 y_pos = qgis_geom.y()
             self.gui.move(x_pos, y_pos)
-        except Exception:
-            pass
+        except Exception as e:
+            from qgis.core import QgsMessageLog, Qgis
+            import traceback
+            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 1307): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
         # Smart re-bind layers first
         self.initialize_layers()
@@ -1315,8 +1337,10 @@ class DroneCorridorPlanner(object):
             state_json, ok = QgsProject.instance().readEntry("QUCORE", "state")
             if ok and state_json and not self.waypoints:
                 self.deserialize_state(state_json)
-        except Exception:
-            pass
+        except Exception as e:
+            from qgis.core import QgsMessageLog, Qgis
+            import traceback
+            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 1318): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
         # Fallback: Restore waypoints and pilot from layers if python state is still empty (e.g. on reload without project entry)
         if self.is_layer_valid(self.lyr_waypoints) and not self.waypoints:
@@ -1329,8 +1353,10 @@ class DroneCorridorPlanner(object):
                             from qgis.core import NULL
                             if val is not None and val != NULL:
                                 return int(val)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            from qgis.core import QgsMessageLog, Qgis
+                            import traceback
+                            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 1332): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                         return 999999
                     
                     features.sort(key=get_index_safe)
@@ -1341,8 +1367,10 @@ class DroneCorridorPlanner(object):
                             from qgis.core import NULL
                             if val is not None and val != NULL:
                                 return float(val)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            from qgis.core import QgsMessageLog, Qgis
+                            import traceback
+                            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 1344): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                         return default_val
                     
                     loaded_wps = []
@@ -1524,8 +1552,10 @@ class DroneCorridorPlanner(object):
                         if '=' in line:
                             k, v = line.strip().split('=', 1)
                             metadata[k.strip()] = v.strip()
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 1527): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                 
         dlg = AboutDialog(self.gui if self.gui else self.iface.mainWindow(), metadata, self)
         dlg.exec_()
@@ -2143,8 +2173,10 @@ class DroneCorridorPlanner(object):
                 state_json = self.serialize_state()
                 from qgis.core import QgsProject
                 QgsProject.instance().writeEntry("QUCORE", "state", state_json)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 2146): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
             return
             
         self.initialize_layers(force_restyle=force_restyle)
@@ -2322,8 +2354,10 @@ class DroneCorridorPlanner(object):
             try:
                 state_json = self.serialize_state()
                 QgsProject.instance().writeEntry("QUCORE", "state", state_json)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 2325): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
 
     def update_pilot_layer(self):
@@ -2398,8 +2432,10 @@ class DroneCorridorPlanner(object):
         try:
             state_json = self.serialize_state()
             QgsProject.instance().writeEntry("QUCORE", "state", state_json)
-        except Exception:
-            pass
+        except Exception as e:
+            from qgis.core import QgsMessageLog, Qgis
+            import traceback
+            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 2401): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
 
     def update_results_panel(self):
@@ -2718,8 +2754,10 @@ class DroneCorridorPlanner(object):
             # Remove QgsProject state entry so it doesn't get restored on reload/reopen
             try:
                 QgsProject.instance().removeEntry("QUCORE", "state")
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 2721): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
             
             # Clear layers
             self.rebuild_and_calculate()
@@ -2835,8 +2873,10 @@ class DroneCorridorPlanner(object):
                     if val is not None and val != NULL and str(val) != 'NULL' and str(val) != '':
                         try:
                             alt = float(val)
-                        except ValueError:
-                            pass
+                        except ValueError as e:
+                            from qgis.core import QgsMessageLog, Qgis
+                            import traceback
+                            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 2876): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
                 spd = default_spd
                 if spd_idx != -1:
@@ -2845,8 +2885,10 @@ class DroneCorridorPlanner(object):
                     if val is not None and val != NULL and str(val) != 'NULL' and str(val) != '':
                         try:
                             spd = float(val)
-                        except ValueError:
-                            pass
+                        except ValueError as e:
+                            from qgis.core import QgsMessageLog, Qgis
+                            import traceback
+                            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 2886): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
                 fg = default_fg
                 if fg_idx != -1:
@@ -2855,8 +2897,10 @@ class DroneCorridorPlanner(object):
                     if val is not None and val != NULL and str(val) != 'NULL' and str(val) != '':
                         try:
                             fg = float(val)
-                        except ValueError:
-                            pass
+                        except ValueError as e:
+                            from qgis.core import QgsMessageLog, Qgis
+                            import traceback
+                            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 2896): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
                 # Extract vertices from geometry
                 for vertex in geom.vertices():
@@ -3418,8 +3462,10 @@ class DroneCorridorPlanner(object):
             try:
                 # Fallback to current canvas view
                 render_extent_to_image(canvas.extent(), overview_path, width=1000, height=700)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 3421): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                 
         return overview_path, start_path, end_path
 
@@ -3644,8 +3690,10 @@ class DroneCorridorPlanner(object):
                         sora_pixmap = self.sora_viz.grab()
                         temp_sora_path = os.path.join(tempfile.gettempdir(), f"sora_viz_{uuid.uuid4().hex[:8]}.png")
                         sora_pixmap.save(temp_sora_path, "PNG")
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        from qgis.core import QgsMessageLog, Qgis
+                        import traceback
+                        QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 3647): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                 
                 ImporterExporter.export_sora_docx(
                     file_path, 
@@ -3664,8 +3712,10 @@ class DroneCorridorPlanner(object):
                     if p and os.path.exists(p):
                         try:
                             os.remove(p)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            from qgis.core import QgsMessageLog, Qgis
+                            import traceback
+                            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 3667): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                         
                 QMessageBox.information(
                     self.gui, 
@@ -3795,8 +3845,10 @@ class DroneCorridorPlanner(object):
                     sora_pixmap = self.sora_viz.grab()
                     temp_sora_path = os.path.join(tempfile.gettempdir(), f"sora_viz_{uuid.uuid4().hex[:8]}.png")
                     sora_pixmap.save(temp_sora_path, "PNG")
-                except Exception:
-                    pass
+                except Exception as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    import traceback
+                    QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 3798): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
             
             # Run SORA DOCX Export
             ImporterExporter.export_sora_docx(
@@ -3816,8 +3868,10 @@ class DroneCorridorPlanner(object):
                 if p and os.path.exists(p):
                     try:
                         os.remove(p)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        from qgis.core import QgsMessageLog, Qgis
+                        import traceback
+                        QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 3819): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                     
             QMessageBox.information(
                 self.gui, 

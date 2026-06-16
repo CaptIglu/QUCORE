@@ -32,8 +32,10 @@ class ExportSettingsDialog(QDialog):
             try:
                 with open(tr_path, 'r', encoding='utf-8') as f:
                     self.tr_strings = json.load(f)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in export_settings_dialog.py (line 35): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                 
         self.setWindowTitle(self.tr("dialog_export_title", "Parameter für den Export festlegen"))
         

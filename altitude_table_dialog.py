@@ -42,8 +42,10 @@ class AltitudeTableDialog(QDialog):
             try:
                 with open(tr_path, 'r', encoding='utf-8') as f:
                     self.tr_strings = json.load(f)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 45): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                 
         self.setWindowTitle(self.tr("dialog_altitude_title", "Wegpunkt-Parameter bearbeiten"))
         self.init_ui()
@@ -319,8 +321,10 @@ class AltitudeTableDialog(QDialog):
                     if len(parts) == 2:
                         lat = float(parts[0])
                         lon = float(parts[1])
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    import traceback
+                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 324): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                     
             # Calculate distance
             dist = 0.0
@@ -352,8 +356,10 @@ class AltitudeTableDialog(QDialog):
             if item_spd:
                 try:
                     spd = float(item_spd.text().replace(',', '.'))
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    import traceback
+                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 357): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
             
             if spd < 0.1:
                 spd = 0.1
@@ -617,8 +623,10 @@ class AltitudeTableDialog(QDialog):
                     if len(parts) == 2:
                         lat_val = float(parts[0])
                         lon_val = float(parts[1])
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    import traceback
+                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 622): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
             
             # Read Altitude (col 2)
             alt_val = alt_prev
@@ -628,8 +636,10 @@ class AltitudeTableDialog(QDialog):
                     alt_val = float(item_alt.text().replace(',', '.'))
                     if alt_val < 0.0:
                         alt_val = 0.0
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    import traceback
+                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 633): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
             
             # Read Speed (col 3)
             spd_val = spd_prev
@@ -639,8 +649,10 @@ class AltitudeTableDialog(QDialog):
                     spd_val = float(item_spd.text().replace(',', '.'))
                     if spd_val < 0.1:
                         spd_val = 0.1
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    import traceback
+                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 644): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                     
             # Read FG Width (col 4)
             fg_val = fg_prev
@@ -650,8 +662,10 @@ class AltitudeTableDialog(QDialog):
                     fg_val = float(item_fg.text().replace(',', '.'))
                     if fg_val < 1.0:
                         fg_val = 1.0
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    import traceback
+                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 655): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                     
             updated_params.append((lon_val, lat_val, alt_val, spd_val, fg_val))
         return updated_params
@@ -703,8 +717,10 @@ class AltitudeTableDialog(QDialog):
                 self.waypoints_layer.triggerRepaint()
                 if self.canvas:
                     self.canvas.refresh()
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 706): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
             self.labels_active = False
 
     def accept(self):

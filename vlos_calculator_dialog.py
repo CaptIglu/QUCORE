@@ -33,8 +33,10 @@ class VlosCalculatorDialog(QDialog):
             try:
                 with open(tr_path, 'r', encoding='utf-8') as f:
                     self.tr_strings = json.load(f)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in vlos_calculator_dialog.py (line 36): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                 
         self.setWindowTitle(self.tr("dialog_vlos_title", "VLOS-Rechner (ALOS/DLOS)"))
         self.init_ui()

@@ -36,8 +36,10 @@ class AdvancedSettingsDialog(QDialog):
             try:
                 with open(self.config_path, 'r', encoding='utf-8') as f:
                     self.config_params = json.load(f)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in advanced_settings_dialog.py (line 39): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                 
         # Load config_limits.json for dynamic min/max/step/decimals of spinboxes
         self.config_limits = {}
@@ -48,8 +50,10 @@ class AdvancedSettingsDialog(QDialog):
                 try:
                     with open(limits_path, 'r', encoding='utf-8') as f:
                         self.config_limits = json.load(f)
-                except Exception:
-                    pass
+                except Exception as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    import traceback
+                    QgsMessageLog.logMessage(f"Silent exception caught in advanced_settings_dialog.py (line 51): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
         # Apply current in-memory parameters to reflect the active session
         if current_params:
@@ -63,8 +67,10 @@ class AdvancedSettingsDialog(QDialog):
             try:
                 with open(tr_path, 'r', encoding='utf-8') as f:
                     self.tr_strings = json.load(f)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in advanced_settings_dialog.py (line 66): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                 
         self.init_ui()
 
@@ -412,8 +418,10 @@ class AdvancedSettingsDialog(QDialog):
                 try:
                     with open(self.config_path, 'r', encoding='utf-8') as f:
                         fresh_config = json.load(f)
-                except Exception:
-                    pass
+                except Exception as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    import traceback
+                    QgsMessageLog.logMessage(f"Silent exception caught in advanced_settings_dialog.py (line 415): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
             
             if not fresh_config:
                 return

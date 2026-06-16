@@ -23,8 +23,10 @@ def tr(key, default=""):
             try:
                 with open(tr_path, 'r', encoding='utf-8') as f:
                     _tr_strings = json.load(f)
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in importer_exporter.py (line 26): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
     return _tr_strings.get(key, {}).get(lang, default)
 
 
@@ -968,8 +970,10 @@ class ImporterExporter:
                             if rid.startswith("rId"):
                                 try:
                                     existing_rids.append(int(rid[3:]))
-                                except ValueError:
-                                    pass
+                                except ValueError as e:
+                                    from qgis.core import QgsMessageLog, Qgis
+                                    import traceback
+                                    QgsMessageLog.logMessage(f"Silent exception caught in importer_exporter.py (line 973): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
         except Exception as e:
             QgsMessageLog.logMessage(f"Failed to parse docx rels: {e}", "QUCORE", Qgis.Warning)
             

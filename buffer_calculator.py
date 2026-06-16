@@ -201,9 +201,11 @@ class BufferCalculator:
                     if abs(lon - prev_lon) < 1e-7 and abs(lat - prev_lat) < 1e-7:
                         continue
                 parsed_wpts.append((lon, lat, h, spd, fg))
-            except (ValueError, TypeError, IndexError):
+            except (ValueError, TypeError, IndexError) as e:
                 # Ignore malformed points
-                pass
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(f"Silent exception caught in buffer_calculator.py (line 204): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
 
         if not parsed_wpts:
             return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
