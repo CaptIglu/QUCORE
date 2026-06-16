@@ -4,6 +4,7 @@ import json
 import math
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QBrush
+from .config_manager import ConfigManager
 from PyQt5.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -491,7 +492,7 @@ class AltitudeTableDialog(QDialog):
             # Validation for Speed (col 3)
             elif col == 3:
                 item_spd = self.table.item(row, col)
-                max_vel = float(self.params.get("maxCommandableSpeedVmax", self.params.get("maxVelocityVmax", self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))))
+                max_vel = float(ConfigManager.get_param(self.params, "maxCommandableSpeedVmax"))
                 uas_type = self.params.get("uas_type", "FixedWing")
                 stall_vel = float(self.params.get("stallVelocity", 10.0))
                 

@@ -56,9 +56,8 @@ class ImporterExporter:
             # Legacy migrations (already handled in sanitize, but we can leave it to be safe)
             if "maxVelocity" in params and "maxOpsSpeedV0" not in params:
                 params["maxOpsSpeedV0"] = params["maxVelocity"]
-            if "maxVelocityVmax" in params or "maxCommandSpeedVmax" in params or "maxCommandableSpeedVmax" not in params:
-                if "maxCommandableSpeedVmax" not in params:
-                    params["maxCommandableSpeedVmax"] = params.get("maxVelocityVmax", params.get("maxCommandSpeedVmax", params.get("maxOpsSpeedV0", 30.0)))
+            if "maxCommandableSpeedVmax" not in params:
+                params["maxCommandableSpeedVmax"] = params.get("maxVelocityVmax", params.get("maxCommandSpeedVmax", params.get("maxOpsSpeedV0", 30.0)))
             geom_type = qucore_state.get("geometry_type", "Corridor")
             width = float(ConfigManager.get_param(params, "corridorWidth"))
             max_height = float(ConfigManager.get_param(params, "maxFlightHeight"))

@@ -2035,23 +2035,7 @@ class DroneCorridorPlanner(object):
             QgsMessageLog.logMessage(f"CRS-Transformationsfehler (aus WGS84): {e}", "QUCORE", Qgis.Warning)
             return point_wgs
 
-    def on_waypoint_clicked(self, point, button):
-        """
-        Handles clicks when waypoint drawing is active.
-        """
-        if button == Qt.LeftButton:
-            pt_wgs = self.transform_to_wgs84(point)
-            
-            # Set default altitude to params default altitude
-            def_alt = float(ConfigManager.get_param(self.params, "maxFlightHeight"))
-            self.waypoints.append((pt_wgs.x(), pt_wgs.y(), def_alt))
-            
-            # Recalculate
-            self.rebuild_and_calculate()
-        elif button == Qt.RightButton:
-            # Done drawing, turn off map tool
-            self.btn_draw_wp.setChecked(False)
-            self.canvas.unsetMapTool(self.wp_tool)
+
 
     def on_pilot_clicked(self, point, button):
         """

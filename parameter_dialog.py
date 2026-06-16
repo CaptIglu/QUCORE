@@ -61,23 +61,10 @@ class ParameterDialog(QDialog):
 
         # Override with current parameters if provided
         if current_params:
-            migrated_params = current_params.copy()
-            if "maxVelocity" in migrated_params:
-                if "maxOpsSpeedV0" not in migrated_params:
-                    migrated_params["maxOpsSpeedV0"] = migrated_params["maxVelocity"]
-                if "maxVelocityVmax" not in migrated_params and "maxCommandSpeedVmax" not in migrated_params and "maxCommandableSpeedVmax" not in migrated_params:
-                    migrated_params["maxCommandableSpeedVmax"] = migrated_params["maxVelocity"]
+            self.params.update(current_params)
 
-            if ("maxVelocityVmax" in migrated_params or "maxCommandSpeedVmax" in migrated_params) and "maxCommandableSpeedVmax" not in migrated_params:
-                migrated_params["maxCommandableSpeedVmax"] = migrated_params.get("maxVelocityVmax", migrated_params.get("maxCommandSpeedVmax"))
-
-            if "maxOpsSpeedV0" in migrated_params and "maxCommandableSpeedVmax" not in migrated_params:
-                migrated_params["maxCommandableSpeedVmax"] = migrated_params["maxOpsSpeedV0"]
-
-            self.params.update(migrated_params)
-
-        if "maxCommandableSpeedVmax" not in self.params:
-            self.params["maxCommandableSpeedVmax"] = self.params.get("maxOpsSpeedV0", 30.0)
+        self.params["maxOpsSpeedV0"] = ConfigManager.get_param(self.params, "maxOpsSpeedV0")
+        self.params["maxCommandableSpeedVmax"] = ConfigManager.get_param(self.params, "maxCommandableSpeedVmax")
 
         # Load translations
         self.tr_strings = {}
@@ -112,8 +99,8 @@ class ParameterDialog(QDialog):
         main_layout = QVBoxLayout(self)
 
         # Get defaults from config_defaults with robust fallbacks
-        v0_def = self.config_defaults.get("maxOpsSpeedV0", self.config_defaults.get("maxVelocity", 30.0))
-        vmax_def = self.config_defaults.get("maxCommandableSpeedVmax", self.config_defaults.get("maxVelocityVmax", v0_def))
+        v0_def = ConfigManager.get_default("maxOpsSpeedV0")
+        vmax_def = ConfigManager.get_default("maxCommandableSpeedVmax")
         cd_def = self.config_defaults.get("maxCharacteristicDimension", 3.6)
         stall_def = self.config_defaults.get("stallVelocity", 10.0)
         gps_def = self.config_defaults.get("gpsInaccuracy", 3.0)
@@ -173,7 +160,7 @@ class ParameterDialog(QDialog):
         
         self.spin_v0 = QDoubleSpinBox()
         self.configure_spinbox(self.spin_v0, "maxOpsSpeedV0", 0.1, 200.0, 1.0, 1)
-        self.spin_v0.setValue(self.params.get("maxOpsSpeedV0", 30.0))
+        self.spin_v0.setValue(ConfigManager.get_param(self.params, "maxOpsSpeedV0"))
         self.spin_v0.setSuffix(" m/s")
         uas_layout.addRow(f"{self.tr('label_v0', 'Max. Betriebsgeschwindigkeit (v0)')} ({default_label}: {v0_def:.1f} m/s):", self.spin_v0)
         
@@ -190,7 +177,7 @@ class ParameterDialog(QDialog):
 
         self.spin_vmax = QDoubleSpinBox()
         self.configure_spinbox(self.spin_vmax, "maxCommandableSpeedVmax", 0.1, 200.0, 1.0, 1)
-        self.spin_vmax.setValue(self.params.get("maxCommandableSpeedVmax", 30.0))
+        self.spin_vmax.setValue(ConfigManager.get_param(self.params, "maxCommandableSpeedVmax"))
         self.spin_vmax.setSuffix(" m/s")
         uas_layout.addRow(f"{self.tr('label_v_max', 'Max. kommandierbare Geschwindigkeit (v_max)')} ({default_label}: {vmax_def:.1f} m/s):", self.spin_vmax)
         
@@ -258,13 +245,13 @@ class ParameterDialog(QDialog):
         
         self.spin_add_horiz = QDoubleSpinBox()
         self.configure_spinbox(self.spin_add_horiz, "additionalErrorLateral", 0.0, 500.0, 1.0, 1)
-        self.spin_add_horiz.setValue(self.params.get("additionalErrorLateral", 0.0))
+        self.spin_add_horiz.setValue(ConfigManager.get_param(self.params, "additionalErrorLateral"))
         self.spin_add_horiz.setSuffix(" m")
         ass_layout.addRow(f"{self.tr('label_add_horiz', 'Zusatzentfernung (horizontal)')} ({default_label}: {add_lat_def:.1f} m):", self.spin_add_horiz)
         
         self.spin_add_vert = QDoubleSpinBox()
         self.configure_spinbox(self.spin_add_vert, "additionalErrorVertical", 0.0, 500.0, 1.0, 1)
-        self.spin_add_vert.setValue(self.params.get("additionalErrorVertical", 0.0))
+        self.spin_add_vert.setValue(ConfigManager.get_param(self.params, "additionalErrorVertical"))
         self.spin_add_vert.setSuffix(" m")
         ass_layout.addRow(f"{self.tr('label_add_vert', 'Zusatzentfernung (vertikal)')} ({default_label}: {add_vert_def:.1f} m):", self.spin_add_vert)
 
@@ -504,41 +491,7 @@ class ParameterDialog(QDialog):
         text = self.tr("msg_restore_defaults_text", "Möchten Sie wirklich alle Parameter auf die Standardwerte aus der config.json zurücksetzen?")
         reply = QMessageBox.question(self, title, text, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
-            # Recreate baseline default parameter dictionary
-            baseline_defaults = {
-                "uas_type": "FixedWing",
-                "altimetry": "GPS",
-                "maxOpsSpeedV0": 30.0,
-                "maxCommandableSpeedVmax": 30.0,
-                "maxCharacteristicDimension": 3.6,
-                "maxRollAngle": 30.0,
-                "maxPitchAngle": 30.0,
-                "glideRatioDenominator": 10.0,
-                "maxWindVelocity": 3.0,
-                "stallVelocity": 10.0,
-                "gpsInaccuracy": 3.0,
-                "positionError": 3.0,
-                "mapError": 1.0,
-                "reactionTime": 1.0,
-                "altitudeErrorGps": 4.0,
-                "altitudeErrorBarometric": 1.0,
-                "corridorWidth": 50.0,
-                "maxFlightHeight": 100.0,
-                "groundRiskBufferMethod": "Simplified",
-                "lateralContingencyManoeuvreType": "Default",
-                "verticalContingencyManoeuvreType": "Default",
-                "parachuteOpeningTimeLateral": 2.0,
-                "parachuteOpeningTimeVertical": 2.0,
-                "parachuteOpeningTimeGRB": 2.0,
-                "parachuteDescentRate": 2.0,
-                "additionalErrorLateral": 0.0,
-                "additionalErrorVertical": 0.0
-            }
-            
-            # Apply config defaults to baseline params
-            defaults = baseline_defaults.copy()
-            if self.config_defaults:
-                defaults.update(self.config_defaults)
+
                 
             # Block signals temporarily to prevent redundant calculations during reset
             self.combo_uas_type.blockSignals(True)
@@ -576,20 +529,20 @@ class ParameterDialog(QDialog):
 
             
             try:
-                # Apply defaults
-                uas_type = defaults.get("uas_type", "FixedWing")
+                # Apply defaults directly from ConfigManager
+                uas_type = ConfigManager.get_default("uas_type")
                 self.combo_uas_type.setCurrentIndex(1 if uas_type == "Multikopter" else 0)
                 
-                altimetry = defaults.get("altimetry", "GPS")
+                altimetry = ConfigManager.get_default("altimetry")
                 self.combo_altimetry.setCurrentIndex(1 if altimetry in ["Baro", "barometrisch"] else 0)
                 
-                lat_man = defaults.get("lateralContingencyManoeuvreType", "Default")
+                lat_man = ConfigManager.get_default("lateralContingencyManoeuvreType")
                 self.combo_lat_man.setCurrentIndex(1 if lat_man in ["Parachute", "Auslösen des Fallschirms"] else 0)
                 
-                vert_man = defaults.get("verticalContingencyManoeuvreType", "Default")
+                vert_man = ConfigManager.get_default("verticalContingencyManoeuvreType")
                 self.combo_vert_man.setCurrentIndex(1 if vert_man in ["Parachute", "Auslösen des Fallschirms"] else 0)
                 
-                grb_method = defaults.get("groundRiskBufferMethod", "Simplified")
+                grb_method = ConfigManager.get_default("groundRiskBufferMethod")
                 m_map = {
                     "Simplified": 0, "Vereinfachter Ansatz (1:1 Regel)": 0,
                     "Ballistic": 1, "Ballistischer Ansatz": 1,
@@ -598,32 +551,32 @@ class ParameterDialog(QDialog):
                 }
                 self.combo_grb_method.setCurrentIndex(m_map.get(grb_method, 0))
                 
-                self.spin_v0.setValue(defaults.get("maxOpsSpeedV0", 30.0))
-                self.spin_vmax.setValue(defaults.get("maxCommandableSpeedVmax", 30.0))
-                self.spin_cd.setValue(defaults.get("maxCharacteristicDimension", 3.6))
-                self.spin_stall.setValue(defaults.get("stallVelocity", 10.0))
+                self.spin_v0.setValue(ConfigManager.get_default("maxOpsSpeedV0"))
+                self.spin_vmax.setValue(ConfigManager.get_default("maxCommandableSpeedVmax"))
+                self.spin_cd.setValue(ConfigManager.get_default("maxCharacteristicDimension"))
+                self.spin_stall.setValue(ConfigManager.get_default("stallVelocity"))
                 
-                self.spin_gps_inacc.setValue(defaults.get("gpsInaccuracy", 3.0))
-                self.spin_pos_err.setValue(defaults.get("positionError", 3.0))
-                self.spin_map_err.setValue(defaults.get("mapError", 1.0))
-                self.spin_t_rz.setValue(defaults.get("reactionTime", 1.0))
-                self.spin_alt_gps.setValue(defaults.get("altitudeErrorGps", 4.0))
-                self.spin_alt_baro.setValue(defaults.get("altitudeErrorBarometric", 1.0))
-                self.spin_add_horiz.setValue(defaults.get("additionalErrorLateral", 0.0))
-                self.spin_add_vert.setValue(defaults.get("additionalErrorVertical", 0.0))
+                self.spin_gps_inacc.setValue(ConfigManager.get_default("gpsInaccuracy"))
+                self.spin_pos_err.setValue(ConfigManager.get_default("positionError"))
+                self.spin_map_err.setValue(ConfigManager.get_default("mapError"))
+                self.spin_t_rz.setValue(ConfigManager.get_default("reactionTime"))
+                self.spin_alt_gps.setValue(ConfigManager.get_default("altitudeErrorGps"))
+                self.spin_alt_baro.setValue(ConfigManager.get_default("altitudeErrorBarometric"))
+                self.spin_add_horiz.setValue(ConfigManager.get_default("additionalErrorLateral"))
+                self.spin_add_vert.setValue(ConfigManager.get_default("additionalErrorVertical"))
                 
-                self.spin_roll_angle.setValue(defaults.get("maxRollAngle", 30.0))
-                self.spin_pitch_angle.setValue(defaults.get("maxPitchAngle", 30.0))
-                self.spin_para_lat.setValue(defaults.get("parachuteOpeningTimeLateral", 2.0))
-                self.spin_para_vert.setValue(defaults.get("parachuteOpeningTimeVertical", 2.0))
+                self.spin_roll_angle.setValue(ConfigManager.get_default("maxRollAngle"))
+                self.spin_pitch_angle.setValue(ConfigManager.get_default("maxPitchAngle"))
+                self.spin_para_lat.setValue(ConfigManager.get_default("parachuteOpeningTimeLateral"))
+                self.spin_para_vert.setValue(ConfigManager.get_default("parachuteOpeningTimeVertical"))
                 
-                self.spin_glide.setValue(defaults.get("glideRatioDenominator", 10.0))
-                self.spin_para_grb.setValue(defaults.get("parachuteOpeningTimeGRB", 2.0))
-                self.spin_wind.setValue(defaults.get("maxWindVelocity", 3.0))
-                self.spin_descent.setValue(defaults.get("parachuteDescentRate", 2.0))
+                self.spin_glide.setValue(ConfigManager.get_default("glideRatioDenominator"))
+                self.spin_para_grb.setValue(ConfigManager.get_default("parachuteOpeningTimeGRB"))
+                self.spin_wind.setValue(ConfigManager.get_default("maxWindVelocity"))
+                self.spin_descent.setValue(ConfigManager.get_default("parachuteDescentRate"))
                 
-                self.spin_corridor_width.setValue(defaults.get("corridorWidth", 50.0))
-                self.spin_default_h.setValue(defaults.get("maxFlightHeight", 100.0))
+                self.spin_corridor_width.setValue(ConfigManager.get_default("corridorWidth"))
+                self.spin_default_h.setValue(ConfigManager.get_default("maxFlightHeight"))
 
             finally:
                 # Unblock signals
@@ -758,8 +711,8 @@ class ParameterDialog(QDialog):
             for idx in range(len(self.waypoints)):
                 w = self.waypoints[idx]
                 lon, lat = w[0], w[1]
-                spd = w[3] if len(w) > 3 else float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
-                fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
+                spd = w[3] if len(w) > 3 else float(ConfigManager.get_param(self.params, "maxOpsSpeedV0"))
+                fg = w[4] if len(w) > 4 else float(ConfigManager.get_param(self.params, "corridorWidth"))
                 self.waypoints[idx] = (lon, lat, new_h, spd, fg)
             self.on_value_changed()
 
@@ -770,8 +723,8 @@ class ParameterDialog(QDialog):
             for idx in range(len(self.waypoints)):
                 w = self.waypoints[idx]
                 lon, lat = w[0], w[1]
-                alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
-                spd = w[3] if len(w) > 3 else float(self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0)))
+                alt = w[2] if len(w) > 2 else float(ConfigManager.get_param(self.params, "maxFlightHeight"))
+                spd = w[3] if len(w) > 3 else float(ConfigManager.get_param(self.params, "maxOpsSpeedV0"))
                 self.waypoints[idx] = (lon, lat, alt, spd, new_w)
             self.on_value_changed()
 
@@ -782,8 +735,8 @@ class ParameterDialog(QDialog):
             for idx in range(len(self.waypoints)):
                 w = self.waypoints[idx]
                 lon, lat = w[0], w[1]
-                alt = w[2] if len(w) > 2 else float(self.params.get("maxFlightHeight", 100.0))
-                fg = w[4] if len(w) > 4 else float(self.params.get("corridorWidth", 50.0))
+                alt = w[2] if len(w) > 2 else float(ConfigManager.get_param(self.params, "maxFlightHeight"))
+                fg = w[4] if len(w) > 4 else float(ConfigManager.get_param(self.params, "corridorWidth"))
                 self.waypoints[idx] = (lon, lat, alt, new_v, fg)
             self.on_value_changed()
 
@@ -792,19 +745,19 @@ class ParameterDialog(QDialog):
     def has_individual_heights(self):
         if not self.waypoints:
             return False
-        standard = self.params.get("maxFlightHeight", 100.0)
+        standard = ConfigManager.get_param(self.params, "maxFlightHeight")
         return any(len(w) > 2 and abs(w[2] - standard) > 1e-3 for w in self.waypoints)
 
     def has_individual_widths(self):
         if not self.waypoints:
             return False
-        standard = self.params.get("corridorWidth", 50.0)
+        standard = ConfigManager.get_param(self.params, "corridorWidth")
         return any(len(w) > 4 and abs(w[4] - standard) > 1e-3 for w in self.waypoints)
 
     def has_individual_speeds(self):
         if not self.waypoints:
             return False
-        standard = self.params.get("maxOpsSpeedV0", self.params.get("maxVelocity", 30.0))
+        standard = ConfigManager.get_param(self.params, "maxOpsSpeedV0")
         return any(len(w) > 3 and abs(w[3] - standard) > 1e-3 for w in self.waypoints)
 
     def reject(self):
@@ -847,14 +800,14 @@ class ParameterDialog(QDialog):
         
         # If there are no waypoints, check the default settings
         if not self.waypoints:
-            h = params.get("maxFlightHeight", 100.0)
+            h = ConfigManager.get_param(params, "maxFlightHeight")
             r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params)
             s_cv_list.append(r_cv - r_fg)
         else:
             for w in self.waypoints:
-                h = w[2] if len(w) > 2 else params.get("maxFlightHeight", 100.0)
-                spd = w[3] if len(w) > 3 else params.get("maxOpsSpeedV0", params.get("maxVelocity", 30.0))
-                fg = w[4] if len(w) > 4 else params.get("corridorWidth", 50.0)
+                h = w[2] if len(w) > 2 else ConfigManager.get_param(params, "maxFlightHeight")
+                spd = w[3] if len(w) > 3 else ConfigManager.get_param(params, "maxOpsSpeedV0")
+                fg = w[4] if len(w) > 4 else ConfigManager.get_param(params, "corridorWidth")
                 
                 params_wp = params.copy()
                 params_wp["maxOpsSpeedV0"] = spd
