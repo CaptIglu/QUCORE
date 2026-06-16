@@ -422,7 +422,23 @@ class PopulationDensityDialog(QDialog):
                 self.params["aa_population"] = total_population
                 self.params["aa_density"] = density
                 
+        def on_task_terminated():
+            self.setCursor(Qt.ArrowCursor)
+            self.btn_calculate.setEnabled(True)
+            self.btn_calculate.setText(self.tr("btn_calculate_pop", "Berechnung starten"))
+            from qgis.core import QgsMessageLog, Qgis
+            QgsMessageLog.logMessage(
+                "Zonalstatistik-Berechnung wurde abgebrochen oder vorzeitig beendet.",
+                "QUCORE", Qgis.Warning
+            )
+            QMessageBox.warning(
+                self,
+                self.tr("error_calc_terminated_title", "Berechnung abgebrochen"),
+                self.tr("error_calc_terminated_text", "Die Zonalstatistik-Berechnung wurde abgebrochen.")
+            )
+
         # Create and start the QgsTask
         task = QgsTask.fromFunction("QUCORE Zonal Statistics AA", run_zstats_async)
         task.taskCompleted.connect(lambda: on_task_completed(*task.returned_values))
+        task.taskTerminated.connect(on_task_terminated)
         QgsApplication.taskManager().addTask(task)
