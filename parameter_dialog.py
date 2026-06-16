@@ -65,7 +65,19 @@ class ParameterDialog(QDialog):
 
         # Override with current parameters if provided
         if current_params:
-            self.params.update(current_params)
+            cp = current_params.copy()
+            if "maxVelocity" in cp and "maxOpsSpeedV0" not in cp:
+                cp["maxOpsSpeedV0"] = cp["maxVelocity"]
+            if "maxVelocityVmax" in cp and "maxCommandableSpeedVmax" not in cp:
+                cp["maxCommandableSpeedVmax"] = cp["maxVelocityVmax"]
+            if "maxCommandSpeedVmax" in cp and "maxCommandableSpeedVmax" not in cp:
+                cp["maxCommandableSpeedVmax"] = cp["maxCommandSpeedVmax"]
+                
+            # Fallback to V0 if Vmax is missing
+            if "maxOpsSpeedV0" in cp and "maxCommandableSpeedVmax" not in cp:
+                cp["maxCommandableSpeedVmax"] = cp["maxOpsSpeedV0"]
+                
+            self.params.update(cp)
 
         self.params["maxOpsSpeedV0"] = ConfigManager.get_param(self.params, "maxOpsSpeedV0")
         self.params["maxCommandableSpeedVmax"] = ConfigManager.get_param(self.params, "maxCommandableSpeedVmax")

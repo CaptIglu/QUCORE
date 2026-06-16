@@ -2171,7 +2171,6 @@ class DroneCorridorPlanner(object):
             self.canvas.refresh()
             try:
                 state_json = self.serialize_state()
-                from qgis.core import QgsProject
                 QgsProject.instance().writeEntry("QUCORE", "state", state_json)
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis

@@ -316,7 +316,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         self.base_params = {
             "uas_type": "FixedWing",
             "altimetry": "GPS",
-            "maxVelocity": 30.0,
+            "maxOpsSpeedV0": 30.0,
             "maxCharacteristicDimension": 3.6,
             "maxRollAngle": 30.0,
             "maxPitchAngle": 30.0,
@@ -350,7 +350,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         params.update({
             "uas_type": "FixedWing",
             "altimetry": "Baro",
-            "maxVelocity": 20.0,
+            "maxOpsSpeedV0": 20.0,
             "maxCharacteristicDimension": 3.6,
             "corridorWidth": 50.0,
             "maxFlightHeight": 110.0,
@@ -383,7 +383,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         params.update({
             "uas_type": "Multikopter",
             "altimetry": "Baro",
-            "maxVelocity": 10.0,
+            "maxOpsSpeedV0": 10.0,
             "maxCharacteristicDimension": 1.5,
             "corridorWidth": 50.0,
             "maxFlightHeight": 100.0,
@@ -415,7 +415,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         params.update({
             "uas_type": "FixedWing",
             "altimetry": "GPS",
-            "maxVelocity": 20.0,
+            "maxOpsSpeedV0": 20.0,
             "maxCharacteristicDimension": 3.6,
             "corridorWidth": 50.0,
             "maxFlightHeight": 110.0,
@@ -446,7 +446,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         params.update({
             "uas_type": "FixedWing",
             "altimetry": "Baro",
-            "maxVelocity": 20.0,
+            "maxOpsSpeedV0": 20.0,
             "maxCharacteristicDimension": 3.6,
             "corridorWidth": 50.0,
             "maxFlightHeight": 110.0,
@@ -476,7 +476,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         params.update({
             "uas_type": "Multikopter",
             "altimetry": "GPS",
-            "maxVelocity": 12.0,
+            "maxOpsSpeedV0": 12.0,
             "maxCharacteristicDimension": 2.0,
             "corridorWidth": 60.0,
             "maxFlightHeight": 120.0,
@@ -508,7 +508,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         params.update({
             "uas_type": "FixedWing",
             "altimetry": "GPS",
-            "maxVelocity": 15.0,
+            "maxOpsSpeedV0": 15.0,
             "maxCharacteristicDimension": 4.0,
             "corridorWidth": 80.0,
             "maxFlightHeight": 100.0,
@@ -541,7 +541,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         params.update({
             "uas_type": "Multikopter",
             "altimetry": "Baro",
-            "maxVelocity": 15.0,
+            "maxOpsSpeedV0": 15.0,
             "maxCharacteristicDimension": 2.5,
             "corridorWidth": 50.0,
             "maxFlightHeight": 90.0,
@@ -572,7 +572,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         params.update({
             "uas_type": "FixedWing",
             "altimetry": "Baro",
-            "maxVelocity": 25.0,
+            "maxOpsSpeedV0": 25.0,
             "maxCharacteristicDimension": 4.5,
             "corridorWidth": 100.0,
             "maxFlightHeight": 120.0,
@@ -731,7 +731,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             self.assertEqual(meta_feat["properties"]["altimetry"], "GPS")
             
             # 3. Read back from GeoJSON and verify
-            wpts_in, pilot_in, width_in, max_height_in, params_in, geom_in = ImporterExporter.import_geojson(dest_geojson)
+            wpts_in, pilot_in, width_in, max_height_in, params_in, geom_in, warnings_in = ImporterExporter.import_geojson(dest_geojson)
             
             # 4. Verify structural correctness
             self.assertEqual(len(wpts_in), 2)
@@ -759,7 +759,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             # General parameters
             self.assertEqual(params_in.get("uas_type"), "FixedWing")
             self.assertEqual(params_in.get("altimetry"), "GPS")
-            self.assertEqual(params_in.get("maxVelocity"), 30.0)
+            self.assertEqual(params_in.get("maxOpsSpeedV0"), 30.0)
             self.assertEqual(params_in.get("corridorWidth"), 50.0)
             
         finally:
@@ -783,7 +783,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         params = self.base_params.copy()
         params.update({
             "uas_type": "FixedWing",
-            "maxVelocity": 20.0,
+            "maxOpsSpeedV0": 20.0,
             "maxWindVelocity": 5.0,
             "groundRiskBufferMethod": "Parachute"
         })
@@ -798,7 +798,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             self.assertGreater(os.path.getsize(dest_kml), 100)
             
             # 3. Read back from KML and verify
-            wpts_in, pilot_in, width_in, max_height_in, params_in, geom_in = ImporterExporter.import_kml(dest_kml)
+            wpts_in, pilot_in, width_in, max_height_in, params_in, geom_in, warnings_in = ImporterExporter.import_kml(dest_kml)
             
             # 4. Verify structural correctness
             self.assertEqual(len(wpts_in), 2)
@@ -821,7 +821,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             
             # General parameters restored
             self.assertEqual(params_in.get("uas_type"), "FixedWing")
-            self.assertEqual(params_in.get("maxVelocity"), 20.0)
+            self.assertEqual(params_in.get("maxOpsSpeedV0"), 20.0)
             self.assertEqual(params_in.get("maxWindVelocity"), 5.0)
             self.assertEqual(params_in.get("groundRiskBufferMethod"), "Parachute")
             
@@ -1057,7 +1057,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         # Set values that yield a very low s_cv (reaction time = 0.1s, maxVelocity = 1m/s, maxPitchAngle = 80deg)
         params.update({
             "uas_type": "Multikopter",
-            "maxVelocity": 1.0,
+            "maxOpsSpeedV0": 1.0,
             "reactionTime": 0.1,
             "gpsInaccuracy": 1.0,
             "positionError": 1.0,
