@@ -497,7 +497,7 @@ class ImporterExporter:
             "params": params
         }
         state_json = json.dumps(state, ensure_ascii=False)
-        state_xml_escaped = state_json.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+        state_xml_escaped = state_json.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace("'", "&apos;")
         
         extended_data_xml = f"""      <ExtendedData>
         <Data name="qucore_state">
