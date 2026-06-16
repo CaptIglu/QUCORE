@@ -103,9 +103,7 @@
       <w:t xml:space="preserve">The pilot's location is at: __PILOT_COORDS__.</w:t>
     </w:r>
   </w:p>
-  <w:p>
-    <w:r><w:t xml:space="preserve">Comment: __COMMENT__</w:t></w:r>
-  </w:p>
+  
   __DETAIL_MAPS_XML__
   <w:p>
     <w:pPr><w:pStyle w:val="berschrift3"/></w:pPr>

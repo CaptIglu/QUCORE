@@ -974,12 +974,7 @@ class ImporterExporter:
         else:
             pilot_str = "No pilot position defined" if is_en else "Keine Pilotenposition definiert"
             
-        # Comment
-        fallback_comment = "No general comment on the project." if is_en else "Kein allgemeiner Kommentar zum Projekt."
-        comment_str = params.get("comment", fallback_comment)
-        if not comment_str or comment_str.strip() == "":
-            comment_str = fallback_comment
-            
+
         # UAS Properties
         uas_type = ConfigManager.get_param(params, "uas_type")
         is_copter = uas_type == "Multikopter" or "kopter" in str(uas_type).lower()
@@ -1274,7 +1269,6 @@ class ImporterExporter:
         xml_content = xml_content.replace("__DATE__", date_str)
         xml_content = xml_content.replace("__CENTER_COORDS__", center_str)
         xml_content = xml_content.replace("__PILOT_COORDS__", pilot_str)
-        xml_content = xml_content.replace("__COMMENT__", comment_str)
         xml_content = xml_content.replace("__UAS_TYPE__", uas_type_str)
         xml_content = xml_content.replace("__ALTIMETRY__", altimetry_str)
         xml_content = xml_content.replace("__V0__", v0_str)
