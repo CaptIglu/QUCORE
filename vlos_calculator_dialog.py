@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import (
     QDialogButtonBox,
     QGroupBox
 )
+from .translation_manager import TranslationManager
 
 class VlosCalculatorDialog(QDialog):
     def __init__(self, parent=None, uas_type="FixedWing", cd=3.6, current_params=None):
@@ -26,25 +27,16 @@ class VlosCalculatorDialog(QDialog):
         self.params = current_params if current_params is not None else {}
         
         # Load translations
-        self.tr_strings = {}
-        plugin_dir = os.path.dirname(os.path.abspath(__file__))
-        tr_path = os.path.join(plugin_dir, "translations.json")
-        if os.path.exists(tr_path):
-            try:
-                with open(tr_path, 'r', encoding='utf-8') as f:
-                    self.tr_strings = json.load(f)
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in vlos_calculator_dialog.py (line 36): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
-                
+        # self.tr_strings logic removed in favor of TranslationManager
+        
+
         self.setWindowTitle(self.tr("dialog_vlos_title", "VLOS-Rechner (ALOS/DLOS)"))
         self.init_ui()
         self.recalculate()
 
     def tr(self, key, default=""):
         lang = ConfigManager.get_param(self.params, "language")
-        return self.tr_strings.get(key, {}).get(lang, default)
+        return TranslationManager.tr(key, lang, default)
 
     def init_ui(self):
         layout = QVBoxLayout(self)

@@ -20,6 +20,7 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QColorDialog
 )
+from .translation_manager import TranslationManager
 
 class AdvancedSettingsDialog(QDialog):
     def __init__(self, parent=None, config_path=None, current_step_size=50.0, current_params=None):
@@ -60,18 +61,9 @@ class AdvancedSettingsDialog(QDialog):
             self.config_params.update(current_params)
             
         # Load translations
-        self.tr_strings = {}
-        plugin_dir = os.path.dirname(os.path.abspath(__file__))
-        tr_path = os.path.join(plugin_dir, "translations.json")
-        if os.path.exists(tr_path):
-            try:
-                with open(tr_path, 'r', encoding='utf-8') as f:
-                    self.tr_strings = json.load(f)
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in advanced_settings_dialog.py (line 66): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
-                
+        # self.tr_strings logic removed in favor of TranslationManager
+        
+
         self.init_ui()
 
     def configure_spinbox(self, spinbox, param_key, default_min, default_max, default_step=1.0, default_decimals=2):
@@ -88,7 +80,7 @@ class AdvancedSettingsDialog(QDialog):
 
     def tr(self, key, default=""):
         lang = self.config_params.get("language", "de")
-        return self.tr_strings.get(key, {}).get(lang, default)
+        return TranslationManager.tr(key, lang, default)
 
     def init_ui(self):
         self.setWindowTitle(self.tr("dialog_adv_settings_title", "Erweiterte Einstellungen & Standardwerte"))

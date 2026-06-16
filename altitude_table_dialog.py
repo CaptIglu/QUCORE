@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import (
     QHeaderView,
     QCheckBox
 )
+from .translation_manager import TranslationManager
 
 class AltitudeTableDialog(QDialog):
     def __init__(self, parent=None, waypoints=None, params=None, on_change_callback=None, geometry_type="Corridor", waypoints_layer=None, canvas=None):
@@ -35,24 +36,15 @@ class AltitudeTableDialog(QDialog):
         self.labels_active = False
         
         # Load translations
-        self.tr_strings = {}
-        plugin_dir = os.path.dirname(os.path.abspath(__file__))
-        tr_path = os.path.join(plugin_dir, "translations.json")
-        if os.path.exists(tr_path):
-            try:
-                with open(tr_path, 'r', encoding='utf-8') as f:
-                    self.tr_strings = json.load(f)
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 45): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
-                
+        # self.tr_strings logic removed in favor of TranslationManager
+        
+
         self.setWindowTitle(self.tr("dialog_altitude_title", "Wegpunkt-Parameter bearbeiten"))
         self.init_ui()
 
     def tr(self, key, default=""):
         lang = self.params.get("language", "de")
-        return self.tr_strings.get(key, {}).get(lang, default)
+        return TranslationManager.tr(key, lang, default)
 
     def init_ui(self):
         layout = QVBoxLayout(self)

@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QMessageBox
 )
+from .translation_manager import TranslationManager
 
 class ExportSettingsDialog(QDialog):
     def __init__(self, parent=None, default_height=100.0, default_speed=30.0, default_fg_width=50.0, params=None, is_qgc_plan=False, is_waypoints_export=False):
@@ -25,18 +26,9 @@ class ExportSettingsDialog(QDialog):
         self.is_waypoints_export = is_waypoints_export
         
         # Load translations
-        self.tr_strings = {}
-        plugin_dir = os.path.dirname(os.path.abspath(__file__))
-        tr_path = os.path.join(plugin_dir, "translations.json")
-        if os.path.exists(tr_path):
-            try:
-                with open(tr_path, 'r', encoding='utf-8') as f:
-                    self.tr_strings = json.load(f)
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in export_settings_dialog.py (line 35): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
-                
+        # self.tr_strings logic removed in favor of TranslationManager
+        
+
         self.setWindowTitle(self.tr("dialog_export_title", "Parameter für den Export festlegen"))
         
         main_layout = QVBoxLayout(self)
@@ -139,7 +131,7 @@ class ExportSettingsDialog(QDialog):
         
     def tr(self, key, default=""):
         lang = self.params.get("language", "de")
-        return self.tr_strings.get(key, {}).get(lang, default)
+        return TranslationManager.tr(key, lang, default)
         
     def get_values(self):
         if not self.is_qgc_plan and not self.is_waypoints_export:

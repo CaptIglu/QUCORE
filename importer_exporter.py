@@ -6,28 +6,14 @@ import xml.etree.ElementTree as ET
 from qgis.core import QgsPointXY, QgsGeometry, QgsMessageLog, Qgis
 from .buffer_calculator import BufferCalculator
 from .config_manager import ConfigManager
-
-_tr_strings = {}
+from .translation_manager import TranslationManager
 
 def tr(key, default=""):
-    global _tr_strings
-    plugin_dir = os.path.dirname(os.path.abspath(__file__))
     try:
         lang = ConfigManager.get_default("language")
     except KeyError:
         lang = "de"
-            
-    if not _tr_strings:
-        tr_path = os.path.join(plugin_dir, "translations.json")
-        if os.path.exists(tr_path):
-            try:
-                with open(tr_path, 'r', encoding='utf-8') as f:
-                    _tr_strings = json.load(f)
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in importer_exporter.py (line 26): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
-    return _tr_strings.get(key, {}).get(lang, default)
+    return TranslationManager.tr(key, lang, default)
 
 
 def unpack_waypoint(w, params=None):

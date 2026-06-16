@@ -26,6 +26,7 @@ from qgis.core import (
     NULL
 )
 from qgis.analysis import QgsZonalStatistics
+from .translation_manager import TranslationManager
 
 class PopulationDensityDialog(QDialog):
     def __init__(self, parent=None, lyr_aga=None, current_params=None):
@@ -36,20 +37,9 @@ class PopulationDensityDialog(QDialog):
         self.params = current_params if current_params is not None else {}
         
         # Load translations
-        self.tr_strings = {}
-        plugin_dir = os.path.dirname(os.path.abspath(__file__))
-        tr_path = os.path.join(plugin_dir, "translations.json")
-        if os.path.exists(tr_path):
-            try:
-                with open(tr_path, 'r', encoding='utf-8') as f:
-                    self.tr_strings = json.load(f)
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(
-                    f"Fehler beim Laden von translations.json in PopulationDensityDialog: {e}",
-                    "QUCORE", Qgis.Warning
-                )
-                
+        # self.tr_strings logic removed in favor of TranslationManager
+        
+
         self.setWindowTitle(self.tr("dialog_pop_title", "Bevölkerungsdichte im Adjacent Area (AA) Bereich"))
         self.init_ui()
         self.populate_raster_layers()
@@ -57,7 +47,7 @@ class PopulationDensityDialog(QDialog):
 
     def tr(self, key, default=""):
         lang = ConfigManager.get_param(self.params, "language")
-        return self.tr_strings.get(key, {}).get(lang, default)
+        return TranslationManager.tr(key, lang, default)
 
     def init_ui(self):
         layout = QVBoxLayout(self)

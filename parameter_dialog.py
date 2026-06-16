@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import (
     QCheckBox
 )
 from .config_manager import ConfigManager
+from .translation_manager import TranslationManager
 
 class ParameterDialog(QDialog):
     def __init__(self, parent=None, current_params=None, waypoints=None):
@@ -30,29 +31,10 @@ class ParameterDialog(QDialog):
         self.on_change_callback = None
 
         # Load config.json defaults to show actual configured defaults in brackets
-        self.config_defaults = {}
-        plugin_dir = os.path.dirname(os.path.abspath(__file__))
-        config_path = os.path.join(plugin_dir, "config.json")
-        if os.path.exists(config_path):
-            try:
-                with open(config_path, 'r', encoding='utf-8') as f:
-                    self.config_defaults = json.load(f)
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in parameter_dialog.py (line 40): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+        self.config_defaults = ConfigManager.get_instance()._defaults.copy()
 
         # Load config_limits.json for dynamic min/max/step/decimals of spinboxes
-        self.config_limits = {}
-        limits_path = os.path.join(plugin_dir, "config_limits.json")
-        if os.path.exists(limits_path):
-            try:
-                with open(limits_path, 'r', encoding='utf-8') as f:
-                    self.config_limits = json.load(f)
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in parameter_dialog.py (line 50): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+        self.config_limits = ConfigManager.get_instance()._limits.copy()
 
         # ----------------------------------------------------
         # DEFAULT PARAMETERS FROM HELGOLAND DIPUL
@@ -83,16 +65,8 @@ class ParameterDialog(QDialog):
         self.params["maxCommandableSpeedVmax"] = ConfigManager.get_param(self.params, "maxCommandableSpeedVmax")
 
         # Load translations
-        self.tr_strings = {}
-        tr_path = os.path.join(plugin_dir, "translations.json")
-        if os.path.exists(tr_path):
-            try:
-                with open(tr_path, 'r', encoding='utf-8') as f:
-                    self.tr_strings = json.load(f)
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in parameter_dialog.py (line 76): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+        # self.tr_strings logic removed in favor of TranslationManager
+        
 
         self.setWindowTitle(self.tr("dialog_calc_params_title", "UAS Korridor Berechnungsparameter"))
         self.init_ui()
@@ -111,7 +85,7 @@ class ParameterDialog(QDialog):
 
     def tr(self, key, default=""):
         lang = self.params.get("language", "de")
-        return self.tr_strings.get(key, {}).get(lang, default)
+        return TranslationManager.tr(key, lang, default)
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)

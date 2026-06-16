@@ -40,6 +40,7 @@ from qgis.gui import QgsMapToolEmitPoint, QgsMapTool, QgsMapMouseEvent, QgsVerte
 import json
 from .buffer_calculator import BufferCalculator
 from .config_manager import ConfigManager
+from .translation_manager import TranslationManager
 from .parameter_dialog import ParameterDialog
 from .altitude_table_dialog import AltitudeTableDialog
 from .importer_exporter import ImporterExporter
@@ -710,19 +711,8 @@ class DroneCorridorPlanner(object):
         self.config_path = os.path.join(self.plugin_dir, "config.json")
         
         # Load translations
-        self.tr_strings = {}
-        tr_path = os.path.join(self.plugin_dir, "translations.json")
-        if os.path.exists(tr_path):
-            try:
-                with open(tr_path, 'r', encoding='utf-8') as f:
-                    self.tr_strings = json.load(f)
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(
-                    f"Fehler beim Laden von translations.json: {e}",
-                    "QUCORE", Qgis.Warning
-                )
-                
+        # self.tr_strings logic removed in favor of TranslationManager
+        
         self.params = self.load_config_params()
         
         # Undo/Redo stacks
@@ -842,7 +832,7 @@ class DroneCorridorPlanner(object):
 
     def tr(self, key, default=""):
         lang = ConfigManager.get_param(self.params, "language")
-        return self.tr_strings.get(key, {}).get(lang, default)
+        return TranslationManager.tr(key, lang, default)
 
     def initGui(self):
         """
