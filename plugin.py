@@ -1957,11 +1957,15 @@ class DroneCorridorPlanner(object):
     def deserialize_state(self, state_json):
         """
         Deserializes state JSON and restores the complete planning environment.
+        Returns a list of warnings if sanitization modified the state.
         """
         import json
         from qgis.core import QgsPointXY
+        from .config_manager import ConfigManager
         
         state = json.loads(state_json)
+        state, warnings = ConfigManager.sanitize_imported_state(state)
+        
         self.waypoints = [tuple(wp) for wp in state.get("waypoints", [])]
         
         pilot_coords = state.get("pilot_pos")
@@ -1972,6 +1976,7 @@ class DroneCorridorPlanner(object):
             
         self.geometry_type = state.get("geometry_type", "Corridor")
         self.params.update(state.get("params", {}))
+        
         
         # Sync language menu checkmarks and apply translations immediately
         lang = ConfigManager.get_param(self.params, "language")
@@ -1999,6 +2004,8 @@ class DroneCorridorPlanner(object):
             self.update_pilot_layer()
         finally:
             self.is_loading = False
+            
+        return warnings
 
     def transform_to_wgs84(self, point_canvas):
         """
@@ -3453,21 +3460,22 @@ class DroneCorridorPlanner(object):
             
         self.push_undo() # Save state before import
         try:
+            warnings = []
             imported_geom_type = "Corridor"
             if file_path.lower().endswith('.dipul'):
-                waypoints, pilot_pos, width, max_height, params, geom_type = ImporterExporter.import_dipul(file_path)
+                waypoints, pilot_pos, width, max_height, params, geom_type, warnings = ImporterExporter.import_dipul(file_path)
                 self.waypoints = waypoints
                 self.pilot_pos = pilot_pos
                 self.params.update(params)
                 imported_geom_type = geom_type
             elif file_path.lower().endswith('.flightplan'):
-                waypoints, pilot_pos, width, max_height, params, geom_type = ImporterExporter.import_flightplan(file_path)
+                waypoints, pilot_pos, width, max_height, params, geom_type, warnings = ImporterExporter.import_flightplan(file_path)
                 self.waypoints = waypoints
                 self.pilot_pos = pilot_pos
                 self.params.update(params)
                 imported_geom_type = geom_type
             elif file_path.lower().endswith('.geojson'):
-                waypoints, pilot_pos, width, max_height, params, geom_type = ImporterExporter.import_geojson(file_path)
+                waypoints, pilot_pos, width, max_height, params, geom_type, warnings = ImporterExporter.import_geojson(file_path)
                 self.waypoints = waypoints
                 self.pilot_pos = pilot_pos
                 self.params.update(params)
@@ -3483,7 +3491,7 @@ class DroneCorridorPlanner(object):
                         if features:
                             state_json = features[0].attribute(state_idx)
                             if state_json and str(state_json) != 'NULL' and str(state_json) != '':
-                                self.deserialize_state(str(state_json))
+                                warnings = self.deserialize_state(str(state_json))
                                 imported_geom_type = self.geometry_type
                             else:
                                 raise ValueError(self.tr("error_gpkg_no_state", "Die GPKG-Datei enthält keine gespeicherte Planung (qucore_state fehlt oder leer)."))
@@ -3495,7 +3503,7 @@ class DroneCorridorPlanner(object):
                     raise ValueError(self.tr("error_gpkg_load_failed", "Der Wegpunkte-Layer konnte nicht aus der GeoPackage-Datei geladen werden."))
             else:
                 # KML
-                waypoints, pilot_pos, width, max_height, params, geom_type = ImporterExporter.import_kml(file_path)
+                waypoints, pilot_pos, width, max_height, params, geom_type, warnings = ImporterExporter.import_kml(file_path)
                 self.waypoints = waypoints
                 self.pilot_pos = pilot_pos
                 self.params.update(params)
@@ -3512,11 +3520,18 @@ class DroneCorridorPlanner(object):
             self.rebuild_and_calculate()
             self.update_pilot_layer()
             
-            QMessageBox.information(
-                self.gui, 
-                self.tr("msg_import_success_title", "Import erfolgreich"), 
-                self.tr("msg_import_success_text", "Import abgeschlossen!\n{count} Wegpunkte geladen.").format(count=len(self.waypoints))
-            )
+            if warnings:
+                QMessageBox.warning(
+                    self.gui,
+                    self.tr("msg_import_warnings_title", "Import mit Warnungen"),
+                    self.tr("msg_import_warnings_text", "Der Import war erfolgreich, aber einige Daten wurden aufgrund von Validierungsfehlern (Sicherheitscheck) angepasst oder ignoriert.\nBitte überprüfen Sie das QGIS Message Log für Details.")
+                )
+            else:
+                QMessageBox.information(
+                    self.gui, 
+                    self.tr("msg_import_success_title", "Import erfolgreich"), 
+                    self.tr("msg_import_success_text", "Import abgeschlossen!\n{count} Wegpunkte geladen.").format(count=len(self.waypoints))
+                )
         except Exception as e:
             QMessageBox.critical(
                 self.gui, 

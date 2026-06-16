@@ -43,7 +43,9 @@ class ImporterExporter:
         
         # Check if complete QUCORE state exists in settings (100% reactivation)
         qucore_state = settings.get("qucore_state", None)
+        warnings = []
         if qucore_state:
+            qucore_state, warnings = ConfigManager.sanitize_imported_state(qucore_state)
             pilot_coords = qucore_state.get("pilot_pos")
             pilot_pos = None
             if pilot_coords and len(pilot_coords) >= 2:
@@ -51,7 +53,7 @@ class ImporterExporter:
                 
             waypoints = [tuple(wp) for wp in qucore_state.get("waypoints", [])]
             params = qucore_state.get("params", {})
-            # Legacy migrations
+            # Legacy migrations (already handled in sanitize, but we can leave it to be safe)
             if "maxVelocity" in params and "maxOpsSpeedV0" not in params:
                 params["maxOpsSpeedV0"] = params["maxVelocity"]
             if "maxVelocityVmax" in params or "maxCommandSpeedVmax" in params or "maxCommandableSpeedVmax" not in params:
@@ -60,7 +62,7 @@ class ImporterExporter:
             geom_type = qucore_state.get("geometry_type", "Corridor")
             width = float(ConfigManager.get_param(params, "corridorWidth"))
             max_height = float(ConfigManager.get_param(params, "maxFlightHeight"))
-            return waypoints, pilot_pos, width, max_height, params, geom_type
+            return waypoints, pilot_pos, width, max_height, params, geom_type, warnings
 
         geometry = payload.get("geometry", {})
         lateral = geometry.get("lateral", {})
@@ -128,8 +130,29 @@ class ImporterExporter:
             coords = lateral.get("coordinates", [])
             for c in coords:
                 waypoints.append((c[0], c[1], max_height, max_velocity, width))
+                
+        # Sanitize the manually built state
+        dummy_state = {
+            "waypoints": waypoints,
+            "pilot_pos": [pilot_pos.x(), pilot_pos.y()] if pilot_pos else None,
+            "geometry_type": geom_type,
+            "params": params
+        }
+        sanitized_state, warnings = ConfigManager.sanitize_imported_state(dummy_state)
+        
+        # Unpack sanitized state
+        geom_type = sanitized_state.get("geometry_type", "Corridor")
+        waypoints = [tuple(wp) for wp in sanitized_state.get("waypoints", [])]
+        pilot_coords = sanitized_state.get("pilot_pos")
+        if pilot_coords and len(pilot_coords) >= 2:
+            pilot_pos = QgsPointXY(pilot_coords[0], pilot_coords[1])
+        else:
+            pilot_pos = None
+        params = sanitized_state.get("params", {})
+        width = float(ConfigManager.get_param(params, "corridorWidth"))
+        max_height = float(ConfigManager.get_param(params, "maxFlightHeight"))
             
-        return waypoints, pilot_pos, width, max_height, params, geom_type
+        return waypoints, pilot_pos, width, max_height, params, geom_type, warnings
 
     @staticmethod
     def export_dipul(file_path, waypoints, pilot_pos, const_height, const_speed, params, geometry_type="Corridor"):
@@ -315,22 +338,17 @@ class ImporterExporter:
                     try:
                         import json
                         state = json.loads(state_json)
+                        state, warnings = ConfigManager.sanitize_imported_state(state)
                         waypoints = [tuple(wp) for wp in state.get("waypoints", [])]
                         pilot_coords = state.get("pilot_pos")
                         pilot_pos = None
                         if pilot_coords and len(pilot_coords) >= 2:
                             pilot_pos = QgsPointXY(pilot_coords[0], pilot_coords[1])
                         params = state.get("params", {})
-                        # Legacy migrations
-                        if "maxVelocity" in params and "maxOpsSpeedV0" not in params:
-                            params["maxOpsSpeedV0"] = params["maxVelocity"]
-                        if "maxVelocityVmax" in params or "maxCommandSpeedVmax" in params or "maxCommandableSpeedVmax" not in params:
-                            if "maxCommandableSpeedVmax" not in params:
-                                params["maxCommandableSpeedVmax"] = params.get("maxVelocityVmax", params.get("maxCommandSpeedVmax", params.get("maxOpsSpeedV0", 30.0)))
                         geom_type = state.get("geometry_type", "Corridor")
                         width = float(ConfigManager.get_param(params, "corridorWidth"))
                         max_height = float(ConfigManager.get_param(params, "maxFlightHeight"))
-                        return waypoints, pilot_pos, width, max_height, params, geom_type
+                        return waypoints, pilot_pos, width, max_height, params, geom_type, warnings
                     except Exception as e:
                         QgsMessageLog.logMessage(f"Failed to restore state from KML qucore_state: {e}", "QUCORE", Qgis.Warning)
 
@@ -440,7 +458,28 @@ class ImporterExporter:
             "maxCommandableSpeedVmax": 30.0,
             "corridorWidth": width
         }
-        return waypoints, pilot_pos, width, max_height, params, geometry_type
+        
+        # Sanitize manually extracted properties
+        dummy_state = {
+            "waypoints": waypoints,
+            "pilot_pos": [pilot_pos.x(), pilot_pos.y()] if pilot_pos else None,
+            "geometry_type": geometry_type,
+            "params": params
+        }
+        sanitized_state, warnings = ConfigManager.sanitize_imported_state(dummy_state)
+        
+        geom_type = sanitized_state.get("geometry_type", "Corridor")
+        waypoints = [tuple(wp) for wp in sanitized_state.get("waypoints", [])]
+        pilot_coords = sanitized_state.get("pilot_pos")
+        if pilot_coords and len(pilot_coords) >= 2:
+            pilot_pos = QgsPointXY(pilot_coords[0], pilot_coords[1])
+        else:
+            pilot_pos = None
+        params = sanitized_state.get("params", {})
+        width = float(ConfigManager.get_param(params, "corridorWidth"))
+        max_height = float(ConfigManager.get_param(params, "maxFlightHeight"))
+        
+        return waypoints, pilot_pos, width, max_height, params, geom_type, warnings
 
     @staticmethod
     def export_kml(file_path, waypoints, pilot_pos, params, geometry_type="Corridor"):
@@ -735,7 +774,7 @@ class ImporterExporter:
             "corridorWidth": 50.0
         }
         
-        return waypoints, None, 50.0, max_height, params, "Corridor"
+        return waypoints, None, 50.0, max_height, params, "Corridor", []
 
     @staticmethod
     def export_flightplan(file_path, waypoints, const_height):
@@ -1922,7 +1961,7 @@ class ImporterExporter:
             f_type = props.get("type", "")
             if f_type == "Metadata":
                 for k, v in props.items():
-                    if k not in ["type", "name"]:
+                    if k not in ["type", "name", "geometry_type"]:
                         params[k] = v
                 geom_type = props.get("geometry_type", geom_type)
                 break
@@ -1939,7 +1978,28 @@ class ImporterExporter:
         
         if not waypoints:
             raise ValueError(tr("error_no_waypoints_geojson", "Keine gültigen Wegpunkte oder Centerline-Geometrien im GeoJSON-Dokument gefunden."))
-        return waypoints, pilot_pos, width, max_height, params, geom_type
+            
+        # Sanitize manually extracted properties
+        dummy_state = {
+            "waypoints": waypoints,
+            "pilot_pos": [pilot_pos.x(), pilot_pos.y()] if pilot_pos else None,
+            "geometry_type": geom_type,
+            "params": params
+        }
+        sanitized_state, warnings = ConfigManager.sanitize_imported_state(dummy_state)
+        
+        geom_type = sanitized_state.get("geometry_type", "Corridor")
+        waypoints = [tuple(wp) for wp in sanitized_state.get("waypoints", [])]
+        pilot_coords = sanitized_state.get("pilot_pos")
+        if pilot_coords and len(pilot_coords) >= 2:
+            pilot_pos = QgsPointXY(pilot_coords[0], pilot_coords[1])
+        else:
+            pilot_pos = None
+        params = sanitized_state.get("params", {})
+        width = float(ConfigManager.get_param(params, "corridorWidth"))
+        max_height = float(ConfigManager.get_param(params, "maxFlightHeight"))
+            
+        return waypoints, pilot_pos, width, max_height, params, geom_type, warnings
 
     @staticmethod
     def export_geojson(file_path, waypoints, pilot_pos, params, geometry_type="Corridor"):

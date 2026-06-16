@@ -269,6 +269,73 @@
       "maximum": 100,
       "default": 0,
       "description": "Füll-Deckkraft für die VLOS-Reichweite in Prozent."
+    },
+    "commercial_unlocked": {
+      "type": "boolean",
+      "default": false,
+      "description": "Interner Status: Gibt an, ob kommerzielle Funktionen freigeschaltet sind."
+    },
+    "maxVelocity": {
+      "type": "number",
+      "minimum": 0.1,
+      "description": "Legacy-Feld für maxOpsSpeedV0."
+    },
+    "override_heights": {
+      "type": "boolean",
+      "default": false,
+      "description": "Interner UI-Status: Zeigt an, ob individuelle Höhen aktiv sind."
+    },
+    "override_widths": {
+      "type": "boolean",
+      "default": false,
+      "description": "Interner UI-Status: Zeigt an, ob individuelle Breiten aktiv sind."
+    },
+    "override_speeds": {
+      "type": "boolean",
+      "default": false,
+      "description": "Interner UI-Status: Zeigt an, ob individuelle Geschwindigkeiten aktiv sind."
+    },
+    "radius": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Radius in Metern für Circle-Geometrien."
+    },
+    "variable_polygon_buffers": {
+      "type": "boolean",
+      "default": false,
+      "description": "Gibt an, ob bei Polygon-Segmenten individuelle Puffer aktiv sind."
+    },
+    "aa_area_km2": {
+      "type": "number",
+      "description": "Berechnete Fläche der Adjacent Area in Quadratkilometern."
+    },
+    "aa_population": {
+      "type": "number",
+      "description": "Berechnete Population in der Adjacent Area."
+    },
+    "aa_density": {
+      "type": "number",
+      "description": "Berechnete Bevölkerungsdichte in der Adjacent Area."
+    },
+    "grb_area_km2": {
+      "type": "number",
+      "description": "Berechnete Fläche des Ground Risk Buffers in Quadratkilometern."
+    },
+    "grb_population": {
+      "type": "number",
+      "description": "Berechnete Population im Ground Risk Buffer."
+    },
+    "grb_avg_density": {
+      "type": "number",
+      "description": "Durchschnittliche Bevölkerungsdichte im Ground Risk Buffer."
+    },
+    "grb_max_density": {
+      "type": "number",
+      "description": "Maximale Bevölkerungsdichte im Ground Risk Buffer."
+    },
+    "grb_max_raw_value": {
+      "type": "number",
+      "description": "Maximaler Rohwert der Bevölkerungsdaten im Ground Risk Buffer."
     }
   },
   "required": [
