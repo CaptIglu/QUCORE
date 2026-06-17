@@ -41,7 +41,23 @@ class ImporterExporter:
         Returns a tuple: (waypoints, pilot_pos, width, max_height, params, geom_type)
         """
         with open(file_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+            content = f.read()
+            
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError as e:
+            # Try to repair truncated JSON if it cuts off in qucore_state
+            idx = content.find('"qucore_state"')
+            if idx != -1:
+                comma_idx = content.rfind(',', 0, idx)
+                slice_idx = comma_idx if comma_idx != -1 else idx
+                repaired_content = content[:slice_idx] + "}}}"
+                try:
+                    data = json.loads(repaired_content)
+                except Exception:
+                    raise e
+            else:
+                raise e
             
         payload = data.get("payload", {})
         settings = payload.get("settings", {})
@@ -95,7 +111,24 @@ class ImporterExporter:
         uas = payload.get("uasProperties", {}).get("values", {})
         for k, v in uas.items():
             if k == "type":
-                params["uas_type"] = v
+                if v in ["Rotorcraft", "RotorcraftWithParachute"]:
+                    params["uas_type"] = "Multikopter"
+                elif v in ["FixedWing", "FixedWingWithParachute"]:
+                    params["uas_type"] = "FixedWing"
+                else:
+                    params["uas_type"] = v
+            elif k == "altimetry":
+                if v == "Barometric":
+                    params["altimetry"] = "Baro"
+                else:
+                    params["altimetry"] = v
+            elif k == "parachute" and isinstance(v, dict):
+                p_time = v.get("openingTime", 2.0)
+                p_rate = v.get("descentRate", 6.0)
+                params["parachuteOpeningTimeGRB"] = p_time
+                params["parachuteOpeningTimeLateral"] = p_time
+                params["parachuteOpeningTimeVertical"] = p_time
+                params["parachuteDescentRate"] = p_rate
             elif k == "maxVelocity":
                 params["maxOpsSpeedV0"] = v
                 params["maxVelocity"] = v # legacy fallback
@@ -192,9 +225,20 @@ class ImporterExporter:
             lateral_block["coordinates"] = coords
             lateral_block["width"] = width
             
-        # Normalize UAS type (Multikopter -> Rotorcraft, otherwise FixedWing)
+        # Determine if a parachute is used
+        grb_method = ConfigManager.get_param(params, "groundRiskBufferMethod")
+        has_parachute = (
+            grb_method == "Parachute" or 
+            ConfigManager.get_param(params, "lateralContingencyManoeuvreType") == "Parachute" or 
+            ConfigManager.get_param(params, "verticalContingencyManoeuvreType") == "Parachute"
+        )
+
+        # Normalize UAS type matching the official DIPUL schema
         uas_type_raw = ConfigManager.get_param(params, "uas_type")
-        uas_type = "Rotorcraft" if uas_type_raw in ["Multikopter", "Rotorcraft"] else "FixedWing"
+        if uas_type_raw in ["Multikopter", "Rotorcraft"]:
+            uas_type = "RotorcraftWithParachute" if has_parachute else "Rotorcraft"
+        else:
+            uas_type = "FixedWingWithParachute" if has_parachute else "FixedWing"
         
         # Normalize Altimetry (Baro -> Barometric, otherwise GPS)
         altimetry_raw = ConfigManager.get_param(params, "altimetry")
@@ -209,17 +253,31 @@ class ImporterExporter:
             "maxCharacteristicDimension": float(params.get("maxCharacteristicDimension", 3.6))
         }
         
-        if uas_type == "FixedWing":
+        if "FixedWing" in uas_type:
             uas_values["maxRollAngle"] = float(ConfigManager.get_param(params, "maxRollAngle"))
             uas_values["glideRatioDenominator"] = float(ConfigManager.get_param(params, "glideRatioDenominator"))
             uas_values["stallVelocity"] = float(ConfigManager.get_param(params, "stallVelocity"))
-        else: # Rotorcraft
+        else: # Rotorcraft / RotorcraftWithParachute
             uas_values["maxPitchAngle"] = float(params.get("maxPitchAngle", 30.0))
+
+        # If a parachute is used, add its specs to uasProperties.values
+        if has_parachute:
+            if grb_method == "Parachute":
+                t_para = float(params.get("parachuteOpeningTimeGRB", 2.0))
+            elif ConfigManager.get_param(params, "lateralContingencyManoeuvreType") == "Parachute":
+                t_para = float(params.get("parachuteOpeningTimeLateral", 2.0))
+            else:
+                t_para = float(params.get("parachuteOpeningTimeVertical", 2.0))
+                
+            uas_values["parachute"] = {
+                "openingTime": t_para,
+                "descentRate": float(params.get("parachuteDescentRate", 6.0))
+            }
 
         # Dynamically build settings block to match presence/absence of pilotPosition
         settings_block = {
             "bufferDirection": "Outward",
-            "groundRiskBufferMethod": ConfigManager.get_param(params, "groundRiskBufferMethod"),
+            "groundRiskBufferMethod": grb_method,
             "lateralContingencyManoeuvreType": ConfigManager.get_param(params, "lateralContingencyManoeuvreType"),
             "verticalContingencyManoeuvreType": ConfigManager.get_param(params, "verticalContingencyManoeuvreType")
         }

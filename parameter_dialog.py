@@ -617,13 +617,21 @@ class ParameterDialog(QDialog):
         is_fixed = (self.combo_uas_type.currentIndex() == 0)
         self.spin_stall.setEnabled(is_fixed)
         
-        # Disable/enable "Antrieb aus mit Gleitflug" (index 2) in combo_grb_method
         model = self.combo_grb_method.model()
-        item = model.item(2)
-        if item:
-            item.setEnabled(is_fixed)
+        # Disable/enable "Antrieb aus mit Gleitflug" (index 2) in combo_grb_method
+        item_glide = model.item(2)
+        if item_glide:
+            item_glide.setEnabled(is_fixed)
             
-        if not is_fixed and self.combo_grb_method.currentIndex() == 2:
+        # Disable/enable "Ballistischer Ansatz" (index 1) in combo_grb_method
+        item_ballistic = model.item(1)
+        if item_ballistic:
+            item_ballistic.setEnabled(not is_fixed)
+            
+        current_idx = self.combo_grb_method.currentIndex()
+        if not is_fixed and current_idx == 2:
+            self.combo_grb_method.setCurrentIndex(0) # Fallback to 1:1 Regel
+        elif is_fixed and current_idx == 1:
             self.combo_grb_method.setCurrentIndex(0) # Fallback to 1:1 Regel
 
     def on_lat_man_changed(self):
