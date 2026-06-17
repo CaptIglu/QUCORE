@@ -6,7 +6,6 @@ __pycache__/
 .pytest_cache/
 
 # Local configurations
-config.json
 
 # IDEs and OS files
 .idea/
