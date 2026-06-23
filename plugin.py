@@ -44,6 +44,7 @@ from .translation_manager import TranslationManager
 from .parameter_dialog import ParameterDialog
 from .altitude_table_dialog import AltitudeTableDialog
 from .importer_exporter import ImporterExporter
+from .report_generator import ReportGenerator
 from .export_settings_dialog import ExportSettingsDialog
 from .advanced_settings_dialog import AdvancedSettingsDialog
 from .vlos_calculator_dialog import VlosCalculatorDialog
@@ -3684,7 +3685,7 @@ class DroneCorridorPlanner(object):
                         import traceback
                         QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 3647): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
                 
-                ImporterExporter.export_sora_docx(
+                ReportGenerator.export_sora_docx(
                     file_path, 
                     self.waypoints, 
                     self.pilot_pos, 
@@ -3840,7 +3841,7 @@ class DroneCorridorPlanner(object):
                     QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 3798): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
             
             # Run SORA DOCX Export
-            ImporterExporter.export_sora_docx(
+            ReportGenerator.export_sora_docx(
                 file_path, 
                 self.waypoints, 
                 self.pilot_pos, 

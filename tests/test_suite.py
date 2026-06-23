@@ -654,7 +654,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         """
         Verify that SORA report docx export works without crashes.
         """
-        from QUCORE.importer_exporter import ImporterExporter
+        from QUCORE.report_generator import ReportGenerator
         from qgis.core import QgsPointXY
         import tempfile
         
@@ -676,7 +676,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         dest_docx = os.path.join(temp_dir, "test_sora_report.docx")
         
         try:
-            ImporterExporter.export_sora_docx(dest_docx, waypoints, pilot_pos, params, mock_map_png, "Corridor")
+            ReportGenerator.export_sora_docx(dest_docx, waypoints, pilot_pos, params, mock_map_png, "Corridor")
             self.assertTrue(os.path.exists(dest_docx))
             self.assertGreater(os.path.getsize(dest_docx), 1000)
         finally:
