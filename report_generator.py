@@ -567,6 +567,11 @@ class ReportGenerator:
         
         # Build and replace __POPULATION_ANALYSIS_XML__
         pop_xml = []
+        
+        raster_name = params.get("pop_raster_name")
+        raster_crs = params.get("pop_raster_crs")
+        raster_res = params.get("pop_raster_res")
+        
         if is_en:
             pop_xml.append('  <w:p>')
             pop_xml.append('    <w:pPr>')
@@ -575,8 +580,22 @@ class ReportGenerator:
             pop_xml.append('    </w:pPr>')
             pop_xml.append('    <w:r><w:t xml:space="preserve">Population Density and Ground Risk Assessment</w:t></w:r>')
             pop_xml.append('  </w:p>')
+            
+            if raster_name:
+                intro_text = (
+                    f"The analysis of the population density in the safety zones (Adjacent Area and Ground Risk Buffer) "
+                    f"was performed based on the loaded GHS-POP raster data layer '{raster_name}' (CRS: {raster_crs}, "
+                    f"Resolution: {raster_res}). This serves to evaluate operating risks and verify GRC according to SORA guidelines:"
+                )
+            else:
+                intro_text = (
+                    "The analysis of the population density in the safety zones (Adjacent Area and Ground Risk Buffer) "
+                    "was performed based on the loaded GHS-POP raster data. This serves to evaluate operating risks "
+                    "and verify GRC according to SORA guidelines:"
+                )
+                
             pop_xml.append('  <w:p>')
-            pop_xml.append('    <w:r><w:t xml:space="preserve">The analysis of the population density in the safety zones (Adjacent Area and Ground Risk Buffer) was performed based on the loaded GHS-POP raster data. This serves to evaluate operating risks and verify GRC according to SORA guidelines:</w:t></w:r>')
+            pop_xml.append(f'    <w:r><w:t xml:space="preserve">{intro_text}</w:t></w:r>')
             pop_xml.append('  </w:p>')
         else:
             pop_xml.append('  <w:p>')
@@ -586,8 +605,22 @@ class ReportGenerator:
             pop_xml.append('    </w:pPr>')
             pop_xml.append('    <w:r><w:t xml:space="preserve">Bevölkerungsdichte- und Bodenrisikobewertung</w:t></w:r>')
             pop_xml.append('  </w:p>')
+            
+            if raster_name:
+                intro_text = (
+                    f"Die Analyse der Bevölkerungsdichte in den Sicherheitszonen (Adjacent Area und Ground Risk Buffer) "
+                    f"wurde auf Basis des geladenen GHS-POP Raster-Layers '{raster_name}' (CRS: {raster_crs}, "
+                    f"Auflösung: {raster_res}) durchgeführt. Dies dient zur Bewertung der Betriebsrisiken und zur GRC-Verifizierung gemäss den SORA-Richtlinien:"
+                )
+            else:
+                intro_text = (
+                    "Die Analyse der Bevölkerungsdichte in den Sicherheitszonen (Adjacent Area und Ground Risk Buffer) "
+                    "wurde auf Basis der geladenen GHS-POP Rasterdaten durchgeführt. Dies dient zur Bewertung der "
+                    "Betriebsrisiken und zur GRC-Verifizierung gemäss den SORA-Richtlinien:"
+                )
+                
             pop_xml.append('  <w:p>')
-            pop_xml.append('    <w:r><w:t xml:space="preserve">Die Analyse der Bevölkerungsdichte in den Sicherheitszonen (Adjacent Area und Ground Risk Buffer) wurde auf Basis der geladenen GHS-POP Rasterdaten durchgeführt. Dies dient zur Bewertung der Betriebsrisiken und zur GRC-Verifizierung gemäss den SORA-Richtlinien:</w:t></w:r>')
+            pop_xml.append(f'    <w:r><w:t xml:space="preserve">{intro_text}</w:t></w:r>')
             pop_xml.append('  </w:p>')
         
         # Check if Adjacent Area population analysis was run

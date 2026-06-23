@@ -330,6 +330,14 @@ class PopulationDensityDialog(QDialog):
             )
             return
             
+        # Store raster metadata in self.params for Word export
+        if self.params is not None:
+            self.params["pop_raster_name"] = raster_layer.name()
+            self.params["pop_raster_crs"] = raster_layer.crs().authid()
+            res_x = raster_layer.rasterUnitsPerPixelX()
+            res_y = raster_layer.rasterUnitsPerPixelY()
+            self.params["pop_raster_res"] = f"{res_x:.2f} x {res_y:.2f} m/px"
+            
         self.active_tasks.clear()
         self.btn_calculate.setEnabled(False)
         self.btn_calculate.setText(self.tr("btn_calculating", "Berechnung läuft..."))
