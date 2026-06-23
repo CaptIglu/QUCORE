@@ -1110,11 +1110,8 @@ class DroneCorridorPlanner(object):
             self.vlos_calc_action = self.tools_menu.addAction("VLOS-Rechner (ALOS/DLOS)...")
             self.vlos_calc_action.triggered.connect(self.open_vlos_calculator)
             
-            self.pop_density_action = self.tools_menu.addAction("Bevölkerungsdichte im AA-Bereich berechnen...")
+            self.pop_density_action = self.tools_menu.addAction("Bevölkerungsdichte- & Bodenrisiko-Analyse (AA / GRB)...")
             self.pop_density_action.triggered.connect(self.open_population_density_dialog)
-            
-            self.grb_density_action = self.tools_menu.addAction("Bodenrisiko-Analyse (GRB-Bevölkerungsdichte)...")
-            self.grb_density_action.triggered.connect(self.open_grb_density_dialog)
             
             # Help Menu
             self.help_menu = self.menu_bar.addMenu("Hilfe")
@@ -1441,9 +1438,7 @@ class DroneCorridorPlanner(object):
             self.tools_menu.setTitle(self.tr("menu_tools", "Werkzeuge"))
             self.vlos_calc_action.setText(self.tr("menu_vlos_calc", "VLOS-Rechner (ALOS/DLOS)..."))
             if hasattr(self, 'pop_density_action'):
-                self.pop_density_action.setText(self.tr("menu_pop_density", "Bevölkerungsdichte im AA-Bereich berechnen..."))
-            if hasattr(self, 'grb_density_action'):
-                self.grb_density_action.setText(self.tr("menu_grb_density", "Bodenrisiko-Analyse (GRB-Bevölkerungsdichte)..."))
+                self.pop_density_action.setText(self.tr("menu_pop_density", "Bevölkerungsdichte- & Bodenrisiko-Analyse (AA / GRB)..."))
             
             self.help_menu.setTitle(self.tr("menu_help", "Hilfe"))
             self.help_action_menu.setText(self.tr("menu_instructions", "Anleitung / Hilfe..."))
@@ -2611,59 +2606,34 @@ class DroneCorridorPlanner(object):
         dialog.exec_()
 
     def open_population_density_dialog(self):
-        if not self.is_layer_valid(self.lyr_aga):
+        # Check if either layer is valid and contains non-empty features
+        aga_valid = self.is_layer_valid(self.lyr_aga)
+        grb_valid = self.is_layer_valid(self.lyr_grb)
+        
+        aga_has_features = False
+        if aga_valid:
+            for feature in self.lyr_aga.getFeatures():
+                if feature.hasGeometry() and not feature.geometry().isEmpty():
+                    aga_has_features = True
+                    break
+                    
+        grb_has_features = False
+        if grb_valid:
+            for feature in self.lyr_grb.getFeatures():
+                if feature.hasGeometry() and not feature.geometry().isEmpty():
+                    grb_has_features = True
+                    break
+                    
+        if not (aga_has_features or grb_has_features):
             QMessageBox.warning(
                 self.gui,
-                self.tr("error_empty_aa_title", "Keine Adjacent Area"),
-                self.tr("error_empty_aa_text", "Es existiert kein gültiger 'Adjacent Area (AA)'-Layer. Bitte erstellen Sie zuerst eine Flugplanung.")
-            )
-            return
-            
-        # Check if the layer contains at least one non-empty polygon feature
-        has_features = False
-        for feature in self.lyr_aga.getFeatures():
-            if feature.hasGeometry() and not feature.geometry().isEmpty():
-                has_features = True
-                break
-                
-        if not has_features:
-            QMessageBox.warning(
-                self.gui,
-                self.tr("error_empty_aa_title", "Keine Adjacent Area"),
-                self.tr("error_empty_aa_text", "Der 'Adjacent Area (AA)'-Layer enthält keine gültige Geometrie. Bitte erstellen Sie zuerst eine Flugplanung.")
+                self.tr("error_no_pop_data_title", "Keine Planungsdaten"),
+                self.tr("error_no_pop_data_text", "Es existiert kein gültiger Adjacent Area (AA)- oder Ground Risk Buffer (GRB)-Layer mit Geometrie. Bitte erstellen Sie zuerst eine Flugplanung.")
             )
             return
             
         from .population_density_dialog import PopulationDensityDialog
-        dialog = PopulationDensityDialog(self.gui, self.lyr_aga, current_params=self.params)
-        dialog.exec_()
-
-    def open_grb_density_dialog(self):
-        if not self.is_layer_valid(self.lyr_grb):
-            QMessageBox.warning(
-                self.gui,
-                self.tr("error_empty_grb_title", "Kein Ground Risk Buffer"),
-                self.tr("error_empty_grb_text", "Es existiert kein gültiger 'Ground Risk Buffer (GRB)'-Layer. Bitte erstellen Sie zuerst eine Flugplanung.")
-            )
-            return
-            
-        # Check if the layer contains at least one non-empty polygon feature
-        has_features = False
-        for feature in self.lyr_grb.getFeatures():
-            if feature.hasGeometry() and not feature.geometry().isEmpty():
-                has_features = True
-                break
-                
-        if not has_features:
-            QMessageBox.warning(
-                self.gui,
-                self.tr("error_empty_grb_title", "Kein Ground Risk Buffer"),
-                self.tr("error_empty_grb_text", "Der 'Ground Risk Buffer (GRB)'-Layer enthält keine gültige Geometrie. Bitte erstellen Sie zuerst eine Flugplanung.")
-            )
-            return
-            
-        from .grb_density_dialog import GrbDensityDialog
-        dialog = GrbDensityDialog(self.gui, self.lyr_grb, current_params=self.params)
+        dialog = PopulationDensityDialog(self.gui, lyr_aga=self.lyr_aga, lyr_grb=self.lyr_grb, current_params=self.params)
         dialog.exec_()
 
     def open_altitude_table(self):

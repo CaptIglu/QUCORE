@@ -916,12 +916,28 @@
         "en": "There are currently no waypoints to apply the Flight Geography width to."
     },
     "menu_pop_density": {
-        "de": "Bevölkerungsdichte im AA-Bereich berechnen...",
-        "en": "Calculate Population Density in AA Area..."
+        "de": "Bevölkerungsdichte- & Bodenrisiko-Analyse (AA / GRB)...",
+        "en": "Population Density & Ground Risk Analysis (AA / GRB)..."
     },
     "dialog_pop_title": {
-        "de": "Bevölkerungsdichte im Adjacent Area (AA) Bereich",
-        "en": "Population Density in Adjacent Area (AA) Area"
+        "de": "Bevölkerungsdichte- & Bodenrisiko-Analyse (AA / GRB)",
+        "en": "Population Density & Ground Risk Analysis (AA / GRB)"
+    },
+    "pop_desc_combined": {
+        "de": "Berechnung der durchschnittlichen und maximalen Bevölkerungsdichte im Adjacent Area (AA) und Ground Risk Buffer (GRB) basierend auf GHS-POP Daten gemäss SORA Step #8.",
+        "en": "Calculation of the average and maximum population density in the Adjacent Area (AA) and Ground Risk Buffer (GRB) based on GHS-POP data according to SORA Step #8."
+    },
+    "error_no_pop_data_title": {
+        "de": "Keine Planungsdaten",
+        "en": "No Planning Data"
+    },
+    "error_no_pop_data_text": {
+        "de": "Es existiert kein gültiger Adjacent Area (AA)- oder Ground Risk Buffer (GRB)-Layer mit Geometrie. Bitte erstellen Sie zuerst eine Flugplanung.",
+        "en": "There is no valid Adjacent Area (AA) or Ground Risk Buffer (GRB) layer with geometry. Please create a flight plan first."
+    },
+    "no_active_layers_warn": {
+        "de": "Keine gültigen Planungsdaten geladen",
+        "en": "No valid planning data loaded"
     },
     "pop_desc": {
         "de": "Berechnung der durchschnittlichen Bevölkerungsdichte innerhalb der Adjacent Ground Area (AA) basierend auf dem Global Human Settlement Layer (GHSL) GHS-POP GeoTIFF gemäß SORA Step #8.",
