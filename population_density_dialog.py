@@ -29,7 +29,7 @@ from .zonal_stats_calculator import ZonalStatsCalculator
 class PopulationDensityDialog(QDialog):
     def __init__(self, parent=None, lyr_aga=None, lyr_grb=None, current_params=None):
         super(PopulationDensityDialog, self).__init__(parent)
-        self.resize(720, 600)
+        self.resize(720, 500)
         self.setModal(True)
         self.lyr_aga = lyr_aga
         self.lyr_grb = lyr_grb
@@ -116,7 +116,7 @@ class PopulationDensityDialog(QDialog):
         aa_card_layout.addRow(self.tr("label_total_pop", "Gesamtbevölkerung:"), self.lbl_aa_total_pop)
         
         self.lbl_aa_avg_density = QLabel("---")
-        self.lbl_aa_avg_density.setStyleSheet("font-weight: bold; font-size: 14px; color: #16a34a;")
+        self.lbl_aa_avg_density.setStyleSheet("font-weight: bold; color: #0f172a;")
         aa_card_layout.addRow(self.tr("label_avg_density", "Durchschnittliche Dichte:"), self.lbl_aa_avg_density)
         
         sections_layout.addWidget(self.aa_group, 1)
@@ -139,7 +139,7 @@ class PopulationDensityDialog(QDialog):
         grb_card_layout.addRow(self.tr("label_avg_density_grb", "Durchschnittliche Dichte:"), self.lbl_grb_avg_density)
 
         self.lbl_grb_max_density = QLabel("---")
-        self.lbl_grb_max_density.setStyleSheet("font-weight: bold; font-size: 14px; color: #e11d48;")
+        self.lbl_grb_max_density.setStyleSheet("font-weight: bold; color: #0f172a;")
         grb_card_layout.addRow(self.tr("label_max_density_grb", "Maximale Dichte:"), self.lbl_grb_max_density)
         
         sections_layout.addWidget(self.grb_group, 1)

@@ -916,8 +916,8 @@
         "en": "There are currently no waypoints to apply the Flight Geography width to."
     },
     "menu_pop_density": {
-        "de": "Bevölkerungsdichte- & Bodenrisiko-Analyse (AA / GRB)...",
-        "en": "Population Density & Ground Risk Analysis (AA / GRB)..."
+        "de": "Bevölkerungsdichte-Analyse (AA / GRB)...",
+        "en": "Population Density Analysis (AA / GRB)..."
     },
     "dialog_pop_title": {
         "de": "Bevölkerungsdichte- & Bodenrisiko-Analyse (AA / GRB)",
