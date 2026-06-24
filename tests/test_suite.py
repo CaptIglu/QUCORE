@@ -148,6 +148,8 @@ class MockQTableWidgetItemClass:
         pass
     def setBackground(self, brush):
         pass
+    def setForeground(self, brush):
+        pass
     def text(self):
         return self._text
     def setText(self, text):
@@ -231,6 +233,7 @@ qt_core.QRectF = DummyClass
 qt_core.QPointF = DummyClass
 qt_core.QVariant = DummyClass
 qt_core.QUrl = DummyClass
+qt_core.pyqtSignal = MagicMock
 sys.modules['PyQt5.QtCore'] = qt_core
 
 # Mock PyQt5.QtXml for standalone tests
@@ -1247,7 +1250,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
     def test_altitude_table_dialog_show_waypoint_numbers(self):
         """
         Verify that toggling the chk_show_wp_nums checkbox in AltitudeTableDialog
-        enables/disables labeling on the waypoints layer and refreshes the canvas.
+        emits the sigToggleWaypointLabels signal.
         """
         from QUCORE.altitude_table_dialog import AltitudeTableDialog
         from unittest.mock import MagicMock
@@ -1257,10 +1260,10 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             (8.336079, 54.006354, 110.0, 25.0, 60.0)
         ]
         
-        mock_layer = MagicMock()
-        mock_canvas = MagicMock()
+        dialog = AltitudeTableDialog(None, waypoints, self.base_params)
         
-        dialog = AltitudeTableDialog(None, waypoints, self.base_params, waypoints_layer=mock_layer, canvas=mock_canvas)
+        # Mock the signal emit function
+        dialog.sigToggleWaypointLabels.emit = MagicMock()
         
         # Initially labeling is not active
         self.assertFalse(dialog.labels_active)
@@ -1268,28 +1271,19 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         # Toggle checkbox to True (checked)
         dialog.toggle_waypoint_numbers(True)
         self.assertTrue(dialog.labels_active)
-        mock_layer.setLabeling.assert_called_once()
-        mock_layer.setLabelsEnabled.assert_called_with(True)
-        mock_layer.triggerRepaint.assert_called_once()
-        mock_canvas.refresh.assert_called_once()
+        dialog.sigToggleWaypointLabels.emit.assert_called_with(True)
         
         # Toggle checkbox to False (unchecked)
-        mock_layer.reset_mock()
-        mock_canvas.reset_mock()
+        dialog.sigToggleWaypointLabels.emit.reset_mock()
         dialog.toggle_waypoint_numbers(False)
         self.assertFalse(dialog.labels_active)
-        mock_layer.setLabelsEnabled.assert_called_with(False)
-        mock_layer.triggerRepaint.assert_called_once()
-        mock_canvas.refresh.assert_called_once()
+        dialog.sigToggleWaypointLabels.emit.assert_called_with(False)
         
         # Test dialog acceptance triggers cleanup
         dialog.toggle_waypoint_numbers(True)
-        mock_layer.reset_mock()
-        mock_canvas.reset_mock()
+        dialog.sigToggleWaypointLabels.emit.reset_mock()
         dialog.accept()
-        mock_layer.setLabelsEnabled.assert_called_with(False)
-        mock_layer.triggerRepaint.assert_called_once()
-        mock_canvas.refresh.assert_called_once()
+        dialog.sigToggleWaypointLabels.emit.assert_called_with(False)
 
     def test_advanced_settings_dialog_restore_defaults(self):
         """

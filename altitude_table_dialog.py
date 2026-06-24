@@ -20,8 +20,14 @@ from PyQt5.QtWidgets import (
 )
 from .translation_manager import TranslationManager
 
+from PyQt5.QtCore import pyqtSignal
+
 class AltitudeTableDialog(QDialog):
-    def __init__(self, parent=None, waypoints=None, params=None, on_change_callback=None, geometry_type="Corridor", waypoints_layer=None, canvas=None):
+    sigToggleWaypointLabels = pyqtSignal(bool)
+    sigWaypointFocused = pyqtSignal(int)
+    sigClearFocus = pyqtSignal()
+
+    def __init__(self, parent=None, waypoints=None, params=None, on_change_callback=None, geometry_type="Corridor"):
         super(AltitudeTableDialog, self).__init__(parent)
         self.resize(1150, 450) # increased width to fit all 10 columns beautifully
         self.setModal(False)
@@ -31,8 +37,6 @@ class AltitudeTableDialog(QDialog):
         self.params = params if params is not None else {}
         self.on_change_callback = on_change_callback
         self.geometry_type = geometry_type
-        self.waypoints_layer = waypoints_layer
-        self.canvas = canvas
         self.labels_active = False
         
         # Load translations
@@ -99,7 +103,6 @@ class AltitudeTableDialog(QDialog):
             self.table.setColumnHidden(4, True)
         
         # Populate table
-        bg_color = QColor(240, 240, 240)
         for idx, w in enumerate(self.waypoints):
             lon, lat = w[0], w[1]
             alt = w[2] if len(w) > 2 else 100.0
@@ -109,6 +112,7 @@ class AltitudeTableDialog(QDialog):
             # 0. Waypoint label item (read-only)
             item_wp = QTableWidgetItem(f"{self.tr('col_wp', 'Wegpunkt')} {idx + 1}")
             item_wp.setFlags(item_wp.flags() & ~Qt.ItemIsEditable)
+            item_wp.setForeground(QBrush(QColor(130, 130, 130)))
             self.table.setItem(idx, 0, item_wp)
             
             # 1. Position item (editable, Lat/Lon 5 decimals)
@@ -148,8 +152,9 @@ class AltitudeTableDialog(QDialog):
         # Resize columns to fit headers and contents beautifully
         self.table.resizeColumnsToContents()
         
-        # Connect cell changed event
+        self.table.setAlternatingRowColors(True)
         self.table.cellChanged.connect(self.on_cell_changed)
+        self.table.itemSelectionChanged.connect(self.on_selection_changed)
             
         self.table.horizontalHeader().setStretchLastSection(False)
         
@@ -166,10 +171,9 @@ class AltitudeTableDialog(QDialog):
         
         # Checkbox for showing waypoint numbers on map and total label
         lay_options = QHBoxLayout()
-        self.chk_show_wp_nums = QCheckBox(self.tr("chk_show_wp_nums", "Wegpunkt-Nummern auf Karte anzeigen"))
-        self.chk_show_wp_nums.setChecked(False)
+        self.chk_show_wp_nums = QCheckBox(self.tr("chk_show_wp_nums", "Zeige Wegpunkt-Nummern an"))
+        self.chk_show_wp_nums.setChecked(self.labels_active)
         self.chk_show_wp_nums.toggled.connect(self.toggle_waypoint_numbers)
-        self.chk_show_wp_nums.setEnabled(self.waypoints_layer is not None)
         lay_options.addWidget(self.chk_show_wp_nums)
         
         lay_options.addStretch()
@@ -205,8 +209,6 @@ class AltitudeTableDialog(QDialog):
         # Determine if h_FG (col 2) and v0 (col 3) should be editable
         should_edit = not is_polygon or is_variable
         
-        bg_color = QColor(240, 240, 240) if not should_edit else QColor(255, 255, 255)
-        
         self.table.blockSignals(True)
         for r in range(self.table.rowCount()):
             # Column 2 (Altitude)
@@ -214,18 +216,20 @@ class AltitudeTableDialog(QDialog):
             if item_alt:
                 if should_edit:
                     item_alt.setFlags(item_alt.flags() | Qt.ItemIsEditable)
+                    item_alt.setForeground(QBrush(QColor(0, 0, 0)))
                 else:
                     item_alt.setFlags(item_alt.flags() & ~Qt.ItemIsEditable)
-                item_alt.setBackground(QBrush(bg_color))
+                    item_alt.setForeground(QBrush(QColor(130, 130, 130)))
                 
             # Column 3 (Speed)
             item_spd = self.table.item(r, 3)
             if item_spd:
                 if should_edit:
                     item_spd.setFlags(item_spd.flags() | Qt.ItemIsEditable)
+                    item_spd.setForeground(QBrush(QColor(0, 0, 0)))
                 else:
                     item_spd.setFlags(item_spd.flags() & ~Qt.ItemIsEditable)
-                item_spd.setBackground(QBrush(bg_color))
+                    item_spd.setForeground(QBrush(QColor(130, 130, 130)))
         self.table.blockSignals(False)
 
     def on_variable_polygon_toggled(self, checked):
@@ -297,8 +301,6 @@ class AltitudeTableDialog(QDialog):
         return R * c
 
     def recalculate_distances_and_durations(self):
-        bg_color = QColor(240, 240, 240)
-        
         prev_lon, prev_lat = None, None
         total_dist = 0.0
         total_duration_s = 0.0
@@ -338,7 +340,7 @@ class AltitudeTableDialog(QDialog):
                 item_dist = QTableWidgetItem()
                 item_dist.setFlags(item_dist.flags() & ~Qt.ItemIsEditable)
                 item_dist.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-                item_dist.setBackground(QBrush(bg_color))
+                item_dist.setForeground(QBrush(QColor(130, 130, 130)))
                 self.table.setItem(r, 8, item_dist)
             item_dist.setText(dist_str)
             
@@ -369,7 +371,7 @@ class AltitudeTableDialog(QDialog):
                 item_dur = QTableWidgetItem()
                 item_dur.setFlags(item_dur.flags() & ~Qt.ItemIsEditable)
                 item_dur.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-                item_dur.setBackground(QBrush(bg_color))
+                item_dur.setForeground(QBrush(QColor(130, 130, 130)))
                 self.table.setItem(r, 9, item_dur)
             item_dur.setText(dur_str)
 
@@ -427,15 +429,13 @@ class AltitudeTableDialog(QDialog):
         s_cv = r_cv - r_fg
         s_grb = r_grb - r_cv
         
-        bg_color = QColor(240, 240, 240)
-        
-        # Update CV and GRB columns with grey background
+        # Update CV and GRB columns
         item_cv = self.table.item(row, 5)
         if not item_cv:
             item_cv = QTableWidgetItem()
             item_cv.setFlags(item_cv.flags() & ~Qt.ItemIsEditable)
             item_cv.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            item_cv.setBackground(QBrush(bg_color))
+            item_cv.setForeground(QBrush(QColor(130, 130, 130)))
             self.table.setItem(row, 5, item_cv)
         item_cv.setText(f"{s_cv:.1f}")
         
@@ -444,7 +444,7 @@ class AltitudeTableDialog(QDialog):
             item_grb = QTableWidgetItem()
             item_grb.setFlags(item_grb.flags() & ~Qt.ItemIsEditable)
             item_grb.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            item_grb.setBackground(QBrush(bg_color))
+            item_grb.setForeground(QBrush(QColor(130, 130, 130)))
             self.table.setItem(row, 6, item_grb)
         item_grb.setText(f"{s_grb:.1f}")
         
@@ -454,7 +454,7 @@ class AltitudeTableDialog(QDialog):
             item_hcv = QTableWidgetItem()
             item_hcv.setFlags(item_hcv.flags() & ~Qt.ItemIsEditable)
             item_hcv.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            item_hcv.setBackground(QBrush(bg_color))
+            item_hcv.setForeground(QBrush(QColor(130, 130, 130)))
             self.table.setItem(row, 7, item_hcv)
         item_hcv.setText(f"{h_cv:.1f}")
 
@@ -663,57 +663,21 @@ class AltitudeTableDialog(QDialog):
         return updated_params
 
     def toggle_waypoint_numbers(self, checked):
-        if not self.waypoints_layer:
-            return
-            
         self.labels_active = checked
-        
-        if checked:
-            from qgis.core import Qgis, QgsPalLayerSettings, QgsVectorLayerSimpleLabeling, QgsTextFormat, QgsTextBufferSettings
-            
-            settings = QgsPalLayerSettings()
-            settings.fieldName = '"index" + 1'
-            settings.isExpression = True
-            
-            # Configure text format
-            text_format = QgsTextFormat()
-            text_format.setSize(10)
-            text_format.setColor(QColor(0, 0, 0)) # Black text
-            
-            # Add white buffer for legibility
-            buffer_settings = QgsTextBufferSettings()
-            buffer_settings.setEnabled(True)
-            buffer_settings.setSize(1.5)
-            buffer_settings.setColor(QColor(255, 255, 255))
-            text_format.setBuffer(buffer_settings)
-            
-            settings.setFormat(text_format)
-            
-            # Set placement to AroundPoint
-            settings.placement = Qgis.LabelPlacement.AroundPoint
-            
-            labeling = QgsVectorLayerSimpleLabeling(settings)
-            self.waypoints_layer.setLabeling(labeling)
-            self.waypoints_layer.setLabelsEnabled(True)
-        else:
-            self.waypoints_layer.setLabelsEnabled(False)
-            
-        self.waypoints_layer.triggerRepaint()
-        if self.canvas:
-            self.canvas.refresh()
+        self.sigToggleWaypointLabels.emit(checked)
 
     def cleanup_labels(self):
-        if getattr(self, "labels_active", False) and self.waypoints_layer:
-            try:
-                self.waypoints_layer.setLabelsEnabled(False)
-                self.waypoints_layer.triggerRepaint()
-                if self.canvas:
-                    self.canvas.refresh()
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 706): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+        if getattr(self, "labels_active", False):
+            self.sigToggleWaypointLabels.emit(False)
             self.labels_active = False
+
+    def on_selection_changed(self):
+        selection = self.table.selectedRanges()
+        if not selection:
+            self.sigClearFocus.emit()
+        else:
+            row = selection[0].topRow()
+            self.sigWaypointFocused.emit(row)
 
     def accept(self):
         self.cleanup_labels()
