@@ -226,6 +226,7 @@
                 <li><a href="#vlos">13. VLOS-Sichtbarkeitsanzeige (ALOS / DLOS)</a></li>
                 <li><a href="#bestpractice">14. Best Practice für den Planungs-Workflow</a></li>
                 <li><a href="#popdensity">15. Bevölkerungsdichte-Berechnung (SORA Step #8)</a></li>
+                <li><a href="#architecture">16. Software-Architektur (Model-View-Presenter)</a></li>
             </ul>
         </div>
         
@@ -978,6 +979,20 @@
             <ul>
                 <li><b>Menschenansammlungen (Assemblies of People)</b>: GHSL-Daten spiegeln ausschließlich die gemeldete Wohnbevölkerung wider. Kurzzeitige, dichte Menschenansammlungen (wie z. B. Sportveranstaltungen, Konzerte, Strände oder Demonstrationen) müssen von Ihnen als Fernpilot/Betreiber immer <b>manuell geprüft</b> und ausgeschlossen werden!</li>
                 <li><b>Grenzwertprüfung</b>: Vergleichen Sie Ihren errechneten Dichtewert mit den für Ihre Betriebskategorie geltenden Containment-Grenzwerten (z. B. der Grenze von $25\text{ Einwohnern/km}^2$ für Enhanced Containment im Specific-Szenario).</li>
+            </ul>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+        
+        <!-- 16. SOFTWARE ARCHITECTURE -->
+        <h2 id="architecture">🧰 16. Software-Architektur (Model-View-Presenter)</h2>
+        <div class="card">
+            <p>Seit Version 0.8.0 basiert das QUCORE Plugin auf einer strikten <strong>Model-View-Presenter (MVP)</strong> Architektur, die eine saubere Trennung von Benutzeroberfläche (UI) und Berechnungslogik (Backend) gewährleistet:</p>
+            <ul>
+                <li><b>Dumb Views (Entkoppelte Dialoge)</b>: Alle grafischen Dialoge (z. B. <i>AltitudeTableDialog</i>, <i>ParameterDialog</i>) sind vollständig von der QGIS-Kartenansicht entkoppelt. Sie greifen nicht direkt auf die Karte zu, sondern kommunizieren Nutzeränderungen ausschließlich über native PyQt-Signale an das Haupt-Plugin (Presenter).</li>
+                <li><b>Map Tools</b>: Interaktive Karteneingaben wie Drag & Drop von Wegpunkten wurden in ein eigenständiges Modul (<code>map_tools.py</code>) ausgelagert, wodurch das Haupt-Plugin schlank und übersichtlich bleibt.</li>
+                <li><b>Format-Handler (Facade-Pattern)</b>: Das Importieren und Exportieren von Dateien (DIPUL, KML, GeoJSON, SkyDemon Flightplan, ArduPilot) wird über ein zentrales Facade-Modul (<code>importer_exporter.py</code>) gesteuert, welches die eigentliche Arbeit an spezialisierte Format-Handler im Unterordner <code>formats/</code> delegiert.</li>
+                <li><b>Zero-Dependency</b>: Das gesamte Plugin ist vollständig ohne externe Python-Pakete lauffähig (alle Berechnungen, Exporte und Zonal Statistics basieren auf QGIS/PyQt nativen Schnittstellen).</li>
             </ul>
         </div>
 
