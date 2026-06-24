@@ -58,6 +58,22 @@ class ConfigManager:
         return cls()
 
     @classmethod
+    def get_default_params(cls):
+        """
+        Returns a copy of all default parameters.
+        """
+        inst = cls.get_instance()
+        return inst._defaults.copy()
+
+    @classmethod
+    def get_limits(cls):
+        """
+        Returns a copy of all configuration limits.
+        """
+        inst = cls.get_instance()
+        return inst._limits.copy()
+
+    @classmethod
     def get_default(cls, key):
         """
         Retrieves the strict default value for a parameter straight from config.json.

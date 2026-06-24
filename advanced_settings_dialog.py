@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import (
     QColorDialog
 )
 from .translation_manager import TranslationManager
+from .config_manager import ConfigManager
 
 class AdvancedSettingsDialog(QDialog):
     def __init__(self, parent=None, config_path=None, current_step_size=50.0, current_params=None):
@@ -31,30 +32,9 @@ class AdvancedSettingsDialog(QDialog):
         self.config_path = config_path
         self.step_size = current_step_size
         
-        # Load all default parameters from config file to display them
-        self.config_params = {}
-        if self.config_path and os.path.exists(self.config_path):
-            try:
-                with open(self.config_path, 'r', encoding='utf-8') as f:
-                    self.config_params = json.load(f)
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in advanced_settings_dialog.py (line 39): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
-                
-        # Load config_limits.json for dynamic min/max/step/decimals of spinboxes
-        self.config_limits = {}
-        if self.config_path:
-            plugin_dir = os.path.dirname(self.config_path)
-            limits_path = os.path.join(plugin_dir, "config_limits.json")
-            if os.path.exists(limits_path):
-                try:
-                    with open(limits_path, 'r', encoding='utf-8') as f:
-                        self.config_limits = json.load(f)
-                except Exception as e:
-                    from qgis.core import QgsMessageLog, Qgis
-                    import traceback
-                    QgsMessageLog.logMessage(f"Silent exception caught in advanced_settings_dialog.py (line 51): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+        # Load all default parameters and limits directly from ConfigManager
+        self.config_params = ConfigManager.get_instance().get_default_params()
+        self.config_limits = ConfigManager.get_instance().get_limits()
 
         # Apply current in-memory parameters to reflect the active session
         if current_params:

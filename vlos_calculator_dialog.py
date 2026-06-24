@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-from qgis.gui import QgsMapCanvas
 from .config_manager import ConfigManager
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (

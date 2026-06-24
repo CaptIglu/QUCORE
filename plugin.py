@@ -748,7 +748,7 @@ class DroneCorridorPlanner(object):
         creates it with standard default parameters.
         Preserves active session styling overrides in memory.
         """
-        defaults = ParameterDialog().params.copy()
+        defaults = ConfigManager.get_instance().get_default_params()
         defaults["stepSize"] = 50.0
         defaults["language"] = "de"
         defaults["linewidth_route"] = 1.0
