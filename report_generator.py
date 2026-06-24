@@ -572,6 +572,14 @@ class ReportGenerator:
         raster_crs = params.get("pop_raster_crs")
         raster_res = params.get("pop_raster_res")
         
+        # Escape XML characters to prevent corrupting the DOCX structure
+        if raster_name:
+            raster_name = raster_name.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;").replace("'", "&apos;")
+        if raster_crs:
+            raster_crs = raster_crs.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;").replace("'", "&apos;")
+        if raster_res:
+            raster_res = raster_res.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;").replace("'", "&apos;")
+        
         if is_en:
             pop_xml.append('  <w:p>')
             pop_xml.append('    <w:pPr>')
