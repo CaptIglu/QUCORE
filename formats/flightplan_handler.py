@@ -4,16 +4,8 @@ import uuid
 import math
 from qgis.core import QgsPointXY, QgsMessageLog, Qgis, QgsGeometry
 from ..config_manager import ConfigManager
-from ..translation_manager import TranslationManager
 from ..buffer_calculator import BufferCalculator
-from .utils import unpack_waypoint
-
-def tr(key, default=""):
-    try:
-        lang = ConfigManager.get_default("language")
-    except KeyError:
-        lang = "de"
-    return TranslationManager.tr(key, lang, default)
+from .utils import unpack_waypoint, tr
 
 class FlightplanHandler:
     @staticmethod

@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 from ..config_manager import ConfigManager
+from ..translation_manager import TranslationManager
 
+def tr(key, default=""):
+    try:
+        lang = ConfigManager.get_default("language")
+    except KeyError:
+        lang = "de"
+    return TranslationManager.tr(key, lang, default)
 def unpack_waypoint(w, params=None):
     """
     Standardizes unpacking of a waypoint list/tuple.
