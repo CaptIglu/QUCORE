@@ -2219,7 +2219,7 @@ class DroneCorridorPlanner(object):
             
             self.lbl_results.setText(html)
             if hasattr(self, 'sora_viz'):
-                self.sora_viz.update_values(r_fg_list, s_cv_list, s_grb_list, h_fg_list, h_cv_list, self.geometry_type)
+                self.sora_viz.update_values(r_fg_list, s_cv_list, s_grb_list, h_fg_list, h_cv_list, self.geometry_type, [s_aga_global])
         except Exception:
             self.lbl_results.setText(
                 f"<i style='color:#c00;'>{self.tr('results_error', 'Berechnungsfehler')}</i>"
