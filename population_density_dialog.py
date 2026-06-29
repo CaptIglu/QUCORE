@@ -148,11 +148,6 @@ class PopulationDensityDialog(QDialog):
         results_layout.addWidget(self.table_widget)
         layout.addWidget(self.results_group)
         
-    def set_table_item(self, row, col, txt):
-        item = self.table_widget.item(row, col)
-        if item:
-            item.setText(str(txt))
-        
         # Calculation Action Button
         self.btn_calculate = QPushButton(self.tr("btn_calculate_pop", "Berechnung starten"))
         self.btn_calculate.setStyleSheet("background-color: #2563eb; color: white; font-weight: bold; padding: 8px; border-radius: 4px; font-size: 13px;")
@@ -422,3 +417,8 @@ class PopulationDensityDialog(QDialog):
         create_task("GRB", 1, self.lyr_grb, self.grb_active, "grb_", stat_sum | stat_count | stat_max)
         create_task("CV", 2, self.lyr_cv, self.cv_active, "cv_", stat_sum | stat_count | stat_max)
         create_task("FG", 3, self.lyr_fg, self.fg_active, "fg_", stat_sum | stat_count | stat_max)
+
+    def set_table_item(self, row, col, txt):
+        item = self.table_widget.item(row, col)
+        if item:
+            item.setText(str(txt))
