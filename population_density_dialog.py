@@ -33,7 +33,7 @@ from .zonal_stats_calculator import ZonalStatsCalculator
 class PopulationDensityDialog(QDialog):
     def __init__(self, parent=None, lyr_aga=None, lyr_grb=None, lyr_cv=None, lyr_fg=None, current_params=None):
         super(PopulationDensityDialog, self).__init__(parent)
-        self.resize(750, 500)
+        self.resize(750, 580)
         self.setModal(True)
         self.lyr_aga = lyr_aga
         self.lyr_grb = lyr_grb
@@ -128,12 +128,13 @@ class PopulationDensityDialog(QDialog):
         self.table_widget.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table_widget.setAlternatingRowColors(True)
         self.table_widget.setStyleSheet("QTableWidget { background-color: #ffffff; }")
+        self.table_widget.setMinimumHeight(160)
         
         zones = [
-            "Adjacent Area (AA)", 
-            "Ground Risk Buffer (GRB)", 
-            "Contingency Volume (CV)", 
-            "Flight Geography (FG)"
+            self.tr("zone_aa", "Adjacent Area (AA)"), 
+            self.tr("zone_grb", "Ground Risk Buffer (GRB)"), 
+            self.tr("zone_cv", "Contingency Volume (CV)"), 
+            self.tr("zone_fg", "Flight Geography (FG)")
         ]
         
         for row, zone_name in enumerate(zones):

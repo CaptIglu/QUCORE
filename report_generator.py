@@ -631,91 +631,64 @@ class ReportGenerator:
             pop_xml.append(f'    <w:r><w:t xml:space="preserve">{intro_text}</w:t></w:r>')
             pop_xml.append('  </w:p>')
         
-        # Check if Adjacent Area population analysis was run
-        aa_area = params.get("aa_area_km2")
-        aa_pop = params.get("aa_population")
-        aa_dens = params.get("aa_density")
-        
-        # Check if GRB population analysis was run
-        grb_area = params.get("grb_area_km2")
-        grb_pop = params.get("grb_population")
-        grb_avg_dens = params.get("grb_avg_density")
-        grb_max_dens = params.get("grb_max_density")
-        grb_max_raw = params.get("grb_max_raw_value")
+        zones = [
+            ("aa", "Adjacent Area (AA)"),
+            ("grb", "Ground Risk Buffer (GRB)"),
+            ("cv", "Contingency Volume (CV)"),
+            ("fg", "Flight Geography (FG)")
+        ]
         
         has_any_pop = False
+        rows = []
         
-        if aa_area is not None or grb_area is not None:
-            if aa_area is not None:
+        for zone_prefix, zone_name in zones:
+            area = params.get(f"{zone_prefix}_area_km2")
+            if area is not None:
                 has_any_pop = True
-                if is_en:
-                    pop_xml.append('  <w:p>')
-                    pop_xml.append('    <w:pPr><w:jc w:val="left"/></w:pPr>')
-                    pop_xml.append('    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">1. Population Density in the Adjacent Area (AA):</w:t></w:r>')
-                    pop_xml.append('  </w:p>')
-                    
-                    headers_aa = ["Parameter in the Adjacent Area (AA)", "Value"]
-                    rows_aa = [
-                        ["AA - Total Area", f"{float(aa_area):.3f} km²"],
-                        ["AA - Total Number of People", f"{int(round(float(aa_pop))):,}" + " People"],
-                        ["AA - Average Population Density", f"{float(aa_dens):.2f}" + " People / km²"]
-                    ]
-                else:
-                    pop_xml.append('  <w:p>')
-                    pop_xml.append('    <w:pPr><w:jc w:val="left"/></w:pPr>')
-                    pop_xml.append('    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">1. Bevölkerungsdichte in der Adjacent Area (AA):</w:t></w:r>')
-                    pop_xml.append('  </w:p>')
-                    
-                    headers_aa = ["Parameter in der Adjacent Area (AA)", "Wert"]
-                    rows_aa = [
-                        ["AA - Gesamtfläche", f"{float(aa_area):.3f} km²".replace('.', ',')],
-                        ["AA - Anzahl Personen (Summe)", f"{int(round(float(aa_pop))):,}".replace(',', '.') + " Personen"],
-                        ["AA - Durchschnittliche Bevölkerungsdichte", f"{float(aa_dens):.2f}".replace('.', ',') + " Einwohner / km²"]
-                    ]
-                pop_xml.append(ReportGenerator.make_docx_table(headers_aa, rows_aa))
-                pop_xml.append('  <w:p><w:spacing w:before="200"/></w:p>')
+                pop = params.get(f"{zone_prefix}_population", 0)
+                avg_dens = params.get(f"{zone_prefix}_avg_density", 0)
+                max_dens = params.get(f"{zone_prefix}_max_density")
                 
-            if grb_area is not None:
-                has_any_pop = True
-                if is_en:
-                    pop_xml.append('  <w:p>')
-                    pop_xml.append('    <w:pPr><w:jc w:val="left"/></w:pPr>')
-                    pop_xml.append('    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">2. Population Density in the Ground Risk Buffer (GRB):</w:t></w:r>')
-                    pop_xml.append('  </w:p>')
-                    
-                    headers_grb = ["Parameter in the Ground Risk Buffer (GRB)", "Value"]
-                    raw_str = f"{float(grb_max_raw):.6f}" if grb_max_raw is not None else "0"
-                    rows_grb = [
-                        ["GRB - Total Area", f"{float(grb_area):.3f} km²"],
-                        ["GRB - Total Number of People", f"{int(round(float(grb_pop))):,}" + " People"],
-                        ["GRB - Average Population Density", f"{float(grb_avg_dens):.2f}" + " People / km²"],
-                        ["GRB - Maximum Population Density (Conservative EASA Approach)", f"{float(grb_max_dens):.2f}" + " People / km²"],
-                        ["GRB - Raw Maximum Population Density Value", f"{raw_str} People/Cell"]
-                    ]
+                # Format values
+                area_str = f"{float(area):.3f}"
+                pop_str = f"{int(round(float(pop))):,}"
+                avg_str = f"{float(avg_dens):.2f}"
+                if max_dens is not None:
+                    max_str = f"{float(max_dens):.2f}"
                 else:
-                    pop_xml.append('  <w:p>')
-                    pop_xml.append('    <w:pPr><w:jc w:val="left"/></w:pPr>')
-                    pop_xml.append('    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">2. Bevölkerungsdichte im Ground Risk Buffer (GRB):</w:t></w:r>')
-                    pop_xml.append('  </w:p>')
+                    max_str = "N/A"
                     
-                    headers_grb = ["Parameter im Ground Risk Buffer (GRB)", "Wert"]
-                    raw_str = f"{float(grb_max_raw):.6f}".replace('.', ',') if grb_max_raw is not None else "0"
-                    rows_grb = [
-                        ["GRB - Gesamtfläche", f"{float(grb_area):.3f} km²".replace('.', ',')],
-                        ["GRB - Anzahl Personen (Summe)", f"{int(round(float(grb_pop))):,}".replace(',', '.') + " Personen"],
-                        ["GRB - Durchschnittliche Bevölkerungsdichte", f"{float(grb_avg_dens):.2f}".replace('.', ',') + " Einwohner / km²"],
-                        ["GRB - Maximalwert der Bevölkerungsdichte (Konservativer EASA-Ansatz)", f"{float(grb_max_dens):.2f}".replace('.', ',') + " Einwohner / km²"],
-                        ["GRB - Rohwert der maximalen Bevölkerungsdichte", f"{raw_str} Personen/Zelle"]
-                    ]
-                pop_xml.append(ReportGenerator.make_docx_table(headers_grb, rows_grb))
-                pop_xml.append('  <w:p><w:spacing w:before="200"/></w:p>')
-        
-        if not has_any_pop:
+                if not is_en:
+                    area_str = area_str.replace('.', ',')
+                    pop_str = pop_str.replace(',', '.')
+                    avg_str = avg_str.replace('.', ',')
+                    if max_str != "N/A":
+                        max_str = max_str.replace('.', ',')
+                        
+                rows.append([zone_name, area_str, pop_str, avg_str, max_str])
+
+        if has_any_pop:
+            if is_en:
+                pop_xml.append('  <w:p>')
+                pop_xml.append('    <w:pPr><w:jc w:val="left"/></w:pPr>')
+                pop_xml.append('    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Population Density per Zone:</w:t></w:r>')
+                pop_xml.append('  </w:p>')
+                headers = ["Zone", "Area (km²)", "Total Population", "Avg. Density\n(People/km²)", "Max. Density\n(People/km²)"]
+            else:
+                pop_xml.append('  <w:p>')
+                pop_xml.append('    <w:pPr><w:jc w:val="left"/></w:pPr>')
+                pop_xml.append('    <w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Bevölkerungsdichte pro Zone:</w:t></w:r>')
+                pop_xml.append('  </w:p>')
+                headers = ["Zone", "Fläche (km²)", "Gesamtbevölkerung", "Ø Dichte\n(Einw./km²)", "Max. Dichte\n(Einw./km²)"]
+                
+            pop_xml.append(ReportGenerator.make_docx_table(headers, rows))
+            pop_xml.append('  <w:p><w:spacing w:before="200"/></w:p>')
+        else:
             pop_xml.append('  <w:p>')
             if is_en:
-                pop_xml.append('    <w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">No population density analysis was calculated for the Adjacent Area (AA) or the Ground Risk Buffer (GRB) before export. If you need this section, please run the calculation in the plugin at least once before exporting.</w:t></w:r>')
+                pop_xml.append('    <w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">No population density analysis was calculated before export. If you need this section, please run the calculation in the plugin at least once before exporting.</w:t></w:r>')
             else:
-                pop_xml.append('    <w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">Für diese Planung wurde vor dem Export keine Bevölkerungsdichte-Analyse für die Adjacent Area (AA) oder den Ground Risk Buffer (GRB) berechnet. Wenn Sie diesen Abschnitt brauchen, dann führen Sie die Berechnung im Plugin vor dem Export mindestens einmal durch.</w:t></w:r>')
+                pop_xml.append('    <w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">Für diese Planung wurde vor dem Export keine Bevölkerungsdichte-Analyse berechnet. Wenn Sie diesen Abschnitt brauchen, dann führen Sie die Berechnung im Plugin vor dem Export mindestens einmal durch.</w:t></w:r>')
             pop_xml.append('  </w:p>')
             
         pop_analysis_xml_str = "\n".join(pop_xml)

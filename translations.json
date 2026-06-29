@@ -1502,5 +1502,49 @@
     "yes_kml_layers": {
         "de": "Ja (Visualisierung / neu berechnet)",
         "en": "Yes (visual only / recalculated)"
+    },
+    "grp_results": {
+        "de": "Ergebnisse: Bevölkerungsdichte",
+        "en": "Results: Population Density"
+    },
+    "col_zone": {
+        "de": "Zone",
+        "en": "Zone"
+    },
+    "col_area": {
+        "de": "Fläche (km²)",
+        "en": "Area (km²)"
+    },
+    "col_pop": {
+        "de": "Gesamtbevölkerung",
+        "en": "Total Population"
+    },
+    "col_avg_dens": {
+        "de": "Ø Dichte (Einw./km²)",
+        "en": "Avg. Density (People/km²)"
+    },
+    "col_max_dens": {
+        "de": "Max. Dichte (Einw./km²)",
+        "en": "Max. Density (People/km²)"
+    },
+    "empty_geom": {
+        "de": "N/A",
+        "en": "N/A"
+    },
+    "zone_aa": {
+        "de": "Adjacent Area (AA)",
+        "en": "Adjacent Area (AA)"
+    },
+    "zone_grb": {
+        "de": "Ground Risk Buffer (GRB)",
+        "en": "Ground Risk Buffer (GRB)"
+    },
+    "zone_cv": {
+        "de": "Contingency Volume (CV)",
+        "en": "Contingency Volume (CV)"
+    },
+    "zone_fg": {
+        "de": "Flight Geography (FG)",
+        "en": "Flight Geography (FG)"
     }
 }
