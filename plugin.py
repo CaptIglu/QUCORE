@@ -2162,10 +2162,13 @@ class DroneCorridorPlanner(object):
             r_fg_list = []
             r_cv_list = []
             r_grb_list = []
+            r_aga_list = []
             s_cv_list = []
             s_grb_list = []
             h_fg_list = []
             h_cv_list = []
+            
+            s_aga_global = BufferCalculator.calculate_adjacent_area_width(self.params)
             
             for w in self.waypoints:
                 h = w[2] if len(w) > 2 else float(ConfigManager.get_param(self.params, "maxFlightHeight"))
@@ -2186,6 +2189,7 @@ class DroneCorridorPlanner(object):
                 r_fg_list.append(r_fg)
                 r_cv_list.append(r_cv)
                 r_grb_list.append(r_grb)
+                r_aga_list.append(r_cv + s_aga_global)
                 s_cv_list.append(r_cv - r_fg)
                 s_grb_list.append(r_grb - r_cv)
                 h_fg_list.append(h)
@@ -2200,13 +2204,15 @@ class DroneCorridorPlanner(object):
             lbl_rfg = "R<sub>FG</sub>"
             lbl_rcv = "R<sub>CV</sub>"
             lbl_rgrb = "R<sub>GRB</sub>"
+            lbl_raa = "R<sub>AA</sub>"
             
             html = (
                 f"<table style='border-collapse:collapse; width:100%; font-size:11px;'>"
                 f"<tr>"
                 f"<td style='padding: 2px 2px;'><b>{lbl_rfg}:</b> {fmt_range(r_fg_list)}</td>"
                 f"<td style='padding: 2px 2px; text-align:center;'><b>{lbl_rcv}:</b> {fmt_range(r_cv_list)}</td>"
-                f"<td style='padding: 2px 2px; text-align:right;'><b>{lbl_rgrb}:</b> {fmt_range(r_grb_list)}</td>"
+                f"<td style='padding: 2px 2px; text-align:center;'><b>{lbl_rgrb}:</b> {fmt_range(r_grb_list)}</td>"
+                f"<td style='padding: 2px 2px; text-align:right;'><b>{lbl_raa}:</b> {fmt_range(r_aga_list)}</td>"
                 f"</tr>"
                 f"</table>"
             )

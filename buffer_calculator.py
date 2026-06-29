@@ -156,6 +156,21 @@ class BufferCalculator:
         r_grb = r_cv + s_grb
         return r_fg, r_cv, r_grb, h_cv
 
+    @staticmethod
+    def calculate_adjacent_area_width(params):
+        """
+        Calculates the Adjacent Area width S_AGA based on max commandable speed (vmax).
+        Clamped between 5000m and 35000m.
+        """
+        vmax = ConfigManager.get_param(params, "maxCommandableSpeedVmax")
+        s_aga = 180.0 * vmax
+        if s_aga < 5000.0:
+            return 5000.0
+        elif s_aga > 35000.0:
+            return 35000.0
+        return s_aga
+
+
     @classmethod
     def generate_buffers(cls, waypoints, params, geometry_type="Corridor"):
         """
@@ -227,12 +242,7 @@ class BufferCalculator:
             r_fg, r_cv, r_grb, _h_cv = cls.calculate_buffer_widths(h, params_wp)
             
             # Calculate Adjacent Area width: S_AGA = max(5000, min(35000, 180 * vmax))
-            vmax = ConfigManager.get_param(params, "maxCommandableSpeedVmax")
-            s_aga = 180.0 * vmax
-            if s_aga < 5000.0:
-                s_aga = 5000.0
-            elif s_aga > 35000.0:
-                s_aga = 35000.0
+            s_aga = cls.calculate_adjacent_area_width(params)
                 
             try:
                 # Use local UTM zone for this single point (100% native EPSG, no custom Proj distortion)
@@ -311,12 +321,7 @@ class BufferCalculator:
                 fg_polygon_wgs.transform(inverse_transform)
                 
                 # Calculate Adjacent Area width: S_AGA = max(5000, min(35000, 180 * vmax))
-                vmax = ConfigManager.get_param(params, "maxCommandableSpeedVmax")
-                s_aga = 180.0 * vmax
-                if s_aga < 5000.0:
-                    s_aga = 5000.0
-                elif s_aga > 35000.0:
-                    s_aga = 35000.0
+                s_aga = cls.calculate_adjacent_area_width(params)
                 
                 # Check if expert mode variable buffering is enabled
                 if params.get("variable_polygon_buffers", False):
@@ -451,12 +456,7 @@ class BufferCalculator:
                 lon, lat, h, spd, radius = parsed_wpts[0]
                 r_fg, r_cv, r_grb, _h_cv = radii[0]
                 
-                vmax = ConfigManager.get_param(params, "maxCommandableSpeedVmax")
-                s_aga = 180.0 * vmax
-                if s_aga < 5000.0:
-                    s_aga = 5000.0
-                elif s_aga > 35000.0:
-                    s_aga = 35000.0
+                s_aga = cls.calculate_adjacent_area_width(params)
                     
                 try:
                     utm_epsg = get_utm_epsg(lon, lat)
@@ -540,12 +540,7 @@ class BufferCalculator:
                 return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
                 
             # Determine Adjacent Area width S_AGA based on max commandable speed
-            vmax = ConfigManager.get_param(params, "maxCommandableSpeedVmax")
-            s_aga = 180.0 * vmax
-            if s_aga < 5000.0:
-                s_aga = 5000.0
-            elif s_aga > 35000.0:
-                s_aga = 35000.0
+            s_aga = cls.calculate_adjacent_area_width(params)
  
             # Merge all segment capsules in WGS 84
             fg_merged = QgsGeometry.unaryUnion(fg_capsules)
