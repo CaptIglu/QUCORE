@@ -5,7 +5,7 @@ import math
 from qgis.core import QgsPointXY, QgsMessageLog, Qgis, QgsGeometry
 from ..config_manager import ConfigManager
 from ..buffer_calculator import BufferCalculator
-from .utils import unpack_waypoint, tr
+from .utils import unpack_waypoint, tr, DEFAULT_ALTITUDE, DEFAULT_SPEED, DEFAULT_WIDTH
 
 class GeoJsonHandler:
     @staticmethod
@@ -67,7 +67,7 @@ class GeoJsonHandler:
                         for c in coords:
                             if len(c) >= 2:
                                 # default height, speed, width
-                                waypoints.append((float(c[0]), float(c[1]), 100.0, 30.0, 50.0))
+                                waypoints.append((float(c[0]), float(c[1]), DEFAULT_ALTITUDE, DEFAULT_SPEED, DEFAULT_WIDTH))
                         break
                     elif g_type == "Polygon":
                         coords_list = geom.get("coordinates", [[]])
@@ -79,13 +79,13 @@ class GeoJsonHandler:
                             geom_type = "Polygon"
                             for c in coords:
                                 if len(c) >= 2:
-                                    waypoints.append((float(c[0]), float(c[1]), 100.0, 30.0, 50.0))
+                                    waypoints.append((float(c[0]), float(c[1]), DEFAULT_ALTITUDE, DEFAULT_SPEED, DEFAULT_WIDTH))
                             break
                     elif g_type == "Point":
                         coords = geom.get("coordinates")
                         if coords and len(coords) >= 2:
                             geom_type = "Circle"
-                            waypoints.append((float(coords[0]), float(coords[1]), 100.0, 30.0, 50.0))
+                            waypoints.append((float(coords[0]), float(coords[1]), DEFAULT_ALTITUDE, DEFAULT_SPEED, DEFAULT_WIDTH))
                             break
                             
         # 3. Read general parameters if available from a metadata feature
@@ -100,8 +100,8 @@ class GeoJsonHandler:
                 break
                 
         # If waypoints are loaded, extract width and max_height
-        width = 50.0
-        max_height = 100.0
+        width = DEFAULT_WIDTH
+        max_height = DEFAULT_ALTITUDE
         if waypoints:
             width = waypoints[0][4]
             max_height = max(wp[2] for wp in waypoints)

@@ -8,6 +8,12 @@ def tr(key, default=""):
     except KeyError:
         lang = "de"
     return TranslationManager.tr(key, lang, default)
+
+DEFAULT_ALTITUDE = 100.0
+DEFAULT_SPEED = 30.0
+DEFAULT_WIDTH = 50.0
+FEET_TO_METERS = 3.28084
+
 def unpack_waypoint(w, params=None):
     """
     Standardizes unpacking of a waypoint list/tuple.

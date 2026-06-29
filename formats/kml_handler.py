@@ -5,7 +5,7 @@ import math
 from qgis.core import QgsPointXY, QgsMessageLog, Qgis, QgsGeometry
 from ..config_manager import ConfigManager
 from ..buffer_calculator import BufferCalculator
-from .utils import unpack_waypoint, tr, find_local_elements, find_first_local_element
+from .utils import unpack_waypoint, tr, find_local_elements, find_first_local_element, DEFAULT_ALTITUDE, DEFAULT_SPEED, DEFAULT_WIDTH
 
 class KmlHandler:
     @staticmethod
@@ -72,8 +72,8 @@ class KmlHandler:
                         if len(parts) >= 2:
                             lon = float(parts[0])
                             lat = float(parts[1])
-                            h = float(parts[2]) if len(parts) >= 3 else 100.0
-                            spd = 30.0
+                            h = float(parts[2]) if len(parts) >= 3 else DEFAULT_ALTITUDE
+                            spd = DEFAULT_SPEED
                             pts.append((lon, lat, h, spd))
                     
                     if len(pts) >= 3 and pts[0][0] == pts[-1][0] and pts[0][1] == pts[-1][1]:
@@ -95,8 +95,8 @@ class KmlHandler:
                     if len(parts) >= 2:
                         lon = float(parts[0])
                         lat = float(parts[1])
-                        h = float(parts[2]) if len(parts) >= 3 else 100.0
-                        spd = 30.0
+                        h = float(parts[2]) if len(parts) >= 3 else DEFAULT_ALTITUDE
+                        spd = DEFAULT_SPEED
                         waypoints = [(lon, lat, h, spd)]
                         geometry_type = "Circle"
                         found_centerline = True
@@ -115,8 +115,8 @@ class KmlHandler:
                             if len(parts) >= 2:
                                 lon = float(parts[0])
                                 lat = float(parts[1])
-                                h = float(parts[2]) if len(parts) >= 3 else 100.0
-                                spd = 30.0
+                                h = float(parts[2]) if len(parts) >= 3 else DEFAULT_ALTITUDE
+                                spd = DEFAULT_SPEED
                                 pts.append((lon, lat, h, spd))
                         if pts:
                             geometry_type = "Polygon"
@@ -145,15 +145,15 @@ class KmlHandler:
             raise ValueError(tr("error_no_waypoints_kml", "Keine gültigen Wegpunkte oder Centerline-Geometrien im KML-Dokument gefunden."))
             
         # Fallback values for standard KML files
-        width = 50.0
-        max_height = 100.0
+        width = DEFAULT_WIDTH
+        max_height = DEFAULT_ALTITUDE
         if waypoints:
             max_height = max(wp[2] for wp in waypoints)
             
         params = {
             "maxFlightHeight": max_height,
-            "maxOpsSpeedV0": 30.0,
-            "maxCommandableSpeedVmax": 30.0,
+            "maxOpsSpeedV0": DEFAULT_SPEED,
+            "maxCommandableSpeedVmax": DEFAULT_SPEED,
             "corridorWidth": width
         }
         

@@ -5,7 +5,7 @@ import math
 from qgis.core import QgsPointXY, QgsMessageLog, Qgis, QgsGeometry
 from ..config_manager import ConfigManager
 from ..buffer_calculator import BufferCalculator
-from .utils import unpack_waypoint, tr, find_local_elements, find_first_local_element
+from .utils import unpack_waypoint, tr, find_local_elements, find_first_local_element, DEFAULT_ALTITUDE, DEFAULT_SPEED, DEFAULT_WIDTH, FEET_TO_METERS
 
 class FlightplanHandler:
     @staticmethod
@@ -62,7 +62,7 @@ class FlightplanHandler:
             raise ValueError(tr("error_invalid_skydemon_format", "Ungültiges SkyDemon-Flugplanformat: <PrimaryRoute> nicht gefunden."))
             
         level_feet = float(pr.attribute("Level", "3000"))
-        max_height = level_feet / 3.28084
+        max_height = level_feet / FEET_TO_METERS
         
         waypoints = []
         
@@ -70,7 +70,7 @@ class FlightplanHandler:
         if start_str:
             lon, lat = parse_dms_pair(start_str)
             if lon is not None and lat is not None:
-                waypoints.append((lon, lat, max_height, 30.0, 50.0))
+                waypoints.append((lon, lat, max_height, DEFAULT_SPEED, DEFAULT_WIDTH))
                 
         rhumb_lines = find_local_elements(pr, "RhumbLineRoute")
         for r in rhumb_lines:
@@ -78,16 +78,16 @@ class FlightplanHandler:
             if to_str:
                 lon, lat = parse_dms_pair(to_str)
                 if lon is not None and lat is not None:
-                    waypoints.append((lon, lat, max_height, 30.0, 50.0))
+                    waypoints.append((lon, lat, max_height, DEFAULT_SPEED, DEFAULT_WIDTH))
                     
         params = {
             "maxFlightHeight": max_height,
-            "maxOpsSpeedV0": 30.0,
-            "maxCommandableSpeedVmax": 30.0,
-            "corridorWidth": 50.0
+            "maxOpsSpeedV0": DEFAULT_SPEED,
+            "maxCommandableSpeedVmax": DEFAULT_SPEED,
+            "corridorWidth": DEFAULT_WIDTH
         }
         
-        return waypoints, None, 50.0, max_height, params, "Corridor", []
+        return waypoints, None, DEFAULT_WIDTH, max_height, params, "Corridor", []
 
     @staticmethod
     def export_flightplan(file_path, waypoints, const_height):
@@ -116,7 +116,7 @@ class FlightplanHandler:
             else:
                 return f"{direction}{d:03d}{m:02d}{s:05.2f}"
 
-        level_feet = int(round(const_height * 3.28084))
+        level_feet = int(round(const_height * FEET_TO_METERS))
         
         w0 = waypoints[0]
         lon0, lat0, _ = unpack_waypoint(w0)
