@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -12,7 +13,10 @@ from PyQt5.QtWidgets import (
     QDialogButtonBox,
     QGroupBox,
     QFileDialog,
-    QMessageBox
+    QMessageBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView
 )
 from qgis.core import (
     QgsProject,
@@ -27,18 +31,22 @@ from .translation_manager import TranslationManager
 from .zonal_stats_calculator import ZonalStatsCalculator
 
 class PopulationDensityDialog(QDialog):
-    def __init__(self, parent=None, lyr_aga=None, lyr_grb=None, current_params=None):
+    def __init__(self, parent=None, lyr_aga=None, lyr_grb=None, lyr_cv=None, lyr_fg=None, current_params=None):
         super(PopulationDensityDialog, self).__init__(parent)
-        self.resize(720, 500)
+        self.resize(750, 500)
         self.setModal(True)
         self.lyr_aga = lyr_aga
         self.lyr_grb = lyr_grb
+        self.lyr_cv = lyr_cv
+        self.lyr_fg = lyr_fg
         self.params = current_params if current_params is not None else {}
         self.active_tasks = set()
         
         # Determine which layers are active and contain valid features
         self.aa_active = self._is_layer_active(self.lyr_aga)
         self.grb_active = self._is_layer_active(self.lyr_grb)
+        self.cv_active = self._is_layer_active(self.lyr_cv)
+        self.fg_active = self._is_layer_active(self.lyr_fg)
 
         self.setWindowTitle(self.tr("dialog_pop_title", "Bevölkerungsdichte- & Bodenrisiko-Analyse (AA / GRB)"))
         self.init_ui()
@@ -99,69 +107,59 @@ class PopulationDensityDialog(QDialog):
         
         layout.addWidget(input_group)
         
-        # Side-by-Side Area & Results Display
-        sections_layout = QHBoxLayout()
+        # Results Table
+        self.results_group = QGroupBox(self.tr("grp_results", "Ergebnisse: Bevölkerungsdichte"))
+        results_layout = QVBoxLayout(self.results_group)
         
-        # Card 1: AA (Adjacent Ground Area)
-        self.aa_group = QGroupBox(self.tr("grp_aa_details", "Adjacent Ground Area (AA) Eigenschaften"))
-        aa_card_layout = QFormLayout(self.aa_group)
-        aa_card_layout.setSpacing(8)
+        self.table_widget = QTableWidget(4, 5)
+        self.table_widget.setHorizontalHeaderLabels([
+            self.tr("col_zone", "Zone"),
+            self.tr("col_area", "Fläche (km²)"),
+            self.tr("col_pop", "Gesamtbevölkerung"),
+            self.tr("col_avg_dens", "Ø Dichte (Einw./km²)"),
+            self.tr("col_max_dens", "Max. Dichte (Einw./km²)")
+        ])
         
-        self.lbl_aa_area = QLabel("---")
-        self.lbl_aa_area.setStyleSheet("font-weight: bold; color: #1e293b;")
-        aa_card_layout.addRow(self.tr("label_aa_area", "AA-Fläche:"), self.lbl_aa_area)
+        header = self.table_widget.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.Stretch)
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         
-        self.lbl_aa_total_pop = QLabel("---")
-        self.lbl_aa_total_pop.setStyleSheet("font-weight: bold; color: #0f172a;")
-        aa_card_layout.addRow(self.tr("label_total_pop", "Gesamtbevölkerung:"), self.lbl_aa_total_pop)
+        self.table_widget.verticalHeader().setVisible(False)
+        self.table_widget.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table_widget.setAlternatingRowColors(True)
+        self.table_widget.setStyleSheet("QTableWidget { background-color: #ffffff; }")
         
-        self.lbl_aa_avg_density = QLabel("---")
-        self.lbl_aa_avg_density.setStyleSheet("font-weight: bold; color: #0f172a;")
-        aa_card_layout.addRow(self.tr("label_avg_density", "Durchschnittliche Dichte:"), self.lbl_aa_avg_density)
+        zones = [
+            "Adjacent Area (AA)", 
+            "Ground Risk Buffer (GRB)", 
+            "Contingency Volume (CV)", 
+            "Flight Geography (FG)"
+        ]
         
-        sections_layout.addWidget(self.aa_group, 1)
+        for row, zone_name in enumerate(zones):
+            item_zone = QTableWidgetItem(zone_name)
+            item_zone.setFont(QFont("Arial", 9, QFont.Bold))
+            self.table_widget.setItem(row, 0, item_zone)
+            for col in range(1, 5):
+                item = QTableWidgetItem("---")
+                item.setTextAlignment(Qt.AlignCenter)
+                self.table_widget.setItem(row, col, item)
+                
+        results_layout.addWidget(self.table_widget)
+        layout.addWidget(self.results_group)
         
-        # Card 2: GRB (Ground Risk Buffer)
-        self.grb_group = QGroupBox(self.tr("grp_grb_details", "Ground Risk Buffer (GRB) Eigenschaften"))
-        grb_card_layout = QFormLayout(self.grb_group)
-        grb_card_layout.setSpacing(8)
+    def set_table_item(self, row, col, txt):
+        item = self.table_widget.item(row, col)
+        if item:
+            item.setText(str(txt))
         
-        self.lbl_grb_area = QLabel("---")
-        self.lbl_grb_area.setStyleSheet("font-weight: bold; color: #1e293b;")
-        grb_card_layout.addRow(self.tr("label_grb_area", "GRB-Gesamtfläche:"), self.lbl_grb_area)
-        
-        self.lbl_grb_total_pop = QLabel("---")
-        self.lbl_grb_total_pop.setStyleSheet("font-weight: bold; color: #0f172a;")
-        grb_card_layout.addRow(self.tr("label_total_pop_grb", "Gesamtbevölkerung:"), self.lbl_grb_total_pop)
-        
-        self.lbl_grb_avg_density = QLabel("---")
-        self.lbl_grb_avg_density.setStyleSheet("font-weight: bold; color: #1e293b;")
-        grb_card_layout.addRow(self.tr("label_avg_density_grb", "Durchschnittliche Dichte:"), self.lbl_grb_avg_density)
-
-        self.lbl_grb_max_density = QLabel("---")
-        self.lbl_grb_max_density.setStyleSheet("font-weight: bold; color: #0f172a;")
-        grb_card_layout.addRow(self.tr("label_max_density_grb", "Maximale Dichte:"), self.lbl_grb_max_density)
-        
-        sections_layout.addWidget(self.grb_group, 1)
-        
-        layout.addLayout(sections_layout)
-        
-        # Manage enabling/disabling states based on whether vectors exist
-        if not self.aa_active:
-            self.aa_group.setEnabled(False)
-            self.lbl_aa_area.setText(self.tr("empty_aa_geometry", "AA-Geometrie leer / nicht geladen"))
-            
-        if not self.grb_active:
-            self.grb_group.setEnabled(False)
-            self.lbl_grb_area.setText(self.tr("empty_grb_geometry", "GRB-Geometrie leer / nicht geladen"))
-            
         # Calculation Action Button
         self.btn_calculate = QPushButton(self.tr("btn_calculate_pop", "Berechnung starten"))
         self.btn_calculate.setStyleSheet("background-color: #2563eb; color: white; font-weight: bold; padding: 8px; border-radius: 4px; font-size: 13px;")
         self.btn_calculate.clicked.connect(self.calculate_density)
         layout.addWidget(self.btn_calculate)
         
-        if not self.aa_active and not self.grb_active:
+        if not self.aa_active and not self.grb_active and not self.cv_active and not self.fg_active:
             self.btn_calculate.setEnabled(False)
             self.btn_calculate.setText(self.tr("no_active_layers_warn", "Keine gültigen Planungsdaten geladen"))
         
@@ -207,7 +205,7 @@ class PopulationDensityDialog(QDialog):
             self.btn_calculate.setEnabled(False)
         else:
             # Enable calculate button if we have raster and at least one active vector layer
-            if self.aa_active or self.grb_active:
+            if self.aa_active or self.grb_active or self.cv_active or self.fg_active:
                 self.btn_calculate.setEnabled(True)
             for layer in raster_layers:
                 self.cmb_raster_layers.addItem(layer.name(), layer.id())
@@ -288,21 +286,23 @@ class PopulationDensityDialog(QDialog):
         da.setSourceCrs(QgsCoordinateReferenceSystem("EPSG:4326"), QgsProject.instance().transformContext())
         da.setEllipsoid("WGS84")
         
-        if self.aa_active:
-            total_area_m2 = 0.0
-            for feature in self.lyr_aga.getFeatures():
-                if feature.hasGeometry() and not feature.geometry().isEmpty():
-                    total_area_m2 += da.measureArea(feature.geometry())
-            total_area_km2 = total_area_m2 / 1000000.0
-            self.lbl_aa_area.setText(f"{total_area_km2:.3f} km²")
-            
-        if self.grb_active:
-            total_area_m2 = 0.0
-            for feature in self.lyr_grb.getFeatures():
-                if feature.hasGeometry() and not feature.geometry().isEmpty():
-                    total_area_m2 += da.measureArea(feature.geometry())
-            total_area_km2 = total_area_m2 / 1000000.0
-            self.lbl_grb_area.setText(f"{total_area_km2:.3f} km²")
+        layers_info = [
+            (0, self.aa_active, self.lyr_aga),
+            (1, self.grb_active, self.lyr_grb),
+            (2, self.cv_active, self.lyr_cv),
+            (3, self.fg_active, self.lyr_fg)
+        ]
+        
+        for row, is_active, layer in layers_info:
+            if is_active and layer:
+                total_area_m2 = 0.0
+                for feature in layer.getFeatures():
+                    if feature.hasGeometry() and not feature.geometry().isEmpty():
+                        total_area_m2 += da.measureArea(feature.geometry())
+                total_area_km2 = total_area_m2 / 1000000.0
+                self.set_table_item(row, 1, f"{total_area_km2:.3f}")
+            else:
+                self.set_table_item(row, 1, self.tr("empty_geom", "N/A"))
 
     def check_and_restore_ui(self):
         """Restores cursor and calculation button once all active tasks are completed or failed."""
@@ -354,111 +354,71 @@ class PopulationDensityDialog(QDialog):
             stat_count = QgsZonalStatistics.Count
             stat_max = QgsZonalStatistics.Max
 
-        # ----------------------------------------------------
-        # 1. AA Zonal Statistics
-        # ----------------------------------------------------
-        if self.aa_active:
-            self.active_tasks.add("AA")
-            self.lbl_aa_total_pop.setText("...")
-            self.lbl_aa_avg_density.setText("...")
+        def create_task(zone_id, row, layer, is_active, prefix, stat_flags):
+            if not is_active:
+                return
+                
+            self.active_tasks.add(zone_id)
+            self.set_table_item(row, 2, "...")
+            self.set_table_item(row, 3, "...")
+            self.set_table_item(row, 4, "...")
             
-            def on_aa_completed(total_area_km2, cell_area_km2, results):
+            def on_completed(total_area_km2, cell_area_km2, results):
                 try:
                     total_population = sum(r[0] for r in results)
-                    self.lbl_aa_total_pop.setText(f"{total_population:,.0f} {self.tr('people', 'Personen')}")
+                    max_pixel_val = max(r[2] for r in results) if results and len(results[0]) > 2 else 0.0
                     
-                    density = total_population / total_area_km2 if total_area_km2 > 0 else 0.0
-                    self.lbl_aa_avg_density.setText(f"{density:.2f} {self.tr('people_per_km2', 'Einwohner / km²')}")
-                    
-                    if self.params is not None:
-                        self.params["aa_area_km2"] = total_area_km2
-                        self.params["aa_population"] = total_population
-                        self.params["aa_density"] = density
-                finally:
-                    self.active_tasks.discard("AA")
-                    self.check_and_restore_ui()
-
-            def on_aa_failed(error_msg):
-                try:
-                    QMessageBox.critical(
-                        self,
-                        self.tr("error_calc_failed_title", "Fehler bei Berechnung") + " (AA)",
-                        self.tr("error_calc_failed_text", "Zonalstatistik-Berechnung fehlgeschlagen:\n{error}").format(error=error_msg)
-                    )
-                finally:
-                    self.active_tasks.discard("AA")
-                    self.check_and_restore_ui()
-
-            def on_aa_terminated():
-                try:
-                    QMessageBox.warning(
-                        self,
-                        self.tr("error_calc_terminated_title", "Berechnung abgebrochen") + " (AA)",
-                        self.tr("error_calc_terminated_text", "Die Zonalstatistik-Berechnung wurde abgebrochen.")
-                    )
-                finally:
-                    self.active_tasks.discard("AA")
-                    self.check_and_restore_ui()
-
-            calc_aa = ZonalStatsCalculator(self.lyr_aga, raster_layer, "pop_", stat_sum | stat_count, parent=self)
-            calc_aa.calculate_async(on_aa_completed, on_aa_failed, on_aa_terminated)
-
-        # ----------------------------------------------------
-        # 2. GRB Zonal Statistics
-        # ----------------------------------------------------
-        if self.grb_active:
-            self.active_tasks.add("GRB")
-            self.lbl_grb_total_pop.setText("...")
-            self.lbl_grb_avg_density.setText("...")
-            self.lbl_grb_max_density.setText("...")
-            
-            def on_grb_completed(total_area_km2, cell_area_km2, results):
-                try:
-                    total_population = sum(r[0] for r in results)
-                    max_pixel_val = max(r[2] for r in results) if results else 0.0
-                    
-                    self.lbl_grb_total_pop.setText(f"{total_population:,.1f} {self.tr('people', 'Personen')}")
+                    self.set_table_item(row, 2, f"{total_population:,.0f}")
                     
                     avg_density = total_population / total_area_km2 if total_area_km2 > 0 else 0.0
-                    self.lbl_grb_avg_density.setText(f"{avg_density:.2f} {self.tr('people_per_km2', 'Einwohner / km²')}")
+                    self.set_table_item(row, 3, f"{avg_density:.2f}")
                     
-                    max_density = max_pixel_val / cell_area_km2 if cell_area_km2 > 0 else 0.0
-                    self.lbl_grb_max_density.setText(
-                        f"{max_density:.2f} {self.tr('people_per_km2', 'Einwohner / km²')} "
-                        f"({self.tr('raw_value', 'Rohwert')}: {max_pixel_val:.6f} {self.tr('people_per_cell', 'Personen/Zelle')})"
-                    )
+                    if stat_flags & stat_max:
+                        max_density = max_pixel_val / cell_area_km2 if cell_area_km2 > 0 else 0.0
+                        self.set_table_item(row, 4, f"{max_density:.2f}")
+                    else:
+                        max_density = 0.0
+                        self.set_table_item(row, 4, "N/A")
                     
                     if self.params is not None:
-                        self.params["grb_area_km2"] = total_area_km2
-                        self.params["grb_population"] = total_population
-                        self.params["grb_avg_density"] = avg_density
-                        self.params["grb_max_density"] = max_density
-                        self.params["grb_max_raw_value"] = max_pixel_val
+                        lower_id = zone_id.lower()
+                        self.params[f"{lower_id}_area_km2"] = total_area_km2
+                        self.params[f"{lower_id}_population"] = total_population
+                        self.params[f"{lower_id}_avg_density"] = avg_density
+                        if stat_flags & stat_max:
+                            self.params[f"{lower_id}_max_density"] = max_density
+                            self.params[f"{lower_id}_max_raw_value"] = max_pixel_val
                 finally:
-                    self.active_tasks.discard("GRB")
+                    self.active_tasks.discard(zone_id)
                     self.check_and_restore_ui()
 
-            def on_grb_failed(error_msg):
+            def on_failed(error_msg):
                 try:
                     QMessageBox.critical(
                         self,
-                        self.tr("error_calc_failed_title", "Fehler bei Berechnung") + " (GRB)",
+                        self.tr("error_calc_failed_title", "Fehler bei Berechnung") + f" ({zone_id})",
                         self.tr("error_calc_failed_text", "Zonalstatistik-Berechnung fehlgeschlagen:\n{error}").format(error=error_msg)
                     )
                 finally:
-                    self.active_tasks.discard("GRB")
+                    self.active_tasks.discard(zone_id)
                     self.check_and_restore_ui()
 
-            def on_grb_terminated():
+            def on_terminated():
                 try:
                     QMessageBox.warning(
                         self,
-                        self.tr("error_calc_terminated_title", "Berechnung abgebrochen") + " (GRB)",
+                        self.tr("error_calc_terminated_title", "Berechnung abgebrochen") + f" ({zone_id})",
                         self.tr("error_calc_terminated_text", "Die Zonalstatistik-Berechnung wurde abgebrochen.")
                     )
                 finally:
-                    self.active_tasks.discard("GRB")
+                    self.active_tasks.discard(zone_id)
                     self.check_and_restore_ui()
 
-            calc_grb = ZonalStatsCalculator(self.lyr_grb, raster_layer, "grb_", stat_sum | stat_count | stat_max, parent=self)
-            calc_grb.calculate_async(on_grb_completed, on_grb_failed, on_grb_terminated)
+            calc = ZonalStatsCalculator(layer, raster_layer, prefix, stat_flags, parent=self)
+            calc.calculate_async(on_completed, on_failed, on_terminated)
+
+        # Start all tasks
+        create_task("AA", 0, self.lyr_aga, self.aa_active, "pop_", stat_sum | stat_count)
+        create_task("GRB", 1, self.lyr_grb, self.grb_active, "grb_", stat_sum | stat_count | stat_max)
+        create_task("CV", 2, self.lyr_cv, self.cv_active, "cv_", stat_sum | stat_count | stat_max)
+        create_task("FG", 3, self.lyr_fg, self.fg_active, "fg_", stat_sum | stat_count | stat_max)

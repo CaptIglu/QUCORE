@@ -1795,8 +1795,9 @@ class DroneCorridorPlanner(object):
         """
         keys_to_clear = [
             "aa_area_km2", "aa_population", "aa_density",
-            "grb_area_km2", "grb_population", "grb_avg_density",
-            "grb_max_density", "grb_max_raw_value"
+            "grb_area_km2", "grb_population", "grb_avg_density", "grb_max_density", "grb_max_raw_value",
+            "cv_area_km2", "cv_population", "cv_avg_density", "cv_max_density", "cv_max_raw_value",
+            "fg_area_km2", "fg_population", "fg_avg_density", "fg_max_density", "fg_max_raw_value"
         ]
         for key in keys_to_clear:
             if key in self.params:
@@ -2355,7 +2356,14 @@ class DroneCorridorPlanner(object):
             return
             
         from .population_density_dialog import PopulationDensityDialog
-        dialog = PopulationDensityDialog(self.gui, lyr_aga=self.lyr_aga, lyr_grb=self.lyr_grb, current_params=self.params)
+        dialog = PopulationDensityDialog(
+            self.gui, 
+            lyr_aga=self.lyr_aga, 
+            lyr_grb=self.lyr_grb, 
+            lyr_cv=self.lyr_cv, 
+            lyr_fg=self.lyr_fg, 
+            current_params=self.params
+        )
         dialog.exec_()
 
     def open_altitude_table(self):
