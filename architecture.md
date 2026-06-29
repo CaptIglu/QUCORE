@@ -1,6 +1,6 @@
-# QUCORE QGIS Plugin: Architecture Analysis (v0.8.0)
+# QUCORE QGIS Plugin: Architecture Analysis (v0.8.1)
 
-This document provides a comprehensive analysis of the macro-structure of the **QUCORE** QGIS plugin codebase following the v0.8.0 refactoring cycle. It maps the end-to-end data flow, defines the public interfaces of each module, and demonstrates the Model-View-Presenter (MVP) architecture.
+This document provides a comprehensive analysis of the macro-structure of the **QUCORE** QGIS plugin codebase following the v0.8.1 refactoring cycle. It maps the end-to-end data flow, defines the public interfaces of each module, and demonstrates the Model-View-Presenter (MVP) architecture.
 
 ---
 
@@ -77,13 +77,13 @@ The plugin operates on five primary data flows:
 3. **Cell Processing**: `AltitudeTableDialog.on_cell_changed()` runs `recalculate_buffers(row)` to calculate the safety dimensions locally for that waypoint using `BufferCalculator.calculate_buffer_widths(h, params)`.
 4. **Synchronization**: On clicking **Accept**, the updated parameters array is passed back to `plugin.py` via PyQt signals, triggering a full redrawing and recalculation.
 
-### Flow C: Asynchronous Zonal Statistics (Population & Ground Risk Analysis)
-1. **Initiation**: The user launches the `PopulationDensityDialog` (which handles both Adjacent Ground Area and Ground Risk Buffer analysis in a unified interface).
-2. **Setup**: The dialog compiles local vector layer geometries, reprojects them to the CRS of a selected GHS-POP population density raster layer, and translates them to WKT.
+### Flow C: Asynchronous Zonal Statistics (Population Density Analysis)
+1. **Initiation**: The user launches the `PopulationDensityDialog` (which handles unified spatial analysis for all four buffer zones: Adjacent Area, Ground Risk Buffer, Contingency Volume, and Flight Geography).
+2. **Setup**: The dialog compiles local vector layer geometries, reprojects them to the CRS of a selected GHS-POP population density raster layer, and prepares them for processing.
 3. **Worker Thread Execution**:
-   - The dialog instantiates `ZonalStatsCalculator` and invokes `calculate_async()`.
-   - A `QgsTask` is queued in the background. The worker creates a temporary in-memory layer inside the thread, adds features, and runs `QgsZonalStatistics.calculateStatistics()`.
-4. **GUI Integration**: Upon completion, the task reports population sums and pixel maximums to the main thread. The dialog computes average/maximum densities and saves them in `self.params`.
+   - The dialog iterates over all active geometries and spawns up to four parallel `ZonalStatsCalculator` tasks using `calculate_async()`.
+   - `QgsTask` threads run in the background. Each worker creates a temporary in-memory layer inside its thread, adds features, and executes `QgsZonalStatistics.calculateStatistics()`.
+4. **GUI Integration**: Upon completion, tasks independently report population sums, area, and pixel maximums to the main thread via callbacks (`on_completed`). The dialog dynamically updates a central `QTableWidget` to visualize average and maximum densities side-by-side, and stores the values in `self.params`.
 
 ### Flow D: Session Serialization & Project Loading
 1. **Autosave**: On every non-dragging map change, `serialize_state()` compiles a JSON object containing the waypoints list, pilot position, geometry type, and parameters. This JSON is saved directly into the QGIS Project file using `QgsProject.instance().writeEntry("QUCORE", "state")`.
@@ -132,3 +132,4 @@ In version 0.8.0, the codebase underwent a massive architectural overhaul to res
 2. **Dumb Views (Dialog Separation)**: The `AltitudeTableDialog` was completely decoupled from the QGIS Map Canvas. It no longer injects text labels or vertex markers itself; it simply emits native PyQt signals (`sigWaypointFocused`, `sigToggleWaypointLabels`) that the main `DroneCorridorPlanner` presenter intercepts and processes.
 3. **Map Tool Extraction**: `WaypointMapTool` was extracted from the monolithic `plugin.py` into `map_tools.py` using weak references and callback injection to prevent memory leaks and circular dependencies.
 4. **Importer/Exporter Decomposing**: The 1,400+ line `importer_exporter.py` module was broken down into a sleek Facade pattern. The actual parsing logic is now strictly isolated by file extension into the `formats/` sub-package.
+5. **Unified Async Workflows**: The `PopulationDensityDialog` was rewritten to utilize dynamic GUI updates (via `QTableWidget`) and parallel task spawner factories (`create_task`), eliminating hardcoded layouts and unifying analysis across all volumetric zones (AA, GRB, CV, FG).
