@@ -212,11 +212,16 @@ class ZonalStatsCalculator:
             
         # 6. Create and start task
         task_name = f"QUCORE Zonal Stats ({self.stats_prefix})"
-        task = QgsTask.fromFunction(task_name, run_zstats_worker)
-        task.taskCompleted.connect(lambda: on_task_completed(*task.returned_values))
-        task.taskTerminated.connect(on_task_terminated)
+        self.task = QgsTask.fromFunction(task_name, run_zstats_worker)
+        self.task.taskCompleted.connect(lambda: on_task_completed(*self.task.returned_values))
+        self.task.taskTerminated.connect(on_task_terminated)
         
         try:
-            QgsApplication.taskManager().addTask(task)
+            QgsApplication.taskManager().addTask(self.task)
         except Exception as e:
             on_failed(f"Fehler beim Starten des Hintergrund-Tasks: {str(e)}")
+            
+    def cancel(self):
+        """Cancels the running background task if it exists."""
+        if hasattr(self, 'task') and self.task is not None:
+            self.task.cancel()

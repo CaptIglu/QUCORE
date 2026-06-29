@@ -41,6 +41,7 @@ class PopulationDensityDialog(QDialog):
         self.lyr_fg = lyr_fg
         self.params = current_params if current_params is not None else {}
         self.active_tasks = set()
+        self.calculators = []
         
         # Determine which layers are active and contain valid features
         self.aa_active = self._is_layer_active(self.lyr_aga)
@@ -384,9 +385,11 @@ class PopulationDensityDialog(QDialog):
                         if stat_flags & stat_max:
                             self.params[f"{lower_id}_max_density"] = max_density
                             self.params[f"{lower_id}_max_raw_value"] = max_pixel_val
-                finally:
+                            
                     self.active_tasks.discard(zone_id)
                     self.check_and_restore_ui()
+                except RuntimeError:
+                    pass
 
             def on_failed(error_msg):
                 try:
@@ -395,9 +398,10 @@ class PopulationDensityDialog(QDialog):
                         self.tr("error_calc_failed_title", "Fehler bei Berechnung") + f" ({zone_id})",
                         self.tr("error_calc_failed_text", "Zonalstatistik-Berechnung fehlgeschlagen:\n{error}").format(error=error_msg)
                     )
-                finally:
                     self.active_tasks.discard(zone_id)
                     self.check_and_restore_ui()
+                except RuntimeError:
+                    pass
 
             def on_terminated():
                 try:
@@ -406,11 +410,13 @@ class PopulationDensityDialog(QDialog):
                         self.tr("error_calc_terminated_title", "Berechnung abgebrochen") + f" ({zone_id})",
                         self.tr("error_calc_terminated_text", "Die Zonalstatistik-Berechnung wurde abgebrochen.")
                     )
-                finally:
                     self.active_tasks.discard(zone_id)
                     self.check_and_restore_ui()
+                except RuntimeError:
+                    pass
 
             calc = ZonalStatsCalculator(layer, raster_layer, prefix, stat_flags, parent=self)
+            self.calculators.append(calc)
             calc.calculate_async(on_completed, on_failed, on_terminated)
 
         # Start all tasks
@@ -423,3 +429,11 @@ class PopulationDensityDialog(QDialog):
         item = self.table_widget.item(row, col)
         if item:
             item.setText(str(txt))
+
+    def closeEvent(self, event):
+        for calc in getattr(self, 'calculators', []):
+            try:
+                calc.cancel()
+            except Exception:
+                pass
+        super(PopulationDensityDialog, self).closeEvent(event)
