@@ -5,7 +5,7 @@ import math
 from qgis.core import QgsPointXY, QgsMessageLog, Qgis, QgsGeometry
 from ..config_manager import ConfigManager
 from ..buffer_calculator import BufferCalculator
-from .utils import unpack_waypoint, tr
+from .utils import unpack_waypoint, tr, find_local_elements, find_first_local_element
 
 class FlightplanHandler:
     @staticmethod
@@ -55,40 +55,7 @@ class FlightplanHandler:
             
         root = doc.documentElement()
         
-        def find_local_elements(parent, local_name):
-            results = []
-            def recurse(node):
-                if node.isElement():
-                    elem = node.toElement()
-                    tag = elem.tagName()
-                    if ":" in tag:
-                        tag = tag.split(":", 1)[1]
-                    if tag == local_name:
-                        results.append(elem)
-                child = node.firstChild()
-                while not child.isNull():
-                    recurse(child)
-                    child = child.nextSibling()
-            recurse(parent)
-            return results
-            
-        def find_first_local_element(parent, local_name):
-            def recurse(node):
-                if node.isElement():
-                    elem = node.toElement()
-                    tag = elem.tagName()
-                    if ":" in tag:
-                        tag = tag.split(":", 1)[1]
-                    if tag == local_name:
-                        return elem
-                child = node.firstChild()
-                while not child.isNull():
-                    res = recurse(child)
-                    if res is not None:
-                        return res
-                    child = child.nextSibling()
-                return None
-            return recurse(parent)
+        # Use extracted functions from utils.py
 
         pr = find_first_local_element(root, "PrimaryRoute")
         if pr is None:

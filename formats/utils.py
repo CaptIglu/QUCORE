@@ -23,3 +23,38 @@ def unpack_waypoint(w, params=None):
         alt = 0.0
         
     return lon, lat, alt
+
+def find_local_elements(parent, local_name):
+    results = []
+    def recurse(node):
+        if node.isElement():
+            elem = node.toElement()
+            tag = elem.tagName()
+            if ":" in tag:
+                tag = tag.split(":", 1)[1]
+            if tag == local_name:
+                results.append(elem)
+        child = node.firstChild()
+        while not child.isNull():
+            recurse(child)
+            child = child.nextSibling()
+    recurse(parent)
+    return results
+
+def find_first_local_element(parent, local_name):
+    def recurse(node):
+        if node.isElement():
+            elem = node.toElement()
+            tag = elem.tagName()
+            if ":" in tag:
+                tag = tag.split(":", 1)[1]
+            if tag == local_name:
+                return elem
+        child = node.firstChild()
+        while not child.isNull():
+            res = recurse(child)
+            if res is not None:
+                return res
+            child = child.nextSibling()
+        return None
+    return recurse(parent)
