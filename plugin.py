@@ -3414,42 +3414,7 @@ class DroneCorridorPlanner(object):
             
         if is_docx:
             try:
-                # Capture three map screenshots dynamically
-                overview_path, start_path, end_path = self.capture_map_views()
-                
-                # Grab live Sora visual widget screenshot
-                temp_sora_path = None
-                if hasattr(self, 'sora_viz') and self.sora_viz is not None:
-                    try:
-                        sora_pixmap = self.sora_viz.grab()
-                        temp_sora_path = os.path.join(tempfile.gettempdir(), f"sora_viz_{uuid.uuid4().hex[:8]}.png")
-                        sora_pixmap.save(temp_sora_path, "PNG")
-                    except Exception as e:
-                        from qgis.core import QgsMessageLog, Qgis
-                        import traceback
-                        QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 3647): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
-                
-                ReportGenerator.export_sora_docx(
-                    file_path, 
-                    self.waypoints, 
-                    self.pilot_pos, 
-                    self.params, 
-                    overview_path, 
-                    self.geometry_type,
-                    start_image_path=start_path,
-                    end_image_path=end_path,
-                    sora_viz_image_path=temp_sora_path
-                )
-                
-                # Clean up temporary PNGs
-                for p in [overview_path, start_path, end_path, temp_sora_path]:
-                    if p and os.path.exists(p):
-                        try:
-                            os.remove(p)
-                        except Exception as e:
-                            from qgis.core import QgsMessageLog, Qgis
-                            import traceback
-                            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 3667): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+                self._do_sora_export(file_path)
                         
                 QMessageBox.information(
                     self.gui, 
@@ -3533,6 +3498,43 @@ class DroneCorridorPlanner(object):
                 self.tr("msg_export_error_text", "Fehler beim Exportieren der Datei:\n{error}").format(error=str(e))
             )
 
+    def _do_sora_export(self, file_path):
+        """Captures map screenshots and generates SORA DOCX report."""
+        import os, tempfile, uuid
+        from .report_generator import ReportGenerator
+        
+        overview_path, start_path, end_path = self.capture_map_views()
+        temp_sora_path = None
+        if hasattr(self, 'sora_viz') and self.sora_viz is not None:
+            try:
+                sora_pixmap = self.sora_viz.grab()
+                temp_sora_path = os.path.join(
+                    tempfile.gettempdir(),
+                    f"sora_viz_{uuid.uuid4().hex[:8]}.png"
+                )
+                sora_pixmap.save(temp_sora_path, "PNG")
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                import traceback
+                QgsMessageLog.logMessage(
+                    f"Silent exception in _do_sora_export: {e}\n{traceback.format_exc()}",
+                    "QUCORE", Qgis.Warning
+                )
+
+        ReportGenerator.export_sora_docx(
+            file_path, self.waypoints, self.pilot_pos, self.params,
+            overview_path, self.geometry_type,
+            start_image_path=start_path, end_image_path=end_path,
+            sora_viz_image_path=temp_sora_path
+        )
+
+        for p in [overview_path, start_path, end_path, temp_sora_path]:
+            if p and os.path.exists(p):
+                try:
+                    os.remove(p)
+                except Exception:
+                    pass
+
     def export_sora_report(self):
         if not self.waypoints:
             QMessageBox.warning(
@@ -3569,43 +3571,7 @@ class DroneCorridorPlanner(object):
             file_path += '.docx'
             
         try:
-            # Capture three map screenshots dynamically
-            overview_path, start_path, end_path = self.capture_map_views()
-            
-            # Grab live Sora visual widget screenshot
-            temp_sora_path = None
-            if hasattr(self, 'sora_viz') and self.sora_viz is not None:
-                try:
-                    sora_pixmap = self.sora_viz.grab()
-                    temp_sora_path = os.path.join(tempfile.gettempdir(), f"sora_viz_{uuid.uuid4().hex[:8]}.png")
-                    sora_pixmap.save(temp_sora_path, "PNG")
-                except Exception as e:
-                    from qgis.core import QgsMessageLog, Qgis
-                    import traceback
-                    QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 3798): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
-            
-            # Run SORA DOCX Export
-            ReportGenerator.export_sora_docx(
-                file_path, 
-                self.waypoints, 
-                self.pilot_pos, 
-                self.params, 
-                overview_path, 
-                self.geometry_type,
-                start_image_path=start_path,
-                end_image_path=end_path,
-                sora_viz_image_path=temp_sora_path
-            )
-            
-            # Clean up temporary PNGs
-            for p in [overview_path, start_path, end_path, temp_sora_path]:
-                if p and os.path.exists(p):
-                    try:
-                        os.remove(p)
-                    except Exception as e:
-                        from qgis.core import QgsMessageLog, Qgis
-                        import traceback
-                        QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 3819): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+            self._do_sora_export(file_path)
                     
             QMessageBox.information(
                 self.gui, 
