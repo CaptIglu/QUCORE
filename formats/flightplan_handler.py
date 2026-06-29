@@ -5,7 +5,7 @@ import math
 from qgis.core import QgsPointXY, QgsMessageLog, Qgis, QgsGeometry
 from ..config_manager import ConfigManager
 from ..buffer_calculator import BufferCalculator
-from .utils import unpack_waypoint, tr, find_local_elements, find_first_local_element, DEFAULT_ALTITUDE, DEFAULT_SPEED, DEFAULT_WIDTH, FEET_TO_METERS
+from .utils import unpack_waypoint, tr, find_local_elements, find_first_local_element, FEET_TO_METERS
 
 class FlightplanHandler:
     @staticmethod
@@ -15,6 +15,9 @@ class FlightplanHandler:
         Converts DMS coordinates to decimal and altitude (feet) to meters.
         Returns a tuple: (waypoints, pilot_pos, width, max_height, params, geom_type)
         """
+        def_alt = float(ConfigManager.get_default('maxFlightHeight'))
+        def_spd = float(ConfigManager.get_default('maxOpsSpeedV0'))
+        def_w = float(ConfigManager.get_default('corridorWidth'))
         def dms_to_decimal(dms_str):
             direction = dms_str[0]
             rest = dms_str[1:]
@@ -70,7 +73,7 @@ class FlightplanHandler:
         if start_str:
             lon, lat = parse_dms_pair(start_str)
             if lon is not None and lat is not None:
-                waypoints.append((lon, lat, max_height, DEFAULT_SPEED, DEFAULT_WIDTH))
+                waypoints.append((lon, lat, max_height, def_spd, def_w))
                 
         rhumb_lines = find_local_elements(pr, "RhumbLineRoute")
         for r in rhumb_lines:
@@ -78,16 +81,16 @@ class FlightplanHandler:
             if to_str:
                 lon, lat = parse_dms_pair(to_str)
                 if lon is not None and lat is not None:
-                    waypoints.append((lon, lat, max_height, DEFAULT_SPEED, DEFAULT_WIDTH))
+                    waypoints.append((lon, lat, max_height, def_spd, def_w))
                     
         params = {
             "maxFlightHeight": max_height,
-            "maxOpsSpeedV0": DEFAULT_SPEED,
-            "maxCommandableSpeedVmax": DEFAULT_SPEED,
-            "corridorWidth": DEFAULT_WIDTH
+            "maxOpsSpeedV0": def_spd,
+            "maxCommandableSpeedVmax": def_spd,
+            "corridorWidth": def_w
         }
         
-        return waypoints, None, DEFAULT_WIDTH, max_height, params, "Corridor", []
+        return waypoints, None, def_w, max_height, params, "Corridor", []
 
     @staticmethod
     def export_flightplan(file_path, waypoints, const_height):

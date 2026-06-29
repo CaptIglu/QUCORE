@@ -5,7 +5,7 @@ import math
 from qgis.core import QgsPointXY, QgsMessageLog, Qgis, QgsGeometry
 from ..config_manager import ConfigManager
 from ..buffer_calculator import BufferCalculator
-from .utils import unpack_waypoint, tr, DEFAULT_ALTITUDE, DEFAULT_SPEED, DEFAULT_WIDTH
+from .utils import unpack_waypoint, tr
 
 class GeoJsonHandler:
     @staticmethod
@@ -14,6 +14,9 @@ class GeoJsonHandler:
         Imports waypoints, pilot position, and parameters from a GeoJSON file.
         Returns a tuple: (waypoints, pilot_pos, width, max_height, params, geom_type)
         """
+        def_alt = float(ConfigManager.get_default('maxFlightHeight'))
+        def_spd = float(ConfigManager.get_default('maxOpsSpeedV0'))
+        def_w = float(ConfigManager.get_default('corridorWidth'))
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
             
@@ -67,7 +70,7 @@ class GeoJsonHandler:
                         for c in coords:
                             if len(c) >= 2:
                                 # default height, speed, width
-                                waypoints.append((float(c[0]), float(c[1]), DEFAULT_ALTITUDE, DEFAULT_SPEED, DEFAULT_WIDTH))
+                                waypoints.append((float(c[0]), float(c[1]), def_alt, def_spd, def_w))
                         break
                     elif g_type == "Polygon":
                         coords_list = geom.get("coordinates", [[]])
@@ -79,13 +82,13 @@ class GeoJsonHandler:
                             geom_type = "Polygon"
                             for c in coords:
                                 if len(c) >= 2:
-                                    waypoints.append((float(c[0]), float(c[1]), DEFAULT_ALTITUDE, DEFAULT_SPEED, DEFAULT_WIDTH))
+                                    waypoints.append((float(c[0]), float(c[1]), def_alt, def_spd, def_w))
                             break
                     elif g_type == "Point":
                         coords = geom.get("coordinates")
                         if coords and len(coords) >= 2:
                             geom_type = "Circle"
-                            waypoints.append((float(coords[0]), float(coords[1]), DEFAULT_ALTITUDE, DEFAULT_SPEED, DEFAULT_WIDTH))
+                            waypoints.append((float(coords[0]), float(coords[1]), def_alt, def_spd, def_w))
                             break
                             
         # 3. Read general parameters if available from a metadata feature
@@ -100,8 +103,8 @@ class GeoJsonHandler:
                 break
                 
         # If waypoints are loaded, extract width and max_height
-        width = DEFAULT_WIDTH
-        max_height = DEFAULT_ALTITUDE
+        width = def_w
+        max_height = def_alt
         if waypoints:
             width = waypoints[0][4]
             max_height = max(wp[2] for wp in waypoints)

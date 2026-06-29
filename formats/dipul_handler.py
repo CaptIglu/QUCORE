@@ -5,7 +5,7 @@ import math
 from qgis.core import QgsPointXY, QgsMessageLog, Qgis, QgsGeometry
 from ..config_manager import ConfigManager
 from ..buffer_calculator import BufferCalculator
-from .utils import unpack_waypoint, tr, DEFAULT_ALTITUDE, DEFAULT_SPEED, DEFAULT_WIDTH
+from .utils import unpack_waypoint, tr
 
 class DipulHandler:
     @staticmethod
@@ -14,6 +14,9 @@ class DipulHandler:
         Imports waypoints, pilot position, parameters from a .dipul JSON file.
         Returns a tuple: (waypoints, pilot_pos, width, max_height, params, geom_type)
         """
+        def_alt = float(ConfigManager.get_default('maxFlightHeight'))
+        def_spd = float(ConfigManager.get_default('maxOpsSpeedV0'))
+        def_w = float(ConfigManager.get_default('corridorWidth'))
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
             
@@ -52,7 +55,7 @@ class DipulHandler:
             if "maxVelocity" in params and "maxOpsSpeedV0" not in params:
                 params["maxOpsSpeedV0"] = params["maxVelocity"]
             if "maxCommandableSpeedVmax" not in params:
-                params["maxCommandableSpeedVmax"] = params.get("maxVelocityVmax", params.get("maxCommandSpeedVmax", params.get("maxOpsSpeedV0", DEFAULT_SPEED)))
+                params["maxCommandableSpeedVmax"] = params.get("maxVelocityVmax", params.get("maxCommandSpeedVmax", params.get("maxOpsSpeedV0", def_spd)))
             geom_type = qucore_state.get("geometry_type", "Corridor")
             width = float(ConfigManager.get_param(params, "corridorWidth"))
             max_height = float(ConfigManager.get_param(params, "maxFlightHeight"))
@@ -69,9 +72,9 @@ class DipulHandler:
             pilot_pos = QgsPointXY(pilot_coords[0], pilot_coords[1])
             
         # 2. Corridor Width
-        width = float(lateral.get("width", DEFAULT_WIDTH))
+        width = float(lateral.get("width", def_w))
         if geom_type == "Circle":
-            width = float(lateral.get("radius", DEFAULT_WIDTH))
+            width = float(lateral.get("radius", def_w))
             
         # 3. Parameters
         params = {}
@@ -111,14 +114,14 @@ class DipulHandler:
         
         # Populate maxCommandableSpeedVmax if missing
         if "maxCommandableSpeedVmax" not in params:
-            params["maxCommandableSpeedVmax"] = params.get("maxOpsSpeedV0", DEFAULT_SPEED)
+            params["maxCommandableSpeedVmax"] = params.get("maxOpsSpeedV0", def_spd)
                 
         # Settings
         params["groundRiskBufferMethod"] = settings.get("groundRiskBufferMethod", "Simplified")
         params["lateralContingencyManoeuvreType"] = settings.get("lateralContingencyManoeuvreType", "Default")
         params["verticalContingencyManoeuvreType"] = settings.get("verticalContingencyManoeuvreType", "Default")
         params["corridorWidth"] = width
-        max_height = float(geometry.get("maxFlightHeight", DEFAULT_ALTITUDE))
+        max_height = float(geometry.get("maxFlightHeight", def_alt))
         params["maxFlightHeight"] = max_height
         
         # 4. Waypoints with loaded maxFlightHeight and maxVelocity
@@ -127,7 +130,7 @@ class DipulHandler:
         
         if geom_type == "Circle":
             center = lateral.get("center", [0.0, 0.0])
-            radius = float(lateral.get("radius", DEFAULT_WIDTH))
+            radius = float(lateral.get("radius", def_w))
             waypoints = [(center[0], center[1], max_height, max_velocity, radius)]
         elif geom_type == "Polygon":
             coords_list = lateral.get("coordinates", [[]])
