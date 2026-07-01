@@ -188,8 +188,10 @@ class BufferCalculator:
         for w in waypoints:
             try:
                 if isinstance(w, dict):
-                    lon = float(w.get('lon', 0.0))
-                    lat = float(w.get('lat', 0.0))
+                    if 'lon' not in w or 'lat' not in w:
+                        raise ValueError("Fehlende Koordinate (lon/lat) im Wegpunkt.")
+                    lon = float(w['lon'])
+                    lat = float(w['lat'])
                     h = float(w.get('height', def_h))
                     spd = float(w.get('speed', def_spd))
                     fg = float(w.get('fg_width', def_fg))

@@ -93,26 +93,26 @@ class ParameterDialog(QDialog):
         # Get defaults from config_defaults with robust fallbacks
         v0_def = ConfigManager.get_default("maxOpsSpeedV0")
         vmax_def = ConfigManager.get_default("maxCommandableSpeedVmax")
-        cd_def = self.config_defaults.get("maxCharacteristicDimension", 3.6)
-        stall_def = self.config_defaults.get("stallVelocity", 10.0)
-        gps_def = self.config_defaults.get("gpsInaccuracy", 3.0)
-        pos_def = self.config_defaults.get("positionError", 3.0)
-        map_def = self.config_defaults.get("mapError", 1.0)
-        rz_def = self.config_defaults.get("reactionTime", 1.0)
-        alt_gps_def = self.config_defaults.get("altitudeErrorGps", 4.0)
-        alt_baro_def = self.config_defaults.get("altitudeErrorBarometric", 1.0)
-        add_lat_def = self.config_defaults.get("additionalErrorLateral", 0.0)
-        add_vert_def = self.config_defaults.get("additionalErrorVertical", 0.0)
-        roll_def = self.config_defaults.get("maxRollAngle", 30.0)
-        pitch_def = self.config_defaults.get("maxPitchAngle", 30.0)
-        para_lat_def = self.config_defaults.get("parachuteOpeningTimeLateral", 2.0)
-        para_vert_def = self.config_defaults.get("parachuteOpeningTimeVertical", 2.0)
-        glide_def = self.config_defaults.get("glideRatioDenominator", 10.0)
-        para_grb_def = self.config_defaults.get("parachuteOpeningTimeGRB", 2.0)
-        wind_def = self.config_defaults.get("maxWindVelocity", 3.0)
-        descent_def = self.config_defaults.get("parachuteDescentRate", 2.0)
-        w_fg_def = self.config_defaults.get("corridorWidth", 50.0)
-        h_fg_def = self.config_defaults.get("maxFlightHeight", 100.0)
+        cd_def = ConfigManager.get_default("maxCharacteristicDimension")
+        stall_def = ConfigManager.get_default("stallVelocity")
+        gps_def = ConfigManager.get_default("gpsInaccuracy")
+        pos_def = ConfigManager.get_default("positionError")
+        map_def = ConfigManager.get_default("mapError")
+        rz_def = ConfigManager.get_default("reactionTime")
+        alt_gps_def = ConfigManager.get_default("altitudeErrorGps")
+        alt_baro_def = ConfigManager.get_default("altitudeErrorBarometric")
+        add_lat_def = ConfigManager.get_default("additionalErrorLateral")
+        add_vert_def = ConfigManager.get_default("additionalErrorVertical")
+        roll_def = ConfigManager.get_default("maxRollAngle")
+        pitch_def = ConfigManager.get_default("maxPitchAngle")
+        para_lat_def = ConfigManager.get_default("parachuteOpeningTimeLateral")
+        para_vert_def = ConfigManager.get_default("parachuteOpeningTimeVertical")
+        glide_def = ConfigManager.get_default("glideRatioDenominator")
+        para_grb_def = ConfigManager.get_default("parachuteOpeningTimeGRB")
+        wind_def = ConfigManager.get_default("maxWindVelocity")
+        descent_def = ConfigManager.get_default("parachuteDescentRate")
+        w_fg_def = ConfigManager.get_default("corridorWidth")
+        h_fg_def = ConfigManager.get_default("maxFlightHeight")
 
         # Translate helper for "Standard" or "Default" literal inside brackets
         default_label = self.tr("tree_value", "Standardwert")
@@ -144,7 +144,7 @@ class ParameterDialog(QDialog):
         
         self.combo_uas_type = QComboBox()
         self.combo_uas_type.addItems([self.tr("uas_fw", "Flächenflieger (Fixed Wing)"), self.tr("uas_mc", "Multikopter")])
-        if self.params["uas_type"] == "Multikopter":
+        if ConfigManager.get_param(self.params, "uas_type") == "Multikopter":
             self.combo_uas_type.setCurrentIndex(1)
         else:
             self.combo_uas_type.setCurrentIndex(0)
@@ -175,13 +175,13 @@ class ParameterDialog(QDialog):
         
         self.spin_cd = QDoubleSpinBox()
         self.configure_spinbox(self.spin_cd, "maxCharacteristicDimension")
-        self.spin_cd.setValue(self.params["maxCharacteristicDimension"])
+        self.spin_cd.setValue(ConfigManager.get_param(self.params, "maxCharacteristicDimension"))
         self.spin_cd.setSuffix(" m")
         uas_layout.addRow(f"{self.tr('label_cd', 'Charakteristische Dimension (CD)')} ({default_label}: {cd_def:.1f} m):", self.spin_cd)
 
         self.spin_stall = QDoubleSpinBox()
         self.configure_spinbox(self.spin_stall, "stallVelocity")
-        self.spin_stall.setValue(self.params["stallVelocity"])
+        self.spin_stall.setValue(ConfigManager.get_param(self.params, "stallVelocity"))
         self.spin_stall.setSuffix(" m/s")
         uas_layout.addRow(f"{self.tr('label_stall', 'Überziehgeschwindigkeit (stallVelocity)')} ({default_label}: {stall_def:.1f} m/s):", self.spin_stall)
 
@@ -193,7 +193,8 @@ class ParameterDialog(QDialog):
         
         self.combo_altimetry = QComboBox()
         self.combo_altimetry.addItems([self.tr("alt_gps", "GPS-basiert"), self.tr("alt_baro", "barometrisch")])
-        if self.params["altimetry"] == "Baro" or self.params["altimetry"] == "barometrisch":
+        alt_type = ConfigManager.get_param(self.params, "altimetry")
+        if alt_type == "Baro" or alt_type == "barometrisch":
             self.combo_altimetry.setCurrentIndex(1)
         else:
             self.combo_altimetry.setCurrentIndex(0)
@@ -201,37 +202,37 @@ class ParameterDialog(QDialog):
         
         self.spin_gps_inacc = QDoubleSpinBox()
         self.configure_spinbox(self.spin_gps_inacc, "gpsInaccuracy")
-        self.spin_gps_inacc.setValue(self.params["gpsInaccuracy"])
+        self.spin_gps_inacc.setValue(ConfigManager.get_param(self.params, "gpsInaccuracy"))
         self.spin_gps_inacc.setSuffix(" m")
         ass_layout.addRow(f"{self.tr('label_gps_inacc', 'GPS Ungenauigkeit (SGPS)')} ({default_label}: {gps_def:.1f} m):", self.spin_gps_inacc)
         
         self.spin_pos_err = QDoubleSpinBox()
         self.configure_spinbox(self.spin_pos_err, "positionError")
-        self.spin_pos_err.setValue(self.params["positionError"])
+        self.spin_pos_err.setValue(ConfigManager.get_param(self.params, "positionError"))
         self.spin_pos_err.setSuffix(" m")
         ass_layout.addRow(f"{self.tr('label_pos_err', 'Positionshaltefehler (SPos)')} ({default_label}: {pos_def:.1f} m):", self.spin_pos_err)
         
         self.spin_map_err = QDoubleSpinBox()
         self.configure_spinbox(self.spin_map_err, "mapError")
-        self.spin_map_err.setValue(self.params["mapError"])
+        self.spin_map_err.setValue(ConfigManager.get_param(self.params, "mapError"))
         self.spin_map_err.setSuffix(" m")
         ass_layout.addRow(f"{self.tr('label_map_err', 'Kartenfehler (SK)')} ({default_label}: {map_def:.1f} m):", self.spin_map_err)
         
         self.spin_t_rz = QDoubleSpinBox()
         self.configure_spinbox(self.spin_t_rz, "reactionTime")
-        self.spin_t_rz.setValue(self.params["reactionTime"])
+        self.spin_t_rz.setValue(ConfigManager.get_param(self.params, "reactionTime"))
         self.spin_t_rz.setSuffix(" s")
         ass_layout.addRow(f"{self.tr('label_t_rz', 'Fernpilot Reaktionszeit (tRZ)')} ({default_label}: {rz_def:.1f} s):", self.spin_t_rz)
         
         self.spin_alt_gps = QDoubleSpinBox()
         self.configure_spinbox(self.spin_alt_gps, "altitudeErrorGps")
-        self.spin_alt_gps.setValue(self.params["altitudeErrorGps"])
+        self.spin_alt_gps.setValue(ConfigManager.get_param(self.params, "altitudeErrorGps"))
         self.spin_alt_gps.setSuffix(" m")
         ass_layout.addRow(f"{self.tr('label_alt_gps', 'GPS Höhenfehler')} ({default_label}: {alt_gps_def:.1f} m):", self.spin_alt_gps)
         
         self.spin_alt_baro = QDoubleSpinBox()
         self.configure_spinbox(self.spin_alt_baro, "altitudeErrorBarometric")
-        self.spin_alt_baro.setValue(self.params["altitudeErrorBarometric"])
+        self.spin_alt_baro.setValue(ConfigManager.get_param(self.params, "altitudeErrorBarometric"))
         self.spin_alt_baro.setSuffix(" m")
         ass_layout.addRow(f"{self.tr('label_alt_baro', 'Baro Höhenfehler')} ({default_label}: {alt_baro_def:.1f} m):", self.spin_alt_baro)
         
@@ -259,7 +260,7 @@ class ParameterDialog(QDialog):
         
         self.combo_lat_man = QComboBox()
         self.combo_lat_man.addItems([self.tr("man_default_lat", "Standard (Kurve / Anhalten)"), self.tr("man_parachute", "Auslösen des Fallschirms")])
-        if self.params["lateralContingencyManoeuvreType"] == "Parachute":
+        if ConfigManager.get_param(self.params, "lateralContingencyManoeuvreType") == "Parachute":
             self.combo_lat_man.setCurrentIndex(1)
         else:
             self.combo_lat_man.setCurrentIndex(0)
@@ -267,19 +268,19 @@ class ParameterDialog(QDialog):
         
         self.spin_roll_angle = QDoubleSpinBox()
         self.configure_spinbox(self.spin_roll_angle, "maxRollAngle")
-        self.spin_roll_angle.setValue(self.params["maxRollAngle"])
+        self.spin_roll_angle.setValue(ConfigManager.get_param(self.params, "maxRollAngle"))
         self.spin_roll_angle.setSuffix(" °")
         lat_form.addRow(f"{self.tr('label_roll', 'Rollwinkel (FixedWing, Φ)')} ({default_label}: {roll_def:.1f} °):", self.spin_roll_angle)
  
         self.spin_pitch_angle = QDoubleSpinBox()
         self.configure_spinbox(self.spin_pitch_angle, "maxPitchAngle")
-        self.spin_pitch_angle.setValue(self.params["maxPitchAngle"])
+        self.spin_pitch_angle.setValue(ConfigManager.get_param(self.params, "maxPitchAngle"))
         self.spin_pitch_angle.setSuffix(" °")
         lat_form.addRow(f"{self.tr('label_pitch', 'Nickwinkel (Multikopter, Θ)')} ({default_label}: {pitch_def:.1f} °):", self.spin_pitch_angle)
         
         self.spin_para_lat = QDoubleSpinBox()
         self.configure_spinbox(self.spin_para_lat, "parachuteOpeningTimeLateral")
-        self.spin_para_lat.setValue(self.params["parachuteOpeningTimeLateral"])
+        self.spin_para_lat.setValue(ConfigManager.get_param(self.params, "parachuteOpeningTimeLateral"))
         self.spin_para_lat.setSuffix(" s")
         lat_form.addRow(f"{self.tr('label_para_lat', 'Fallschirm Öffnungszeit (lat)')} ({default_label}: {para_lat_def:.1f} s):", self.spin_para_lat)
         
@@ -291,7 +292,7 @@ class ParameterDialog(QDialog):
         
         self.combo_vert_man = QComboBox()
         self.combo_vert_man.addItems([self.tr("man_default_vert", "Standard (Energiewandlung / Climb)"), self.tr("man_parachute", "Auslösen des Fallschirms")])
-        if self.params["verticalContingencyManoeuvreType"] == "Parachute":
+        if ConfigManager.get_param(self.params, "verticalContingencyManoeuvreType") == "Parachute":
             self.combo_vert_man.setCurrentIndex(1)
         else:
             self.combo_vert_man.setCurrentIndex(0)
@@ -299,7 +300,7 @@ class ParameterDialog(QDialog):
         
         self.spin_para_vert = QDoubleSpinBox()
         self.configure_spinbox(self.spin_para_vert, "parachuteOpeningTimeVertical")
-        self.spin_para_vert.setValue(self.params["parachuteOpeningTimeVertical"])
+        self.spin_para_vert.setValue(ConfigManager.get_param(self.params, "parachuteOpeningTimeVertical"))
         self.spin_para_vert.setSuffix(" s")
         vert_form.addRow(f"{self.tr('label_para_vert', 'Fallschirm Öffnungszeit (vert)')} ({default_label}: {para_vert_def:.1f} s):", self.spin_para_vert)
         
@@ -325,30 +326,30 @@ class ParameterDialog(QDialog):
             "Glide": 2,
             "Parachute": 3
         }
-        self.combo_grb_method.setCurrentIndex(grb_map.get(self.params["groundRiskBufferMethod"], 0))
+        self.combo_grb_method.setCurrentIndex(grb_map.get(ConfigManager.get_param(self.params, "groundRiskBufferMethod"), 0))
         grb_layout.addRow(self.tr("label_grb_method", "Terminierungsmethode (GRB):"), self.combo_grb_method)
         
         self.spin_glide = QDoubleSpinBox()
         self.configure_spinbox(self.spin_glide, "glideRatioDenominator")
-        self.spin_glide.setValue(self.params["glideRatioDenominator"])
+        self.spin_glide.setValue(ConfigManager.get_param(self.params, "glideRatioDenominator"))
         self.spin_glide.setSuffix(" : 1")
         grb_layout.addRow(f"{self.tr('label_glide', 'Gleitzahl (E)')} ({default_label}: {glide_def:.1f} : 1):", self.spin_glide)
         
         self.spin_para_grb = QDoubleSpinBox()
         self.configure_spinbox(self.spin_para_grb, "parachuteOpeningTimeGRB")
-        self.spin_para_grb.setValue(self.params["parachuteOpeningTimeGRB"])
+        self.spin_para_grb.setValue(ConfigManager.get_param(self.params, "parachuteOpeningTimeGRB"))
         self.spin_para_grb.setSuffix(" s")
         grb_layout.addRow(f"{self.tr('label_para_grb', 'Fallschirm Öffnungszeit (GRB)')} ({default_label}: {para_grb_def:.1f} s):", self.spin_para_grb)
         
         self.spin_wind = QDoubleSpinBox()
         self.configure_spinbox(self.spin_wind, "maxWindVelocity")
-        self.spin_wind.setValue(self.params["maxWindVelocity"])
+        self.spin_wind.setValue(ConfigManager.get_param(self.params, "maxWindVelocity"))
         self.spin_wind.setSuffix(" m/s")
         grb_layout.addRow(f"{self.tr('label_wind', 'Max. zulässige Windgeschwindigkeit')} ({default_label}: {wind_def:.1f} m/s):", self.spin_wind)
         
         self.spin_descent = QDoubleSpinBox()
         self.configure_spinbox(self.spin_descent, "parachuteDescentRate")
-        self.spin_descent.setValue(self.params["parachuteDescentRate"])
+        self.spin_descent.setValue(ConfigManager.get_param(self.params, "parachuteDescentRate"))
         self.spin_descent.setSuffix(" m/s")
         grb_layout.addRow(f"{self.tr('label_descent', 'Fallschirm Sinkgeschwindigkeit (vZ)')} ({default_label}: {descent_def:.1f} m/s):", self.spin_descent)
 
@@ -360,7 +361,7 @@ class ParameterDialog(QDialog):
         
         self.spin_corridor_width = QDoubleSpinBox()
         self.configure_spinbox(self.spin_corridor_width, "corridorWidth")
-        self.spin_corridor_width.setValue(self.params["corridorWidth"])
+        self.spin_corridor_width.setValue(ConfigManager.get_param(self.params, "corridorWidth"))
         self.spin_corridor_width.setSuffix(" m")
         gen_layout.addRow(f"{self.tr('label_corridor_width', 'Standard Flight Geography Breite (W_FG)')} ({default_label}: {w_fg_def:.1f} m):", self.spin_corridor_width)
         
@@ -381,7 +382,7 @@ class ParameterDialog(QDialog):
         
         self.spin_default_h = QDoubleSpinBox()
         self.configure_spinbox(self.spin_default_h, "maxFlightHeight")
-        self.spin_default_h.setValue(self.params["maxFlightHeight"])
+        self.spin_default_h.setValue(ConfigManager.get_param(self.params, "maxFlightHeight"))
         self.spin_default_h.setSuffix(" m")
         gen_layout.addRow(f"{self.tr('label_default_height', 'Standard Flughöhe (h)')} ({default_label}: {h_fg_def:.1f} m):", self.spin_default_h)
         

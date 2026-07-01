@@ -47,7 +47,7 @@ class AltitudeTableDialog(QDialog):
         self.init_ui()
 
     def tr(self, key, default=""):
-        lang = self.params.get("language", "de")
+        lang = ConfigManager.get_param(self.params, "language")
         return TranslationManager.tr(key, lang, default)
 
     def init_ui(self):
@@ -63,7 +63,7 @@ class AltitudeTableDialog(QDialog):
             
             # Checkbox
             self.chk_variable_polygon = QCheckBox(self.tr("chk_variable_polygon_buffers", "Variable Pufferung der Grenzsegmente erlauben (Expertenmodus)"))
-            self.chk_variable_polygon.setChecked(self.params.get("variable_polygon_buffers", False))
+            self.chk_variable_polygon.setChecked(ConfigManager.get_param(self.params, "variable_polygon_buffers"))
             self.chk_variable_polygon.toggled.connect(self.on_variable_polygon_toggled)
             layout.addWidget(self.chk_variable_polygon)
             
@@ -204,7 +204,7 @@ class AltitudeTableDialog(QDialog):
 
     def update_table_editable_states(self):
         is_polygon = (self.geometry_type == "Polygon")
-        is_variable = self.params.get("variable_polygon_buffers", False)
+        is_variable = ConfigManager.get_param(self.params, "variable_polygon_buffers")
         
         # Determine if h_FG (col 2) and v0 (col 3) should be editable
         should_edit = not is_polygon or is_variable
@@ -491,8 +491,8 @@ class AltitudeTableDialog(QDialog):
             elif col == 3:
                 item_spd = self.table.item(row, col)
                 max_vel = float(ConfigManager.get_param(self.params, "maxCommandableSpeedVmax"))
-                uas_type = self.params.get("uas_type", "FixedWing")
-                stall_vel = float(self.params.get("stallVelocity", 10.0))
+                uas_type = ConfigManager.get_param(self.params, "uas_type")
+                stall_vel = float(ConfigManager.get_param(self.params, "stallVelocity"))
                 
                 if item_spd:
                     try:
@@ -526,7 +526,7 @@ class AltitudeTableDialog(QDialog):
             # Validation for FG Width (col 4)
             elif col == 4:
                 item_fg = self.table.item(row, col)
-                cd = float(self.params.get("maxCharacteristicDimension", 3.6))
+                cd = float(ConfigManager.get_param(self.params, "maxCharacteristicDimension"))
                 min_fg = 3.0 * cd
                 if item_fg:
                     try:

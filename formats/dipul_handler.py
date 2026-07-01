@@ -55,7 +55,7 @@ class DipulHandler:
             if "maxVelocity" in params and "maxOpsSpeedV0" not in params:
                 params["maxOpsSpeedV0"] = params["maxVelocity"]
             if "maxCommandableSpeedVmax" not in params:
-                params["maxCommandableSpeedVmax"] = params.get("maxVelocityVmax", params.get("maxCommandSpeedVmax", params.get("maxOpsSpeedV0", def_spd)))
+                params["maxCommandableSpeedVmax"] = ConfigManager.get_param(params, "maxCommandableSpeedVmax")
             geom_type = qucore_state.get("geometry_type", "Corridor")
             width = float(ConfigManager.get_param(params, "corridorWidth"))
             max_height = float(ConfigManager.get_param(params, "maxFlightHeight"))
@@ -100,8 +100,8 @@ class DipulHandler:
                 else:
                     params["altimetry"] = v
             elif k == "parachute" and isinstance(v, dict):
-                p_time = v.get("openingTime", 2.0)
-                p_rate = v.get("descentRate", 6.0)
+                p_time = v.get("openingTime", ConfigManager.get_default("parachuteOpeningTimeGRB"))
+                p_rate = v.get("descentRate", ConfigManager.get_default("parachuteDescentRate"))
                 params["parachuteOpeningTimeGRB"] = p_time
                 params["parachuteOpeningTimeLateral"] = p_time
                 params["parachuteOpeningTimeVertical"] = p_time
@@ -114,10 +114,10 @@ class DipulHandler:
         
         # Populate maxCommandableSpeedVmax if missing
         if "maxCommandableSpeedVmax" not in params:
-            params["maxCommandableSpeedVmax"] = params.get("maxOpsSpeedV0", def_spd)
+            params["maxCommandableSpeedVmax"] = ConfigManager.get_param(params, "maxOpsSpeedV0")
                 
         # Settings
-        params["groundRiskBufferMethod"] = settings.get("groundRiskBufferMethod", "Simplified")
+        params["groundRiskBufferMethod"] = settings.get("groundRiskBufferMethod", ConfigManager.get_default("groundRiskBufferMethod"))
         params["lateralContingencyManoeuvreType"] = settings.get("lateralContingencyManoeuvreType", "Default")
         params["verticalContingencyManoeuvreType"] = settings.get("verticalContingencyManoeuvreType", "Default")
         params["corridorWidth"] = width
@@ -175,7 +175,7 @@ class DipulHandler:
         Uses const_height and const_speed as the constant flight parameters for export.
         Ensures strict compliance with official DIPUL schemas and types.
         """
-        width = float(params.get("corridorWidth", 500.0))
+        width = float(ConfigManager.get_param(params, "corridorWidth"))
         
         pilot_coords = None
         if pilot_pos:
@@ -226,8 +226,8 @@ class DipulHandler:
             "type": uas_type,
             "altimetry": altimetry,
             "maxVelocity": const_speed,
-            "maxWindVelocity": float(params.get("maxWindVelocity", 3.0)),
-            "maxCharacteristicDimension": float(params.get("maxCharacteristicDimension", 3.6))
+            "maxWindVelocity": float(ConfigManager.get_param(params, "maxWindVelocity")),
+            "maxCharacteristicDimension": float(ConfigManager.get_param(params, "maxCharacteristicDimension"))
         }
         
         if "FixedWing" in uas_type:
@@ -235,20 +235,20 @@ class DipulHandler:
             uas_values["glideRatioDenominator"] = float(ConfigManager.get_param(params, "glideRatioDenominator"))
             uas_values["stallVelocity"] = float(ConfigManager.get_param(params, "stallVelocity"))
         else: # Rotorcraft / RotorcraftWithParachute
-            uas_values["maxPitchAngle"] = float(params.get("maxPitchAngle", 30.0))
+            uas_values["maxPitchAngle"] = float(ConfigManager.get_param(params, "maxPitchAngle"))
 
         # If a parachute is used, add its specs to uasProperties.values
         if has_parachute:
             if grb_method == "Parachute":
-                t_para = float(params.get("parachuteOpeningTimeGRB", 2.0))
+                t_para = float(ConfigManager.get_param(params, "parachuteOpeningTimeGRB"))
             elif ConfigManager.get_param(params, "lateralContingencyManoeuvreType") == "Parachute":
-                t_para = float(params.get("parachuteOpeningTimeLateral", 2.0))
+                t_para = float(ConfigManager.get_param(params, "parachuteOpeningTimeLateral"))
             else:
-                t_para = float(params.get("parachuteOpeningTimeVertical", 2.0))
+                t_para = float(ConfigManager.get_param(params, "parachuteOpeningTimeVertical"))
                 
             uas_values["parachute"] = {
                 "openingTime": t_para,
-                "descentRate": float(params.get("parachuteDescentRate", 6.0))
+                "descentRate": float(ConfigManager.get_param(params, "parachuteDescentRate"))
             }
 
         # Dynamically build settings block to match presence/absence of pilotPosition

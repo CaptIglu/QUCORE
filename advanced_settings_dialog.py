@@ -59,7 +59,7 @@ class AdvancedSettingsDialog(QDialog):
         spinbox.setSingleStep(s_step)
 
     def tr(self, key, default=""):
-        lang = self.config_params.get("language", "de")
+        lang = ConfigManager.get_param(self.config_params, "language")
         return TranslationManager.tr(key, lang, default)
 
     def init_ui(self):
@@ -129,74 +129,74 @@ class AdvancedSettingsDialog(QDialog):
         self.spin_lw_route = QDoubleSpinBox()
         self.configure_spinbox(self.spin_lw_route, "linewidth_route", 0.1, 10.0, 0.1, 2)
         self.spin_lw_route.setSuffix(" mm")
-        self.spin_lw_route.setValue(self.config_params.get("linewidth_route", 1.0))
+        self.spin_lw_route.setValue(ConfigManager.get_param(self.config_params, "linewidth_route"))
         self.btn_col_route = QPushButton()
-        self.update_color_button(self.btn_col_route, self.config_params.get("color_route", "#50505a"))
+        self.update_color_button(self.btn_col_route, ConfigManager.get_param(self.config_params, "color_route"))
         self.create_layer_row(form_style, self.tr("lyr_route", "Flugweg (Mittelachse):"), self.spin_lw_route, self.btn_col_route, None)
         
         # 2. FG
         self.spin_lw_fg = QDoubleSpinBox()
         self.configure_spinbox(self.spin_lw_fg, "linewidth_fg", 0.1, 10.0, 0.1, 2)
         self.spin_lw_fg.setSuffix(" mm")
-        self.spin_lw_fg.setValue(self.config_params.get("linewidth_fg", 1.0))
+        self.spin_lw_fg.setValue(ConfigManager.get_param(self.config_params, "linewidth_fg"))
         self.btn_col_fg = QPushButton()
-        self.update_color_button(self.btn_col_fg, self.config_params.get("color_fg", "#397c59"))
+        self.update_color_button(self.btn_col_fg, ConfigManager.get_param(self.config_params, "color_fg"))
         self.spin_op_fg = QSpinBox()
         self.configure_spinbox(self.spin_op_fg, "opacity_fg", 0, 100, 1)
         self.spin_op_fg.setSuffix(" %")
-        self.spin_op_fg.setValue(self.config_params.get("opacity_fg", 15))
+        self.spin_op_fg.setValue(ConfigManager.get_param(self.config_params, "opacity_fg"))
         self.create_layer_row(form_style, self.tr("lyr_fg", "Flight Geography (FG):"), self.spin_lw_fg, self.btn_col_fg, self.spin_op_fg)
         
         # 3. CV
         self.spin_lw_cv = QDoubleSpinBox()
         self.configure_spinbox(self.spin_lw_cv, "linewidth_cv", 0.1, 10.0, 0.1, 2)
         self.spin_lw_cv.setSuffix(" mm")
-        self.spin_lw_cv.setValue(self.config_params.get("linewidth_cv", 1.0))
+        self.spin_lw_cv.setValue(ConfigManager.get_param(self.config_params, "linewidth_cv"))
         self.btn_col_cv = QPushButton()
-        self.update_color_button(self.btn_col_cv, self.config_params.get("color_cv", "#f7bb3d"))
+        self.update_color_button(self.btn_col_cv, ConfigManager.get_param(self.config_params, "color_cv"))
         self.spin_op_cv = QSpinBox()
         self.configure_spinbox(self.spin_op_cv, "opacity_cv", 0, 100, 1)
         self.spin_op_cv.setSuffix(" %")
-        self.spin_op_cv.setValue(self.config_params.get("opacity_cv", 15))
+        self.spin_op_cv.setValue(ConfigManager.get_param(self.config_params, "opacity_cv"))
         self.create_layer_row(form_style, self.tr("lyr_cv", "Contingency Volume (CV):"), self.spin_lw_cv, self.btn_col_cv, self.spin_op_cv)
         
         # 4. GRB
         self.spin_lw_grb = QDoubleSpinBox()
         self.configure_spinbox(self.spin_lw_grb, "linewidth_grb", 0.1, 10.0, 0.1, 2)
         self.spin_lw_grb.setSuffix(" mm")
-        self.spin_lw_grb.setValue(self.config_params.get("linewidth_grb", 1.0))
+        self.spin_lw_grb.setValue(ConfigManager.get_param(self.config_params, "linewidth_grb"))
         self.btn_col_grb = QPushButton()
-        self.update_color_button(self.btn_col_grb, self.config_params.get("color_grb", "#eb5757"))
+        self.update_color_button(self.btn_col_grb, ConfigManager.get_param(self.config_params, "color_grb"))
         self.spin_op_grb = QSpinBox()
         self.configure_spinbox(self.spin_op_grb, "opacity_grb", 0, 100, 1)
         self.spin_op_grb.setSuffix(" %")
-        self.spin_op_grb.setValue(self.config_params.get("opacity_grb", 15))
+        self.spin_op_grb.setValue(ConfigManager.get_param(self.config_params, "opacity_grb"))
         self.create_layer_row(form_style, self.tr("lyr_grb", "Ground Risk Buffer (GRB):"), self.spin_lw_grb, self.btn_col_grb, self.spin_op_grb)
         
         # 5. AA
         self.spin_lw_aga = QDoubleSpinBox()
         self.configure_spinbox(self.spin_lw_aga, "linewidth_adjacentarea", 0.1, 10.0, 0.1, 2)
         self.spin_lw_aga.setSuffix(" mm")
-        self.spin_lw_aga.setValue(self.config_params.get("linewidth_adjacentarea", 1.0))
+        self.spin_lw_aga.setValue(ConfigManager.get_param(self.config_params, "linewidth_adjacentarea"))
         self.btn_col_aga = QPushButton()
-        self.update_color_button(self.btn_col_aga, self.config_params.get("color_adjacentarea", "#2980b9"))
+        self.update_color_button(self.btn_col_aga, ConfigManager.get_param(self.config_params, "color_adjacentarea"))
         self.spin_op_aga = QSpinBox()
         self.configure_spinbox(self.spin_op_aga, "opacity_adjacentarea", 0, 100, 1)
         self.spin_op_aga.setSuffix(" %")
-        self.spin_op_aga.setValue(self.config_params.get("opacity_adjacentarea", 0))
+        self.spin_op_aga.setValue(ConfigManager.get_param(self.config_params, "opacity_adjacentarea"))
         self.create_layer_row(form_style, self.tr("lyr_aa", "Adjacent Area (AA):"), self.spin_lw_aga, self.btn_col_aga, self.spin_op_aga)
         
         # 6. VLOS
         self.spin_lw_vlos = QDoubleSpinBox()
         self.configure_spinbox(self.spin_lw_vlos, "linewidth_vlos", 0.1, 10.0, 0.1, 2)
         self.spin_lw_vlos.setSuffix(" mm")
-        self.spin_lw_vlos.setValue(self.config_params.get("linewidth_vlos", 0.8))
+        self.spin_lw_vlos.setValue(ConfigManager.get_param(self.config_params, "linewidth_vlos"))
         self.btn_col_vlos = QPushButton()
-        self.update_color_button(self.btn_col_vlos, self.config_params.get("color_vlos", "#2d9cdb"))
+        self.update_color_button(self.btn_col_vlos, ConfigManager.get_param(self.config_params, "color_vlos"))
         self.spin_op_vlos = QSpinBox()
         self.configure_spinbox(self.spin_op_vlos, "opacity_vlos", 0, 100, 1)
         self.spin_op_vlos.setSuffix(" %")
-        self.spin_op_vlos.setValue(self.config_params.get("opacity_vlos", 0))
+        self.spin_op_vlos.setValue(ConfigManager.get_param(self.config_params, "opacity_vlos"))
         self.create_layer_row(form_style, self.tr("lyr_vlos", "VLOS-Reichweite (Pilotenposition):"), self.spin_lw_vlos, self.btn_col_vlos, self.spin_op_vlos)
         
         # Verbindungen für die Farbauswahl-Buttons
@@ -401,31 +401,31 @@ class AdvancedSettingsDialog(QDialog):
             self.config_params = fresh_config
             
             # Update step size spinbox
-            self.spin_step.setValue(self.config_params.get("stepSize", 50.0))
+            self.spin_step.setValue(ConfigManager.get_param(self.config_params, "stepSize"))
             
             # Update representation parameters in UI
-            self.spin_lw_route.setValue(self.config_params.get("linewidth_route", 1.0))
-            self.update_color_button(self.btn_col_route, self.config_params.get("color_route", "#50505a"))
+            self.spin_lw_route.setValue(ConfigManager.get_param(self.config_params, "linewidth_route"))
+            self.update_color_button(self.btn_col_route, ConfigManager.get_param(self.config_params, "color_route"))
             
-            self.spin_lw_fg.setValue(self.config_params.get("linewidth_fg", 1.0))
-            self.update_color_button(self.btn_col_fg, self.config_params.get("color_fg", "#397c59"))
-            self.spin_op_fg.setValue(self.config_params.get("opacity_fg", 15))
+            self.spin_lw_fg.setValue(ConfigManager.get_param(self.config_params, "linewidth_fg"))
+            self.update_color_button(self.btn_col_fg, ConfigManager.get_param(self.config_params, "color_fg"))
+            self.spin_op_fg.setValue(ConfigManager.get_param(self.config_params, "opacity_fg"))
             
-            self.spin_lw_cv.setValue(self.config_params.get("linewidth_cv", 1.0))
-            self.update_color_button(self.btn_col_cv, self.config_params.get("color_cv", "#f7bb3d"))
-            self.spin_op_cv.setValue(self.config_params.get("opacity_cv", 15))
+            self.spin_lw_cv.setValue(ConfigManager.get_param(self.config_params, "linewidth_cv"))
+            self.update_color_button(self.btn_col_cv, ConfigManager.get_param(self.config_params, "color_cv"))
+            self.spin_op_cv.setValue(ConfigManager.get_param(self.config_params, "opacity_cv"))
             
-            self.spin_lw_grb.setValue(self.config_params.get("linewidth_grb", 1.0))
-            self.update_color_button(self.btn_col_grb, self.config_params.get("color_grb", "#eb5757"))
-            self.spin_op_grb.setValue(self.config_params.get("opacity_grb", 15))
+            self.spin_lw_grb.setValue(ConfigManager.get_param(self.config_params, "linewidth_grb"))
+            self.update_color_button(self.btn_col_grb, ConfigManager.get_param(self.config_params, "color_grb"))
+            self.spin_op_grb.setValue(ConfigManager.get_param(self.config_params, "opacity_grb"))
             
-            self.spin_lw_aga.setValue(self.config_params.get("linewidth_adjacentarea", 1.0))
-            self.update_color_button(self.btn_col_aga, self.config_params.get("color_adjacentarea", "#2980b9"))
-            self.spin_op_aga.setValue(self.config_params.get("opacity_adjacentarea", 0))
+            self.spin_lw_aga.setValue(ConfigManager.get_param(self.config_params, "linewidth_adjacentarea"))
+            self.update_color_button(self.btn_col_aga, ConfigManager.get_param(self.config_params, "color_adjacentarea"))
+            self.spin_op_aga.setValue(ConfigManager.get_param(self.config_params, "opacity_adjacentarea"))
             
-            self.spin_lw_vlos.setValue(self.config_params.get("linewidth_vlos", 0.8))
-            self.update_color_button(self.btn_col_vlos, self.config_params.get("color_vlos", "#2d9cdb"))
-            self.spin_op_vlos.setValue(self.config_params.get("opacity_vlos", 0))
+            self.spin_lw_vlos.setValue(ConfigManager.get_param(self.config_params, "linewidth_vlos"))
+            self.update_color_button(self.btn_col_vlos, ConfigManager.get_param(self.config_params, "color_vlos"))
+            self.spin_op_vlos.setValue(ConfigManager.get_param(self.config_params, "opacity_vlos"))
             
             # Refresh the Tree widget
             self.tree.clear()

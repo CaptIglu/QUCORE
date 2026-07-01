@@ -274,7 +274,7 @@ class KmlHandler:
 
         aga_xml = ""
         if aga_coords:
-            aga_op = float(params.get("opacity_adjacentarea", 0))
+            aga_op = float(ConfigManager.get_param(params, "opacity_adjacentarea"))
             aga_alpha = int(round(aga_op * 255 / 100))
             aga_alpha_hex = f"{aga_alpha:02x}"
             aga_xml = f"""      <Placemark id="adjacentAreaPolygonRing">
