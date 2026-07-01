@@ -381,11 +381,11 @@
     },
     "label_corridor_width": {
         "de": "Standard Flight Geography Breite (W_FG)",
-        "en": "Default Flight Geography Width (W_FG)"
+        "en": "Flight Geography Width (W_FG)"
     },
     "label_default_height": {
-        "de": "Standard Flughöhe (h)",
-        "en": "Default Flight Height (h)"
+        "de": "Standard Flughöhe AGL (h)",
+        "en": "Flight Height AGL (h)"
     },
     "msg_cd_warning_title": {
         "de": "Einstellung korrigiert",

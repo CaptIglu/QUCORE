@@ -858,10 +858,13 @@ class DroneCorridorPlanner(object):
             self.lay_circle_rad = QHBoxLayout()
             self.lbl_circle_rad = QLabel("Kreis-Radius (m):")
             self.spn_circle_radius = QDoubleSpinBox()
-            self.spn_circle_radius.setRange(5.0, 50000.0)
-            self.spn_circle_radius.setValue(50.0)
-            self.spn_circle_radius.setDecimals(1)
-            self.spn_circle_radius.setSingleStep(5.0)
+            
+            circle_limits = ConfigManager.get_limits().get("circlemodeRadius", {"min": 5.0, "max": 50000.0, "step": 5.0, "decimals": 1})
+            self.spn_circle_radius.setRange(circle_limits.get("min", 5.0), circle_limits.get("max", 50000.0))
+            self.spn_circle_radius.setValue(float(ConfigManager.get_default("circlemodeRadius")))
+            self.spn_circle_radius.setDecimals(circle_limits.get("decimals", 1))
+            self.spn_circle_radius.setSingleStep(circle_limits.get("step", 5.0))
+            
             self.spn_circle_radius.valueChanged.connect(self.on_circle_radius_changed)
             self.lay_circle_rad.addWidget(self.lbl_circle_rad)
             self.lay_circle_rad.addWidget(self.spn_circle_radius)

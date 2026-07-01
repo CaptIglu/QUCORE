@@ -295,7 +295,7 @@
       "default": false,
       "description": "Interner UI-Status: Zeigt an, ob individuelle Geschwindigkeiten aktiv sind."
     },
-    "radius": {
+    "circlemodeRadius": {
       "type": "number",
       "minimum": 0,
       "description": "Radius in Metern für Circle-Geometrien."

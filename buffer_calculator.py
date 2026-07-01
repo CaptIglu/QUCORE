@@ -139,19 +139,16 @@ class BufferCalculator:
         # ----------------------------------------------------
         # 5. RADIUS FROM CENTERLINE
         # ----------------------------------------------------
-        corridor_width = ConfigManager.get_param(params, "corridorWidth")
-        
-        # Enforce minimum Flight Geography size dynamically
         if params.get("geometry_type") == "Circle":
-            radius = corridor_width / 2.0
-            if radius < 3.0 * CD:
-                radius = 3.0 * CD
-            corridor_width = 2.0 * radius
+            circle_radius = ConfigManager.get_param(params, "circlemodeRadius")
+            if circle_radius < 3.0 * CD:
+                circle_radius = 3.0 * CD
+            r_fg = circle_radius
         else:
+            corridor_width = ConfigManager.get_param(params, "corridorWidth")
             if corridor_width < 3.0 * CD:
                 corridor_width = 3.0 * CD
-                
-        r_fg = corridor_width / 2.0
+            r_fg = corridor_width / 2.0
         r_cv = r_fg + s_cv
         r_grb = r_cv + s_grb
         return r_fg, r_cv, r_grb, h_cv
@@ -237,7 +234,7 @@ class BufferCalculator:
             params_wp["geometry_type"] = "Circle"
             params_wp["maxOpsSpeedV0"] = spd
             params_wp["maxVelocity"] = spd
-            params_wp["corridorWidth"] = 2.0 * radius # so calculate_buffer_widths returns r_fg = radius
+            params_wp["circlemodeRadius"] = radius
             
             r_fg, r_cv, r_grb, _h_cv = cls.calculate_buffer_widths(h, params_wp)
             

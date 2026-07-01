@@ -16,7 +16,7 @@
   "altitudeErrorGps": 4.0,
   "altitudeErrorBarometric": 1.0,
   "corridorWidth": 50.0,
-  "radius": 50.0,
+  "circlemodeRadius": 50.0,
   "maxFlightHeight": 100.0,
   "groundRiskBufferMethod": "Simplified",
   "lateralContingencyManoeuvreType": "Default",

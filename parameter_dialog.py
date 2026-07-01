@@ -368,12 +368,16 @@ class ParameterDialog(QDialog):
         self.chk_override_w.setStyleSheet("color: #d97706; font-weight: bold;")
         self.chk_override_w.setChecked(False)
         self.has_custom_w = self.has_individual_widths()
-        self.chk_override_w.setVisible(self.has_custom_w)
         self.chk_override_w.toggled.connect(self.on_override_w_toggled)
         gen_layout.addRow("", self.chk_override_w)
         
-        if self.has_custom_w:
+        if self.params.get("geometry_type") == "Circle":
             self.spin_corridor_width.setEnabled(False)
+            self.chk_override_w.setVisible(False)
+        else:
+            self.chk_override_w.setVisible(self.has_custom_w)
+            if self.has_custom_w:
+                self.spin_corridor_width.setEnabled(False)
         
         self.spin_default_h = QDoubleSpinBox()
         self.configure_spinbox(self.spin_default_h, "maxFlightHeight", 0.0, 2000.0, 5.0, 1)
