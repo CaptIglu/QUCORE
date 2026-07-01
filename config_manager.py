@@ -74,6 +74,18 @@ class ConfigManager:
         return inst._limits.copy()
 
     @classmethod
+    def get_limit(cls, key):
+        """
+        Gibt die Limits für einen Parameter aus config_limits.json zurück.
+        Wirft einen strikten Fehler, wenn der Parameter komplett fehlt.
+        """
+        inst = cls.get_instance()
+        if key in inst._limits:
+            return inst._limits[key]
+            
+        raise KeyError(f"Limits für '{key}' fehlen in config_limits.json. Dies ist nicht erlaubt.")
+
+    @classmethod
     def get_default(cls, key):
         """
         Retrieves the strict default value for a parameter straight from config.json.

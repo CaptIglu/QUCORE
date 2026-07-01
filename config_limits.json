@@ -122,7 +122,7 @@
   "circlemodeRadius": {
     "min": 1.0,
     "max": 50000.0,
-    "step": 1000.0,
+    "step": 100.0,
     "decimals": 1
   },
   "corridorWidth": {

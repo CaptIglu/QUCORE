@@ -90,7 +90,7 @@ class AboutDialog(QDialog):
         title_layout.setSpacing(4)
         
         name = self.metadata.get('name', 'QUCORE (Variable UAS Corridor Planning)')
-        version = self.metadata.get('version', '0.7.6')
+        version = self.metadata.get('version', '0.8.2')
         
         lbl_name = QLabel(f'<span style="font-size: 16px; font-weight: bold; color: #2c3e50;">{name}</span>')
         lbl_version = QLabel(f'<span style="font-size: 12px; color: #7f8c8d; font-weight: 500;">Version {version}</span>')
@@ -859,11 +859,11 @@ class DroneCorridorPlanner(object):
             self.lbl_circle_rad = QLabel("Kreis-Radius (m):")
             self.spn_circle_radius = QDoubleSpinBox()
             
-            circle_limits = ConfigManager.get_limits().get("circlemodeRadius", {"min": 5.0, "max": 50000.0, "step": 5.0, "decimals": 1})
-            self.spn_circle_radius.setRange(circle_limits.get("min", 5.0), circle_limits.get("max", 50000.0))
+            circle_limits = ConfigManager.get_limit("circlemodeRadius")
+            self.spn_circle_radius.setRange(circle_limits["min"], circle_limits["max"])
             self.spn_circle_radius.setValue(float(ConfigManager.get_default("circlemodeRadius")))
-            self.spn_circle_radius.setDecimals(circle_limits.get("decimals", 1))
-            self.spn_circle_radius.setSingleStep(circle_limits.get("step", 5.0))
+            self.spn_circle_radius.setDecimals(circle_limits["decimals"])
+            self.spn_circle_radius.setSingleStep(circle_limits["step"])
             
             self.spn_circle_radius.valueChanged.connect(self.on_circle_radius_changed)
             self.lay_circle_rad.addWidget(self.lbl_circle_rad)
@@ -2236,6 +2236,7 @@ class DroneCorridorPlanner(object):
     # ----------------------------------------------------
     def open_parameter_dialog(self):
         params_backup = dict(self.params)
+        self.params["geometry_type"] = self.geometry_type
         dialog = ParameterDialog(self.gui, self.params, self.waypoints)
         
         # Connect live preview callback
