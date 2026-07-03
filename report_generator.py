@@ -321,6 +321,10 @@ class ReportGenerator:
         
         # 3. Build dynamic table & Calculate min/max ranges
         is_poly = (geometry_type == "Polygon")
+        enable_asym = ConfigManager.get_param(params, "enableAsymmetricBufferWinddrift")
+        
+        grb_header = "S_GRB (Luv/Lee) (m)" if enable_asym else "S_GRB (m)"
+        
         if is_poly:
             headers = [
                 "WP",
@@ -328,7 +332,7 @@ class ReportGenerator:
                 "h_FG (m)",
                 "v0 (m/s)",
                 "S_CV (m)",
-                "S_GRB (m)",
+                grb_header,
                 "h_CV (m)"
             ]
         else:
@@ -339,7 +343,7 @@ class ReportGenerator:
                 "v0 (m/s)",
                 "S_FG (m)",
                 "S_CV (m)",
-                "S_GRB (m)",
+                grb_header,
                 "h_CV (m)"
             ]
         
@@ -347,6 +351,8 @@ class ReportGenerator:
         fg_widths = []
         cv_widths = []
         grb_widths = []
+        grb_luv_widths = []
+        grb_lee_widths = []
         h_cvs = []
         
         has_narrow_cv = False
@@ -368,11 +374,20 @@ class ReportGenerator:
             else:
                 params_wp["corridorWidth"] = fg_w
             
-            r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params_wp)
+            r_fg, r_cv, r_grb, h_cv, d_grb = BufferCalculator.calculate_buffer_widths(h, params_wp)
             s_cv = r_cv - r_fg
             s_grb = r_grb - r_cv
             if s_cv < 9.99:
                 has_narrow_cv = True
+                
+            if enable_asym and d_grb > 0:
+                luv = max(s_grb - d_grb, -s_cv)
+                lee = s_grb + d_grb
+                grb_str = f"{luv:.1f} / {lee:.1f}"
+                grb_luv_widths.append(luv)
+                grb_lee_widths.append(lee)
+            else:
+                grb_str = f"{s_grb:.1f}"
             
             fg_widths.append(fg_w)
             cv_widths.append(s_cv)
@@ -386,7 +401,7 @@ class ReportGenerator:
                     f"{h:.1f}",
                     f"{spd:.1f}",
                     f"{s_cv:.1f}",
-                    f"{s_grb:.1f}",
+                    grb_str,
                     f"{h_cv:.1f}"
                 ])
             else:
@@ -397,7 +412,7 @@ class ReportGenerator:
                     f"{spd:.1f}",
                     f"{fg_w:.1f}",
                     f"{s_cv:.1f}",
-                    f"{s_grb:.1f}",
+                    grb_str,
                     f"{h_cv:.1f}"
                 ])
             
@@ -420,7 +435,12 @@ class ReportGenerator:
                 
         fg_range = get_range_str(fg_widths)
         cv_range = get_range_str(cv_widths)
-        grb_range = get_range_str(grb_widths)
+        if enable_asym and grb_luv_widths:
+            luv_range = get_range_str(grb_luv_widths)
+            lee_range = get_range_str(grb_lee_widths)
+            grb_range = f"{luv_range} (Luv) / {lee_range} (Lee)"
+        else:
+            grb_range = get_range_str(grb_widths)
         h_cv_range = get_range_str(h_cvs)
         
         # 4. Generate dynamic document.xml using placeholder replacements

@@ -22,6 +22,7 @@ class SoraVolumeWidget(QWidget):
         self.h_fg_str = ""
         self.h_cv_str = ""
         self.s_aga_str = ""
+        self.grb_label_text = "S<sub>GRB</sub>"
         
         self.has_data = False
         
@@ -33,7 +34,7 @@ class SoraVolumeWidget(QWidget):
             return self.tr_fn(key, default)
         return default
 
-    def update_values(self, r_fg_list, s_cv_list, s_grb_list, h_fg_list, h_cv_list, geometry_type="Corridor", s_aga_list=None):
+    def update_values(self, r_fg_list, s_cv_list, s_grb_list, h_fg_list, h_cv_list, geometry_type="Corridor", s_aga_list=None, d_grb_list=None, is_asym=False):
         """
         Updates the values to be drawn. 
         Takes raw lists representing the parameters per waypoint.
@@ -46,6 +47,7 @@ class SoraVolumeWidget(QWidget):
             self.avg_h_fg = 0.0
             self.avg_h_cv = 0.0
             self.s_aga_str = ""
+            self.grb_label_text = "S<sub>GRB</sub>"
             
             self.r_fg_str = ""
             self.s_cv_str = ""
@@ -82,7 +84,18 @@ class SoraVolumeWidget(QWidget):
             
         self.r_fg_str = fmt_range([2.0 * x for x in r_fg_list])
         self.s_cv_str = fmt_range(s_cv_list)
-        self.s_grb_str = fmt_range(s_grb_list)
+        
+        if is_asym and d_grb_list and any(d > 0 for d in d_grb_list):
+            luv_list = [max(s_g - d_g, -s_c) for s_g, d_g, s_c in zip(s_grb_list, d_grb_list, s_cv_list)]
+            lee_list = [s_g + d_g for s_g, d_g in zip(s_grb_list, d_grb_list)]
+            luv_str = fmt_range(luv_list, "").strip()
+            lee_str = fmt_range(lee_list, "m")
+            self.s_grb_str = f"{luv_str} / {lee_str}"
+            self.grb_label_text = "S<sub>GRB</sub>(Luv/Lee)"
+        else:
+            self.s_grb_str = fmt_range(s_grb_list)
+            self.grb_label_text = "S<sub>GRB</sub>"
+            
         self.h_fg_str = fmt_range(h_fg_list)
         self.h_cv_str = fmt_range(h_cv_list)
         self.s_aga_str = f"{int(round(s_aga_list[0]))} m" if s_aga_list and len(s_aga_list) > 0 else ""
@@ -189,7 +202,7 @@ class SoraVolumeWidget(QWidget):
         painter.drawRect(grb_rect)
         
         # Label for GRB
-        html_grb = f"<div style='color: rgb({text_color.red()},{text_color.green()},{text_color.blue()}); font-family: Arial; font-size: 11px; font-weight: bold;'>S<sub>GRB</sub> = {self.s_grb_str}</div>"
+        html_grb = f"<div style='color: rgb({text_color.red()},{text_color.green()},{text_color.blue()}); font-family: Arial; font-size: 11px; font-weight: bold;'>{self.grb_label_text} = {self.s_grb_str}</div>"
         self.draw_html_text(painter, QRectF(18 + pad_aa_x, 8 + pad_aa_y_top, W - 36, 16), html_grb)
         
         # 2. Contingency Volume ( soft warm yellow ) - Sits nested inside GRB (height 51.0)

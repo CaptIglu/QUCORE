@@ -105,8 +105,8 @@ Provides a strict validation and clamp wrapper around raw parameters.
 
 ### `buffer_calculator.py`
 The mathematical engine, completely decoupled from QGIS GUI.
-- `BufferCalculator.calculate_buffer_widths(h, params)`: Calculates buffer radii `(r_fg, r_cv, r_grb, h_cv)` for a single flight height $h$ based on the input parameters.
-- `BufferCalculator.generate_buffers(waypoints, params, geometry_type)`: Generates and returns a tuple of WGS84 geometries: `(fg_geom, cv_geom, grb_geom, aga_geom)`.
+- `BufferCalculator.calculate_buffer_widths(h, params)`: Calculates buffer radii `(r_fg, r_cv, r_grb, h_cv, d_grb)` for a single flight height $h$ based on the input parameters. It computes an additional asymmetric wind-drift vector `d_grb` to shift the GRB based on wind velocity and parachute fall time.
+- `BufferCalculator.generate_buffers(waypoints, params, geometry_type)`: Generates and returns a tuple of WGS84 geometries: `(fg_geom, cv_geom, grb_geom, aga_geom)`. The GRB geometry applies an asymmetric translation in UTM-space and falls back to a union with FG to limit Luv shrinking.
 
 ### `importer_exporter.py` & `formats/`
 A clean Facade module that delegates all spatial format serialization to specific handler modules.

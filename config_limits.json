@@ -208,5 +208,11 @@
     "max": 100,
     "step": 1,
     "decimals": 0
+  },
+  "windDirection": {
+    "min": 0.0,
+    "max": 360.0,
+    "step": 10.0,
+    "decimals": 1
   }
 }

@@ -86,6 +86,9 @@ class AltitudeTableDialog(QDialog):
         # Table Widget
         self.table = QTableWidget()
         self.table.setColumnCount(10)
+        is_asym = ConfigManager.get_param(self.params, "enableAsymmetricBufferWinddrift")
+        grb_header = self.tr("col_grb_asym", "S_GRB (Luv / Lee) (m)") if is_asym else self.tr("col_grb", "S_GRB (Breite) (m)")
+        
         self.table.setHorizontalHeaderLabels([
             self.tr("col_wp", "Wegpunkt"), 
             self.tr("col_pos", "Position (Lat, Lon)"),
@@ -93,7 +96,7 @@ class AltitudeTableDialog(QDialog):
             self.tr("col_spd", "v0 (Geschwindigkeit) (m/s)"), 
             self.tr("col_fg", "S_FG (Breite) (m)"), 
             self.tr("col_cv", "S_CV (Breite) (m)"), 
-            self.tr("col_grb", "S_GRB (Breite) (m)"),
+            grb_header,
             self.tr("col_hcv", "h_CV (m)"),
             self.tr("col_dist", "Distanz"),
             self.tr("col_dur", "Dauer (mm:ss)")
@@ -424,7 +427,7 @@ class AltitudeTableDialog(QDialog):
         
         # Calculate CV & GRB
         from .buffer_calculator import BufferCalculator
-        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params_wp)
+        r_fg, r_cv, r_grb, h_cv, d_grb = BufferCalculator.calculate_buffer_widths(h, params_wp)
         
         s_cv = r_cv - r_fg
         s_grb = r_grb - r_cv
@@ -446,7 +449,13 @@ class AltitudeTableDialog(QDialog):
             item_grb.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             item_grb.setForeground(QBrush(QColor(130, 130, 130)))
             self.table.setItem(row, 6, item_grb)
-        item_grb.setText(f"{s_grb:.1f}")
+            
+        if ConfigManager.get_param(self.params, "enableAsymmetricBufferWinddrift") and d_grb > 0:
+            luv_width = max(s_grb - d_grb, -s_cv)
+            lee_width = s_grb + d_grb
+            item_grb.setText(f"{luv_width:.1f} / {lee_width:.1f}")
+        else:
+            item_grb.setText(f"{s_grb:.1f}")
         
         # Update h_CV column with grey background (read-only)
         item_hcv = self.table.item(row, 7)

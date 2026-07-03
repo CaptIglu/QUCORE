@@ -136,6 +136,25 @@ class BufferCalculator:
             v_z = ConfigManager.get_param(params, "parachuteDescentRate")
             s_grb = v0 * t_para_grb + v_wind * (h_cv / v_z) if v_z > 0 else 0
             
+        # Calculate d_grb for asymmetric wind drift
+        d_grb = 0.0
+        if ConfigManager.get_param(params, "enableAsymmetricBufferWinddrift"):
+            v_wind = ConfigManager.get_param(params, "maxWindVelocity")
+            if grb_method == "Parachute":
+                v_z = ConfigManager.get_param(params, "parachuteDescentRate")
+                t_fall = (h_cv / v_z) if v_z > 0 else 0.0
+                d_grb = v_wind * t_fall
+                # Reduce symmetric buffer by the wind portion that is now handled as a vector
+                s_grb -= d_grb
+                s_grb = max(0.0, s_grb)
+            elif grb_method == "Ballistic":
+                t_fall = math.sqrt(2 * h_cv / g)
+                d_grb = v_wind * t_fall
+            elif grb_method == "Glide":
+                glide_ratio = ConfigManager.get_param(params, "glideRatioDenominator")
+                t_fall = (h_cv * glide_ratio) / v0 if v0 > 0 else 0.0
+                d_grb = v_wind * t_fall
+            
         # ----------------------------------------------------
         # 5. RADIUS FROM CENTERLINE
         # ----------------------------------------------------
@@ -151,7 +170,7 @@ class BufferCalculator:
             r_fg = corridor_width / 2.0
         r_cv = r_fg + s_cv
         r_grb = r_cv + s_grb
-        return r_fg, r_cv, r_grb, h_cv
+        return r_fg, r_cv, r_grb, h_cv, d_grb
 
     @staticmethod
     def calculate_adjacent_area_width(params):
@@ -227,6 +246,10 @@ class BufferCalculator:
         # ----------------------------------------------------
         # BRANCH ON GEOMETRY TYPE
         # ----------------------------------------------------
+        enable_asym = ConfigManager.get_param(params, "enableAsymmetricBufferWinddrift")
+        wind_dir = ConfigManager.get_param(params, "windDirection")
+        drift_angle_rad = math.radians(wind_dir + 180.0)
+
         if geometry_type == "Circle":
             # Circle uses the first waypoint as center, and fg as radius
             lon, lat, h, spd, radius = parsed_wpts[0]
@@ -238,7 +261,7 @@ class BufferCalculator:
             params_wp["maxVelocity"] = spd
             params_wp["circlemodeRadius"] = radius
             
-            r_fg, r_cv, r_grb, _h_cv = cls.calculate_buffer_widths(h, params_wp)
+            r_fg, r_cv, r_grb, _h_cv, d_grb = cls.calculate_buffer_widths(h, params_wp)
             
             # Calculate Adjacent Area width: S_AGA = max(5000, min(35000, 180 * vmax))
             s_aga = cls.calculate_adjacent_area_width(params)
@@ -257,6 +280,11 @@ class BufferCalculator:
                 fg_geom = QgsGeometry.fromPointXY(center_utm).buffer(r_fg, BUFFER_SEGMENTS)
                 cv_geom = QgsGeometry.fromPointXY(center_utm).buffer(r_cv, BUFFER_SEGMENTS)
                 grb_geom = QgsGeometry.fromPointXY(center_utm).buffer(r_grb, BUFFER_SEGMENTS)
+                if enable_asym and d_grb > 0:
+                    dx = d_grb * math.sin(drift_angle_rad)
+                    dy = d_grb * math.cos(drift_angle_rad)
+                    grb_geom.translate(dx, dy)
+                grb_geom = grb_geom.combine(fg_geom)
                 aga_geom = cv_geom.buffer(s_aga, BUFFER_SEGMENTS)
                 
                 # Project back to WGS 84
@@ -333,8 +361,8 @@ class BufferCalculator:
                         params_wp["maxVelocity"] = spd
                         params_wp["corridorWidth"] = fg
                         
-                        r_fg, r_cv, r_grb, _h_cv = cls.calculate_buffer_widths(h, params_wp)
-                        radii.append((r_fg, r_cv, r_grb, _h_cv))
+                        r_fg, r_cv, r_grb, _h_cv, d_grb = cls.calculate_buffer_widths(h, params_wp)
+                        radii.append((r_fg, r_cv, r_grb, _h_cv, d_grb))
                         
                     fg_capsules = []
                     cv_capsules = []
@@ -346,8 +374,8 @@ class BufferCalculator:
                         lon_a, lat_a, h_a, spd_a, fg_a = parsed_wpts[i]
                         lon_b, lat_b, h_b, spd_b, fg_b = parsed_wpts[next_idx]
                         
-                        r_fg_a, r_cv_a, r_grb_a, _ = radii[i]
-                        r_fg_b, r_cv_b, r_grb_b, _ = radii[next_idx]
+                        r_fg_a, r_cv_a, r_grb_a, _, d_grb_a = radii[i]
+                        r_fg_b, r_cv_b, r_grb_b, _, d_grb_b = radii[next_idx]
                         
                         seg_utm_epsg = get_utm_epsg(lon_a, lat_a)
                         seg_dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{seg_utm_epsg}")
@@ -372,6 +400,9 @@ class BufferCalculator:
                         
                         c_grb_a = QgsGeometry.fromPointXY(pt_a_utm).buffer(r_grb_a, BUFFER_SEGMENTS)
                         c_grb_b = QgsGeometry.fromPointXY(pt_b_utm).buffer(r_grb_b, BUFFER_SEGMENTS)
+                        if enable_asym:
+                            c_grb_a.translate(d_grb_a * math.sin(drift_angle_rad), d_grb_a * math.cos(drift_angle_rad))
+                            c_grb_b.translate(d_grb_b * math.sin(drift_angle_rad), d_grb_b * math.cos(drift_angle_rad))
                         grb_capsule = c_grb_a.combine(c_grb_b).convexHull()
                         grb_capsule.transform(seg_inverse_transform)
                         grb_capsules.append(grb_capsule)
@@ -391,12 +422,17 @@ class BufferCalculator:
                     params_wp["maxVelocity"] = max_spd
                     params_wp["corridorWidth"] = max_fg
                     
-                    r_fg_tmp, r_cv_tmp, r_grb_tmp, _h_cv = cls.calculate_buffer_widths(max_h, params_wp)
+                    r_fg_tmp, r_cv_tmp, r_grb_tmp, _h_cv, d_grb_tmp = cls.calculate_buffer_widths(max_h, params_wp)
                     s_cv = r_cv_tmp - r_fg_tmp
                     s_grb = r_grb_tmp - r_cv_tmp
                     
                     cv_geom_utm = fg_polygon_utm.buffer(s_cv, BUFFER_SEGMENTS)
                     grb_geom_utm = cv_geom_utm.buffer(s_grb, BUFFER_SEGMENTS)
+                    if enable_asym and d_grb_tmp > 0:
+                        dx = d_grb_tmp * math.sin(drift_angle_rad)
+                        dy = d_grb_tmp * math.cos(drift_angle_rad)
+                        grb_geom_utm.translate(dx, dy)
+                        grb_geom_utm = grb_geom_utm.combine(fg_polygon_utm)
                     
                     cv_geom = cv_geom_utm
                     cv_geom.transform(inverse_transform)
@@ -440,8 +476,8 @@ class BufferCalculator:
                 params_wp["maxVelocity"] = spd
                 params_wp["corridorWidth"] = fg
                 
-                r_fg, r_cv, r_grb, _h_cv = cls.calculate_buffer_widths(h, params_wp)
-                radii.append((r_fg, r_cv, r_grb, _h_cv))
+                r_fg, r_cv, r_grb, _h_cv, d_grb = cls.calculate_buffer_widths(h, params_wp)
+                radii.append((r_fg, r_cv, r_grb, _h_cv, d_grb))
                 
             fg_capsules = []
             cv_capsules = []
@@ -453,7 +489,7 @@ class BufferCalculator:
             # If only 1 waypoint, generate simple circles in its local UTM zone
             if len(parsed_wpts) == 1:
                 lon, lat, h, spd, radius = parsed_wpts[0]
-                r_fg, r_cv, r_grb, _h_cv = radii[0]
+                r_fg, r_cv, r_grb, _h_cv, d_grb = radii[0]
                 
                 s_aga = cls.calculate_adjacent_area_width(params)
                     
@@ -468,6 +504,11 @@ class BufferCalculator:
                     fg_geom = QgsGeometry.fromPointXY(pt_utm).buffer(r_fg, BUFFER_SEGMENTS)
                     cv_geom = QgsGeometry.fromPointXY(pt_utm).buffer(r_cv, BUFFER_SEGMENTS)
                     grb_geom = QgsGeometry.fromPointXY(pt_utm).buffer(r_grb, BUFFER_SEGMENTS)
+                    if enable_asym and d_grb > 0:
+                        dx = d_grb * math.sin(drift_angle_rad)
+                        dy = d_grb * math.cos(drift_angle_rad)
+                        grb_geom.translate(dx, dy)
+                    grb_geom = grb_geom.combine(fg_geom)
                     aga_geom = cv_geom.buffer(s_aga, BUFFER_SEGMENTS)
                     
                     # Project back to WGS 84
@@ -502,8 +543,8 @@ class BufferCalculator:
                     lon_a, lat_a, h_a, spd_a, fg_a = parsed_wpts[i]
                     lon_b, lat_b, h_b, spd_b, fg_b = parsed_wpts[i+1]
                     
-                    r_fg_a, r_cv_a, r_grb_a, _ = radii[i]
-                    r_fg_b, r_cv_b, r_grb_b, _ = radii[i+1]
+                    r_fg_a, r_cv_a, r_grb_a, _, d_grb_a = radii[i]
+                    r_fg_b, r_cv_b, r_grb_b, _, d_grb_b = radii[i+1]
                     
                     utm_epsg = get_utm_epsg(lon_a, lat_a)
                     dest_crs = QgsCoordinateReferenceSystem(f"EPSG:{utm_epsg}")
@@ -528,6 +569,9 @@ class BufferCalculator:
                     
                     c_grb_a = QgsGeometry.fromPointXY(pt_a_utm).buffer(r_grb_a, BUFFER_SEGMENTS)
                     c_grb_b = QgsGeometry.fromPointXY(pt_b_utm).buffer(r_grb_b, BUFFER_SEGMENTS)
+                    if enable_asym:
+                        c_grb_a.translate(d_grb_a * math.sin(drift_angle_rad), d_grb_a * math.cos(drift_angle_rad))
+                        c_grb_b.translate(d_grb_b * math.sin(drift_angle_rad), d_grb_b * math.cos(drift_angle_rad))
                     grb_capsule = c_grb_a.combine(c_grb_b).convexHull()
                     grb_capsule.transform(inverse_transform) # Transform back to WGS 84 immediately
                     grb_capsules.append(grb_capsule)
@@ -545,6 +589,9 @@ class BufferCalculator:
             fg_merged = QgsGeometry.unaryUnion(fg_capsules)
             cv_merged = QgsGeometry.unaryUnion(cv_capsules)
             grb_merged = QgsGeometry.unaryUnion(grb_capsules)
+            
+            # Ensure GRB covers FG (Luv limitation)
+            grb_merged = grb_merged.combine(fg_merged)
             
             # Generate Adjacent Area buffer around the merged WGS 84 CV.
             # We project cv_merged to the UTM zone of the route's midpoint, buffer it there, and project back.

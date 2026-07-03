@@ -819,7 +819,7 @@ class ParameterDialog(QDialog):
                 params_wp["maxVelocity"] = spd
                 params_wp["corridorWidth"] = fg
                 
-                r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params_wp)
+                r_fg, r_cv, r_grb, h_cv, d_grb = BufferCalculator.calculate_buffer_widths(h, params_wp)
                 s_cv_list.append(r_cv - r_fg)
                 
         return s_cv_list

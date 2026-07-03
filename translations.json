@@ -1,4 +1,48 @@
 {
+    "msg_wind_drift_simplified_warning": {
+        "de": "⚠️ Hinweis: Die 1:1 Regel (Simplified) ist aktuell als GRB-Methode ausgewählt. Der Wind-Drift hat bei dieser Methode laut Vorgaben keine Auswirkung auf den Puffer. Bitte wechsle im Parameter-Dialog auf 'Fallschirm', 'Ballistisch' oder 'Gleitflug', um asymmetrische Puffer zu berechnen.",
+        "en": "⚠️ Note: The 1:1 Rule (Simplified) is currently selected as GRB method. Wind drift has no effect on the buffer for this method. Please switch to 'Parachute', 'Ballistic', or 'Glide' in the Parameter Dialog to calculate asymmetric buffers."
+    },
+    "grp_wind_settings": {
+        "de": "Wind Parameter",
+        "en": "Wind Parameters"
+    },
+    "wind_drift_grb_method": {
+        "de": "GRB Methode (Terminierung):",
+        "en": "GRB Method (Termination):"
+    },
+    "col_grb_asym": {
+        "de": "S_GRB (Luv / Lee) (m)",
+        "en": "S_GRB (Upwind / Downwind) (m)"
+    },
+    "menu_wind_drift": {
+        "de": "Wind-Drift (Asymmetrische Puffer)...",
+        "en": "Wind Drift (Asymmetric Buffers)..."
+    },
+    "wind_drift_title": {
+        "de": "Wind-Drift & Asymmetrische Puffer",
+        "en": "Wind Drift & Asymmetric Buffers"
+    },
+    "wind_drift_enable": {
+        "de": "Asymmetrische Wind-Drift Puffer Berechnung aktivieren",
+        "en": "Enable Asymmetric Wind Drift Buffer Calculation"
+    },
+    "wind_drift_direction": {
+        "de": "Windrichtung (0-360°):",
+        "en": "Wind Direction (0-360°):"
+    },
+    "wind_drift_speed": {
+        "de": "Windstärke (m/s):",
+        "en": "Wind Speed (m/s):"
+    },
+    "wind_drift_info": {
+        "de": "<b>Hinweis:</b> Wenn aktiviert, werden die Ground Risk Buffer (GRB) asymmetrisch anhand des Windes verschoben (Luv verkleinert, Lee vergrößert). Das Contingency Volume (CV) bleibt als Reaktionspuffer symmetrisch.",
+        "en": "<b>Note:</b> If enabled, Ground Risk Buffers (GRB) are shifted asymmetrically based on wind (upwind reduced, downwind increased). The Contingency Volume (CV) remains symmetric as a reaction buffer."
+    },
+    "wind_drift_warning": {
+        "de": "<b>⚠️ Abweichung von LBA/EASA-Formelvorlagen:</b> Diese dynamische vektorielle Verschiebung ist eine detailliertere Auslegung und weicht von den vereinfachten statischen 1:1 Beispielen in den Standarddokumenten ab.",
+        "en": "<b>⚠️ Deviation from LBA/EASA Formulas:</b> This dynamic vector shift is a more detailed interpretation and deviates from the simplified static 1:1 examples in standard documents."
+    },
     "dialog_title": {
         "de": "QUCORE – UAS-Korridorplanung (FG/CV/GRB)",
         "en": "QUCORE – UAS Corridor Planning (FG/CV/GRB)"

@@ -827,6 +827,9 @@ class DroneCorridorPlanner(object):
             self.pop_density_action = self.tools_menu.addAction("Bevölkerungsdichte- & Bodenrisiko-Analyse (AA / GRB)...")
             self.pop_density_action.triggered.connect(self.open_population_density_dialog)
             
+            self.wind_drift_action = self.tools_menu.addAction("Asymmetrische Wind-Drift Puffer (Luv / Lee)...")
+            self.wind_drift_action.triggered.connect(self.open_asymmetric_buffer_winddrift_dialog)
+            
             # Help Menu
             self.help_menu = self.menu_bar.addMenu("Hilfe")
             
@@ -1156,6 +1159,8 @@ class DroneCorridorPlanner(object):
             self.vlos_calc_action.setText(self.tr("menu_vlos_calc", "VLOS-Rechner (ALOS/DLOS)..."))
             if hasattr(self, 'pop_density_action'):
                 self.pop_density_action.setText(self.tr("menu_pop_density", "Bevölkerungsdichte- & Bodenrisiko-Analyse (AA / GRB)..."))
+            if hasattr(self, 'wind_drift_action'):
+                self.wind_drift_action.setText(self.tr("menu_wind_drift", "Asymmetrische Wind-Drift Puffer (Luv / Lee)..."))
             
             self.help_menu.setTitle(self.tr("menu_help", "Hilfe"))
             self.help_action_menu.setText(self.tr("menu_instructions", "Anleitung / Hilfe..."))
@@ -2171,6 +2176,7 @@ class DroneCorridorPlanner(object):
             s_grb_list = []
             h_fg_list = []
             h_cv_list = []
+            d_grb_list = []
             
             s_aga_global = BufferCalculator.calculate_adjacent_area_width(self.params)
             
@@ -2188,7 +2194,7 @@ class DroneCorridorPlanner(object):
                 else:
                     params_wp["corridorWidth"] = fg
                 
-                r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(h, params_wp)
+                r_fg, r_cv, r_grb, h_cv, d_grb = BufferCalculator.calculate_buffer_widths(h, params_wp)
                 
                 r_fg_list.append(r_fg)
                 r_cv_list.append(r_cv)
@@ -2260,6 +2266,13 @@ class DroneCorridorPlanner(object):
         old_w = ConfigManager.get_param(self.params, "corridorWidth")
         
         self.params.update(new_params)
+        
+        # Synchronize live with WindDriftDialog if open
+        if hasattr(self, '_wind_drift_dialog') and self._wind_drift_dialog and self._wind_drift_dialog.isVisible():
+            new_speed = ConfigManager.get_param(self.params, "maxWindVelocity")
+            self._wind_drift_dialog.set_wind_speed(new_speed)
+            new_grb = ConfigManager.get_param(self.params, "groundRiskBufferMethod")
+            self._wind_drift_dialog.set_grb_method(new_grb)
         
         new_h = ConfigManager.get_param(self.params, "maxFlightHeight")
         new_v0 = ConfigManager.get_param(self.params, "maxOpsSpeedV0")
@@ -2369,6 +2382,18 @@ class DroneCorridorPlanner(object):
             current_params=self.params
         )
         dialog.exec_()
+
+    def open_asymmetric_buffer_winddrift_dialog(self):
+        from .asymmetric_buffer_winddrift_dialog import WindDriftDialog
+        dialog = WindDriftDialog(
+            self.gui, 
+            self.params, 
+            self.tr,
+            self.rebuild_and_calculate
+        )
+        dialog.show()
+        # Halte Referenz
+        self._wind_drift_dialog = dialog
 
     def open_altitude_table(self):
         if not self.waypoints:

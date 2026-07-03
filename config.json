@@ -45,5 +45,7 @@
   "opacity_cv": 15,
   "opacity_grb": 15,
   "opacity_adjacentarea": 0,
-  "opacity_vlos": 0
+  "opacity_vlos": 0,
+  "enableAsymmetricBufferWinddrift": false,
+  "windDirection": 0.0
 }
