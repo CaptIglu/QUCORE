@@ -63,7 +63,7 @@ class AltitudeTableDialog(QDialog):
             
             # Checkbox
             self.chk_variable_polygon = QCheckBox(self.tr("chk_variable_polygon_buffers", "Variable Pufferung der Grenzsegmente erlauben (Expertenmodus)"))
-            self.chk_variable_polygon.setChecked(ConfigManager.get_param(self.params, "variable_polygon_buffers"))
+            self.chk_variable_polygon.setChecked(self.params.get("variable_polygon_buffers", False))
             self.chk_variable_polygon.toggled.connect(self.on_variable_polygon_toggled)
             layout.addWidget(self.chk_variable_polygon)
             
@@ -204,7 +204,7 @@ class AltitudeTableDialog(QDialog):
 
     def update_table_editable_states(self):
         is_polygon = (self.geometry_type == "Polygon")
-        is_variable = ConfigManager.get_param(self.params, "variable_polygon_buffers")
+        is_variable = self.params.get("variable_polygon_buffers", False)
         
         # Determine if h_FG (col 2) and v0 (col 3) should be editable
         should_edit = not is_polygon or is_variable
