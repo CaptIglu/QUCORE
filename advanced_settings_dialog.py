@@ -144,7 +144,7 @@ class AdvancedSettingsDialog(QDialog):
         self.spin_op_fg = QSpinBox()
         self.configure_spinbox(self.spin_op_fg, "opacity_fg", 0, 100, 1)
         self.spin_op_fg.setSuffix(" %")
-        self.spin_op_fg.setValue(ConfigManager.get_param(self.config_params, "opacity_fg"))
+        self.spin_op_fg.setValue(int(ConfigManager.get_param(self.config_params, "opacity_fg")))
         self.create_layer_row(form_style, self.tr("lyr_fg", "Flight Geography (FG):"), self.spin_lw_fg, self.btn_col_fg, self.spin_op_fg)
         
         # 3. CV
@@ -157,7 +157,7 @@ class AdvancedSettingsDialog(QDialog):
         self.spin_op_cv = QSpinBox()
         self.configure_spinbox(self.spin_op_cv, "opacity_cv", 0, 100, 1)
         self.spin_op_cv.setSuffix(" %")
-        self.spin_op_cv.setValue(ConfigManager.get_param(self.config_params, "opacity_cv"))
+        self.spin_op_cv.setValue(int(ConfigManager.get_param(self.config_params, "opacity_cv")))
         self.create_layer_row(form_style, self.tr("lyr_cv", "Contingency Volume (CV):"), self.spin_lw_cv, self.btn_col_cv, self.spin_op_cv)
         
         # 4. GRB
@@ -170,7 +170,7 @@ class AdvancedSettingsDialog(QDialog):
         self.spin_op_grb = QSpinBox()
         self.configure_spinbox(self.spin_op_grb, "opacity_grb", 0, 100, 1)
         self.spin_op_grb.setSuffix(" %")
-        self.spin_op_grb.setValue(ConfigManager.get_param(self.config_params, "opacity_grb"))
+        self.spin_op_grb.setValue(int(ConfigManager.get_param(self.config_params, "opacity_grb")))
         self.create_layer_row(form_style, self.tr("lyr_grb", "Ground Risk Buffer (GRB):"), self.spin_lw_grb, self.btn_col_grb, self.spin_op_grb)
         
         # 5. AA
@@ -183,7 +183,7 @@ class AdvancedSettingsDialog(QDialog):
         self.spin_op_aga = QSpinBox()
         self.configure_spinbox(self.spin_op_aga, "opacity_adjacentarea", 0, 100, 1)
         self.spin_op_aga.setSuffix(" %")
-        self.spin_op_aga.setValue(ConfigManager.get_param(self.config_params, "opacity_adjacentarea"))
+        self.spin_op_aga.setValue(int(ConfigManager.get_param(self.config_params, "opacity_adjacentarea")))
         self.create_layer_row(form_style, self.tr("lyr_aa", "Adjacent Area (AA):"), self.spin_lw_aga, self.btn_col_aga, self.spin_op_aga)
         
         # 6. VLOS
@@ -196,7 +196,7 @@ class AdvancedSettingsDialog(QDialog):
         self.spin_op_vlos = QSpinBox()
         self.configure_spinbox(self.spin_op_vlos, "opacity_vlos", 0, 100, 1)
         self.spin_op_vlos.setSuffix(" %")
-        self.spin_op_vlos.setValue(ConfigManager.get_param(self.config_params, "opacity_vlos"))
+        self.spin_op_vlos.setValue(int(ConfigManager.get_param(self.config_params, "opacity_vlos")))
         self.create_layer_row(form_style, self.tr("lyr_vlos", "VLOS-Reichweite (Pilotenposition):"), self.spin_lw_vlos, self.btn_col_vlos, self.spin_op_vlos)
         
         # Verbindungen für die Farbauswahl-Buttons
@@ -413,19 +413,19 @@ class AdvancedSettingsDialog(QDialog):
             
             self.spin_lw_cv.setValue(ConfigManager.get_param(self.config_params, "linewidth_cv"))
             self.update_color_button(self.btn_col_cv, ConfigManager.get_param(self.config_params, "color_cv"))
-            self.spin_op_cv.setValue(ConfigManager.get_param(self.config_params, "opacity_cv"))
+            self.spin_op_cv.setValue(int(ConfigManager.get_param(self.config_params, "opacity_cv")))
             
             self.spin_lw_grb.setValue(ConfigManager.get_param(self.config_params, "linewidth_grb"))
             self.update_color_button(self.btn_col_grb, ConfigManager.get_param(self.config_params, "color_grb"))
-            self.spin_op_grb.setValue(ConfigManager.get_param(self.config_params, "opacity_grb"))
+            self.spin_op_grb.setValue(int(ConfigManager.get_param(self.config_params, "opacity_grb")))
             
             self.spin_lw_aga.setValue(ConfigManager.get_param(self.config_params, "linewidth_adjacentarea"))
             self.update_color_button(self.btn_col_aga, ConfigManager.get_param(self.config_params, "color_adjacentarea"))
-            self.spin_op_aga.setValue(ConfigManager.get_param(self.config_params, "opacity_adjacentarea"))
+            self.spin_op_aga.setValue(int(ConfigManager.get_param(self.config_params, "opacity_adjacentarea")))
             
             self.spin_lw_vlos.setValue(ConfigManager.get_param(self.config_params, "linewidth_vlos"))
             self.update_color_button(self.btn_col_vlos, ConfigManager.get_param(self.config_params, "color_vlos"))
-            self.spin_op_vlos.setValue(ConfigManager.get_param(self.config_params, "opacity_vlos"))
+            self.spin_op_vlos.setValue(int(ConfigManager.get_param(self.config_params, "opacity_vlos")))
             
             # Refresh the Tree widget
             self.tree.clear()
