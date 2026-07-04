@@ -200,16 +200,16 @@ class BufferCalculator:
                 a2 = drift_angle_rad + var_rad - i * step_rad
                 vectors.append((d_max * math.sin(a2), d_max * math.cos(a2)))
                 
-        combined_geom = None
+        geoms_to_hull = []
         for dx, dy in vectors:
             geom_copy = QgsGeometry(base_geom)
             geom_copy.translate(dx, dy)
-            if combined_geom is None:
-                combined_geom = geom_copy
-            else:
-                combined_geom = combined_geom.combine(geom_copy)
+            geoms_to_hull.append(geom_copy)
                 
-        return combined_geom.convexHull()
+        # Collect all geometries and calculate the convex hull at once
+        # This bypasses expensive boolean union operations and calculates the hull over all vertices directly.
+        collection = QgsGeometry.collectGeometry(geoms_to_hull)
+        return collection.convexHull()
 
     @staticmethod
     def calculate_adjacent_area_width(params):
