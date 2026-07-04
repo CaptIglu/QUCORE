@@ -32,8 +32,16 @@
         "en": "Wind Direction (0-360°):"
     },
     "wind_drift_speed": {
-        "de": "Windstärke (m/s):",
-        "en": "Wind Speed (m/s):"
+        "de": "Max Wind (m/s):",
+        "en": "Max Wind (m/s):"
+    },
+    "wind_drift_min_speed": {
+        "de": "Min Wind (m/s):",
+        "en": "Min Wind (m/s):"
+    },
+    "wind_drift_variance": {
+        "de": "Varianz (±°):",
+        "en": "Variance (±°):"
     },
     "wind_drift_info": {
         "de": "<b>Hinweis:</b> Wenn aktiviert, werden die Ground Risk Buffer (GRB) asymmetrisch anhand des Windes verschoben (Luv verkleinert, Lee vergrößert). Das Contingency Volume (CV) bleibt als Reaktionspuffer symmetrisch.",

@@ -427,7 +427,7 @@ class AltitudeTableDialog(QDialog):
         
         # Calculate CV & GRB
         from .buffer_calculator import BufferCalculator
-        r_fg, r_cv, r_grb, h_cv, d_grb = BufferCalculator.calculate_buffer_widths(h, params_wp)
+        r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(h, params_wp)
         
         s_cv = r_cv - r_fg
         s_grb = r_grb - r_cv
@@ -450,9 +450,9 @@ class AltitudeTableDialog(QDialog):
             item_grb.setForeground(QBrush(QColor(130, 130, 130)))
             self.table.setItem(row, 6, item_grb)
             
-        if ConfigManager.get_param(self.params, "enableAsymmetricBufferWinddrift") and d_grb > 0:
-            luv_width = max(s_grb - d_grb, -s_cv)
-            lee_width = s_grb + d_grb
+        if ConfigManager.get_param(self.params, "enableAsymmetricBufferWinddrift") and d_max > 0:
+            luv_width = s_grb - d_min
+            lee_width = s_grb + d_max
             item_grb.setText(f"{luv_width:.1f} / {lee_width:.1f}")
         else:
             item_grb.setText(f"{s_grb:.1f}")

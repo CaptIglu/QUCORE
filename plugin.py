@@ -90,7 +90,7 @@ class AboutDialog(QDialog):
         title_layout.setSpacing(4)
         
         name = self.metadata.get('name', 'QUCORE (Variable UAS Corridor Planning)')
-        version = self.metadata.get('version', '0.8.2')
+        version = self.metadata.get('version', '0.8.4')
         
         lbl_name = QLabel(f'<span style="font-size: 16px; font-weight: bold; color: #2c3e50;">{name}</span>')
         lbl_version = QLabel(f'<span style="font-size: 12px; color: #7f8c8d; font-weight: 500;">Version {version}</span>')
@@ -857,6 +857,13 @@ class DroneCorridorPlanner(object):
             lay_geom.addWidget(self.cmb_geom_type)
             layout.addLayout(lay_geom)
             
+            # Wind-drift active indicator
+            self.lbl_winddrift_active = QLabel("Asym. Wind-Drift Pufferberechnung aktiv")
+            self.lbl_winddrift_active.setStyleSheet("color: #e67e22; font-size: 10px; font-weight: bold;")
+            self.lbl_winddrift_active.setAlignment(Qt.AlignRight)
+            layout.addWidget(self.lbl_winddrift_active)
+            self.lbl_winddrift_active.setVisible(False)
+            
             # Circle radius spinner (only visible/enabled in Circle mode)
             self.lay_circle_rad = QHBoxLayout()
             self.lbl_circle_rad = QLabel("Kreis-Radius (m):")
@@ -910,11 +917,14 @@ class DroneCorridorPlanner(object):
             
             self.btn_load_active_layer = QPushButton("Aktivierten QGIS-Layer einlesen")
             self.btn_load_active_layer.clicked.connect(self.import_active_layer)
-            lay_map.addWidget(self.btn_load_active_layer)
             
             self.btn_reactivate = QPushButton("QUCORE Gruppe bearbeiten")
             self.btn_reactivate.clicked.connect(self.reactivate_persistent_group)
-            lay_map.addWidget(self.btn_reactivate)
+            
+            lay_map_btns = QHBoxLayout()
+            lay_map_btns.addWidget(self.btn_load_active_layer)
+            lay_map_btns.addWidget(self.btn_reactivate)
+            lay_map.addLayout(lay_map_btns)
             
             layout.addWidget(self.grp_map)
             
@@ -1871,6 +1881,8 @@ class DroneCorridorPlanner(object):
                 self.wp_tool.clear_midpoint_markers()
             if hasattr(self, 'cmb_geom_type'):
                 self.cmb_geom_type.setEnabled(True)
+            if hasattr(self, 'lbl_winddrift_active'):
+                self.lbl_winddrift_active.setVisible(bool(ConfigManager.get_param(self.params, "enableAsymmetricBufferWinddrift")))
             if hasattr(self, 'lbl_circle_rad'):
                 self.lbl_circle_rad.setVisible(self.geometry_type == "Circle")
             if hasattr(self, 'spn_circle_radius'):
@@ -1894,6 +1906,10 @@ class DroneCorridorPlanner(object):
         # Lock geometry type dropdown as soon as waypoints are added
         if hasattr(self, 'cmb_geom_type'):
             self.cmb_geom_type.setEnabled(len(self.waypoints) == 0)
+            
+        # Update wind drift indicator
+        if hasattr(self, 'lbl_winddrift_active'):
+            self.lbl_winddrift_active.setVisible(bool(ConfigManager.get_param(self.params, "enableAsymmetricBufferWinddrift")))
             
         # Hide/show circle radius controls and disable parameter dialog if not Corridor
         show_circle = (self.geometry_type == "Circle")
@@ -2194,7 +2210,7 @@ class DroneCorridorPlanner(object):
                 else:
                     params_wp["corridorWidth"] = fg
                 
-                r_fg, r_cv, r_grb, h_cv, d_grb = BufferCalculator.calculate_buffer_widths(h, params_wp)
+                r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(h, params_wp)
                 
                 r_fg_list.append(r_fg)
                 r_cv_list.append(r_cv)

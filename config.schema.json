@@ -67,6 +67,27 @@
       "minimum": 0.0,
       "description": "Maximum operational wind speed in m/s."
     },
+    "minWindVelocity": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Minimum operational wind speed in m/s."
+    },
+    "windDirectionVariance": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 180.0,
+      "description": "Variance of the wind direction in degrees (+/-)."
+    },
+    "enableAsymmetricBufferWinddrift": {
+      "type": "boolean",
+      "description": "Enable asymmetric wind drift buffer calculation."
+    },
+    "windDirection": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 360.0,
+      "description": "Main wind direction in degrees (where the wind comes from)."
+    },
     "stallVelocity": {
       "type": "number",
       "minimum": 0.0,

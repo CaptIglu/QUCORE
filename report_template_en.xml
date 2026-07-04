@@ -158,6 +158,10 @@
   </w:p>
   <w:p>
     <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
+    <w:r><w:t xml:space="preserve">Asymmetric Wind Drift Buffer (Upwind/Downwind): __WIND_DRIFT_INFO__</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:pStyle w:val="Listenabsatz"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr></w:pPr>
     <w:r><w:t xml:space="preserve">Characteristic Dimension (CD): __CD__ m</w:t></w:r>
   </w:p>
   __SPEC_FIELDS__

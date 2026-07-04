@@ -113,6 +113,18 @@
     "step": 1.0,
     "decimals": 1
   },
+  "minWindVelocity": {
+    "min": 0.0,
+    "max": 50.0,
+    "step": 1.0,
+    "decimals": 1
+  },
+  "windDirectionVariance": {
+    "min": 0.0,
+    "max": 180.0,
+    "step": 5.0,
+    "decimals": 0
+  },
   "parachuteDescentRate": {
     "min": 0.1,
     "max": 50.0,
@@ -213,6 +225,6 @@
     "min": 0.0,
     "max": 360.0,
     "step": 10.0,
-    "decimals": 1
+    "decimals": 0
   }
 }

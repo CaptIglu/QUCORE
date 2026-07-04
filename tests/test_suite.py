@@ -369,7 +369,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             "parachuteDescentRate": 2.0
         })
         
-        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(110.0, params)
+        r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(110.0, params)
         
         # Expected results:
         # r_fg = 25.0
@@ -398,7 +398,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             "groundRiskBufferMethod": "Ballistic"
         })
         
-        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(100.0, params)
+        r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(100.0, params)
         
         # Expected results:
         # r_fg = 25.0
@@ -430,7 +430,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             "groundRiskBufferMethod": "Simplified"
         })
         
-        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(110.0, params)
+        r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(110.0, params)
         
         # Expected results:
         # r_fg = 25.0
@@ -462,7 +462,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             "glideRatioDenominator": 15.0
         })
         
-        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(110.0, params)
+        r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(110.0, params)
         
         # Expected results:
         # r_fg = 25.0
@@ -492,7 +492,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             "groundRiskBufferMethod": "Ballistic"
         })
         
-        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(120.0, params)
+        r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(120.0, params)
         
         # Expected results:
         # r_fg = 30.0
@@ -525,7 +525,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             "glideRatioDenominator": 8.0
         })
         
-        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(100.0, params)
+        r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(100.0, params)
         
         # Expected results:
         # r_fg = 40.0
@@ -556,7 +556,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             "groundRiskBufferMethod": "Simplified"
         })
         
-        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(90.0, params)
+        r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(90.0, params)
         
         # Expected results:
         # r_fg = 25.0
@@ -590,7 +590,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             "parachuteDescentRate": 3.0
         })
         
-        r_fg, r_cv, r_grb, h_cv = BufferCalculator.calculate_buffer_widths(120.0, params)
+        r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(120.0, params)
         
         # Expected results:
         # r_fg = 50.0
@@ -1129,12 +1129,12 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         })
         
         # Calculate widths with v0=10.0, vmax=25.0
-        r_fg_1, r_cv_1, r_grb_1, h_cv_1 = BufferCalculator.calculate_buffer_widths(100.0, params)
+        r_fg_1, r_cv_1, r_grb_1, h_cv_1, d_min_1, d_max_1 = BufferCalculator.calculate_buffer_widths(100.0, params)
         
         # Change maxCommandableSpeedVmax to 40.0. This should NOT change FG, CV or GRB widths.
         params_high_vmax = params.copy()
         params_high_vmax["maxCommandableSpeedVmax"] = 40.0
-        r_fg_2, r_cv_2, r_grb_2, h_cv_2 = BufferCalculator.calculate_buffer_widths(100.0, params_high_vmax)
+        r_fg_2, r_cv_2, r_grb_2, h_cv_2, d_min_2, d_max_2 = BufferCalculator.calculate_buffer_widths(100.0, params_high_vmax)
         
         self.assertEqual(r_fg_1, r_fg_2)
         self.assertEqual(r_cv_1, r_cv_2)
@@ -1143,7 +1143,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         # Change maxOpsSpeedV0 to 20.0. This should increase CV/GRB width.
         params_high_v0 = params.copy()
         params_high_v0["maxOpsSpeedV0"] = 20.0
-        r_fg_3, r_cv_3, r_grb_3, h_cv_3 = BufferCalculator.calculate_buffer_widths(100.0, params_high_v0)
+        r_fg_3, r_cv_3, r_grb_3, h_cv_3, d_min_3, d_max_3 = BufferCalculator.calculate_buffer_widths(100.0, params_high_v0)
         
         self.assertTrue(r_cv_3 > r_cv_1)
 

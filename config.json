@@ -8,6 +8,8 @@
   "maxPitchAngle": 30.0,
   "glideRatioDenominator": 10.0,
   "maxWindVelocity": 15.0,
+  "minWindVelocity": 0.0,
+  "windDirectionVariance": 15.0,
   "stallVelocity": 12.0,
   "gpsInaccuracy": 3.0,
   "positionError": 3.0,

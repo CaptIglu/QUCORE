@@ -374,15 +374,15 @@ class ReportGenerator:
             else:
                 params_wp["corridorWidth"] = fg_w
             
-            r_fg, r_cv, r_grb, h_cv, d_grb = BufferCalculator.calculate_buffer_widths(h, params_wp)
+            r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(h, params_wp)
             s_cv = r_cv - r_fg
             s_grb = r_grb - r_cv
             if s_cv < 9.99:
                 has_narrow_cv = True
                 
-            if enable_asym and d_grb > 0:
-                luv = max(s_grb - d_grb, -s_cv)
-                lee = s_grb + d_grb
+            if enable_asym and d_max > 0:
+                luv = s_grb - d_min
+                lee = s_grb + d_max
                 grb_str = f"{luv:.1f} / {lee:.1f}"
                 grb_luv_widths.append(luv)
                 grb_lee_widths.append(lee)
@@ -532,6 +532,24 @@ class ReportGenerator:
         xml_content = xml_content.replace("__V0__", v0_str)
         xml_content = xml_content.replace("__VMAX__", vmax_str)
         xml_content = xml_content.replace("__V_WIND__", f"{v_wind:.1f}")
+        
+        enable_asym = ConfigManager.get_param(params, "enableAsymmetricBufferWinddrift")
+        if enable_asym:
+            wd = ConfigManager.get_param(params, "windDirection")
+            vmin = ConfigManager.get_param(params, "minWindVelocity")
+            vmax_wind = ConfigManager.get_param(params, "maxWindVelocity")
+            vvar = ConfigManager.get_param(params, "windDirectionVariance")
+            if lang == "de":
+                wind_drift_info = f"Aktiv (Richtung: {wd}°, v_min: {vmin:.1f} m/s, v_max: {vmax_wind:.1f} m/s, Varianz: ±{vvar}°)"
+            else:
+                wind_drift_info = f"Active (Direction: {wd}°, v_min: {vmin:.1f} m/s, v_max: {vmax_wind:.1f} m/s, Variance: ±{vvar}°)"
+        else:
+            if lang == "de":
+                wind_drift_info = "Deaktiviert (Symmetrisch)"
+            else:
+                wind_drift_info = "Disabled (Symmetric)"
+                
+        xml_content = xml_content.replace("__WIND_DRIFT_INFO__", wind_drift_info)
         xml_content = xml_content.replace("__CD__", f"{cd:.2f}")
         xml_content = xml_content.replace("__SPEC_FIELDS__", uas_spec_fields_str)
         xml_content = xml_content.replace("__LAT_MAN__", lat_man)

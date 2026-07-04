@@ -13,10 +13,14 @@ class WindCompassWidget(QWidget):
         super(WindCompassWidget, self).__init__(parent)
         self.setMinimumSize(150, 150)
         self.direction = 0.0
+        self.variance = 15.0
+        self.min_speed = 0.0
         self.speed = 0.0
 
-    def set_values(self, direction, speed):
+    def set_values(self, direction, variance, min_speed, speed):
         self.direction = direction
+        self.variance = variance
+        self.min_speed = min_speed
         self.speed = speed
         self.update()
 
@@ -102,6 +106,22 @@ class WindCompassWidget(QWidget):
         # Tail circle
         painter.drawEllipse(QPointF(0.0, edge_y), 4.0, 4.0)
         
+        # Draw variance arc (Teilstrich)
+        if self.variance > 0:
+            arc_radius = -edge_y
+            arc_rect = QRectF(-arc_radius, -arc_radius, arc_radius * 2, arc_radius * 2)
+            
+            pen = QPen(QColor(80, 80, 80)) # dunkelgrau
+            pen.setWidth(5)
+            pen.setCapStyle(Qt.RoundCap)
+            painter.setPen(pen)
+            painter.setBrush(Qt.NoBrush)
+            
+            start_angle = int((90 - self.variance) * 16)
+            span_angle = int((2 * self.variance) * 16)
+            
+            painter.drawArc(arc_rect, start_angle, span_angle)
+        
         painter.restore()
         
         # Draw speed in center
@@ -185,11 +205,23 @@ class WindDriftDialog(QDialog):
         self.spn_dir.valueChanged.connect(self.on_value_changed)
         lay_dir.addWidget(lbl_dir)
         lay_dir.addWidget(self.spn_dir)
+        
+        lbl_var = QLabel(self.tr("wind_drift_variance", "Varianz (±°):"))
+        self.spn_var = QDoubleSpinBox()
+        limits_var = ConfigManager.get_limit("windDirectionVariance")
+        self.spn_var.setRange(limits_var["min"], limits_var["max"])
+        self.spn_var.setDecimals(limits_var["decimals"])
+        self.spn_var.setSingleStep(limits_var["step"])
+        self.spn_var.setValue(float(ConfigManager.get_param(self.params, "windDirectionVariance")))
+        self.spn_var.valueChanged.connect(self.on_value_changed)
+        lay_dir.addWidget(lbl_var)
+        lay_dir.addWidget(self.spn_var)
+        
         lay_controls.addLayout(lay_dir)
         
-        # Speed
+        # Max Speed
         lay_speed = QVBoxLayout()
-        lbl_speed = QLabel(self.tr("wind_drift_speed", "Windstärke (m/s):"))
+        lbl_speed = QLabel(self.tr("wind_drift_speed", "Max Wind (m/s):"))
         self.spn_speed = QDoubleSpinBox()
         limits_spd = ConfigManager.get_limit("maxWindVelocity")
         self.spn_speed.setRange(limits_spd["min"], limits_spd["max"])
@@ -199,6 +231,19 @@ class WindDriftDialog(QDialog):
         self.spn_speed.valueChanged.connect(self.on_value_changed)
         lay_speed.addWidget(lbl_speed)
         lay_speed.addWidget(self.spn_speed)
+        
+        # Min Speed
+        lbl_min_speed = QLabel(self.tr("wind_drift_min_speed", "Min Wind (m/s):"))
+        self.spn_min_speed = QDoubleSpinBox()
+        limits_min_spd = ConfigManager.get_limit("minWindVelocity")
+        self.spn_min_speed.setRange(limits_min_spd["min"], limits_min_spd["max"])
+        self.spn_min_speed.setDecimals(limits_min_spd["decimals"])
+        self.spn_min_speed.setSingleStep(limits_min_spd["step"])
+        self.spn_min_speed.setValue(float(ConfigManager.get_param(self.params, "minWindVelocity")))
+        self.spn_min_speed.valueChanged.connect(self.on_value_changed)
+        lay_speed.addWidget(lbl_min_speed)
+        lay_speed.addWidget(self.spn_min_speed)
+        
         lay_controls.addLayout(lay_speed)
         
         lay_settings.addLayout(lay_controls)
@@ -240,13 +285,28 @@ class WindDriftDialog(QDialog):
             
     def on_value_changed(self):
         self.params["windDirection"] = self.spn_dir.value()
+        self.params["windDirectionVariance"] = self.spn_var.value()
         self.params["maxWindVelocity"] = self.spn_speed.value()
+        self.params["minWindVelocity"] = self.spn_min_speed.value()
+        
+        # Enforce min <= max visually (or just logical in background)
+        if self.spn_min_speed.value() > self.spn_speed.value():
+            self.spn_min_speed.blockSignals(True)
+            self.spn_min_speed.setValue(self.spn_speed.value())
+            self.spn_min_speed.blockSignals(False)
+            self.params["minWindVelocity"] = self.spn_min_speed.value()
+            
         self.update_compass()
         if self.recalculate_callback:
             self.recalculate_callback()
 
     def update_compass(self):
-        self.compass.set_values(self.spn_dir.value(), self.spn_speed.value())
+        self.compass.set_values(
+            self.spn_dir.value(), 
+            self.spn_var.value(),
+            self.spn_min_speed.value(), 
+            self.spn_speed.value()
+        )
 
     def set_wind_speed(self, speed):
         """Called externally if maxWindVelocity changes in the main param dialog"""

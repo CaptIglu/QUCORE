@@ -226,7 +226,7 @@
                 <li><a href="#vlos">13. VLOS-Sichtbarkeitsanzeige (ALOS / DLOS)</a></li>
                 <li><a href="#bestpractice">14. Best Practice für den Planungs-Workflow</a></li>
                 <li><a href="#popdensity">15. Bevölkerungsdichte-Berechnung (SORA Step #8)</a></li>
-                <li><a href="#architecture">16. Software-Architektur (Model-View-Presenter)</a></li>
+                <li><a href="#winddrift">16. Asymmetrische Wind-Drift Puffer (Luv / Lee)</a></li>
             </ul>
         </div>
         
@@ -557,13 +557,13 @@
         </ul>
         <p>In allen Formeln stellt <b>$CD$</b> die charakteristische Dimension des UAS (<code>maxCharacteristicDimension</code>) dar.</p>
         
-        <h3>9.5. Asymmetrische Berechnung des GRB aufgrund von Wind-Drift</h3>
-        <p>Sofern die asymmetrische Wind-Drift Puffer Berechnung im Werkzeuge-Menü aktiviert ist, wird der <b>Ground Risk Buffer (GRB)</b> abhängig von der Windrichtung und der Windgeschwindigkeit ($v_{wind}$) räumlich (als Vektor) verschoben. Dies bedeutet, dass der Puffer auf der dem Wind zugewandten Seite (Luv) verkleinert und auf der windabgewandten Seite (Lee) um den gleichen Betrag vergrößert wird.</p>
-        <p>Der asymmetrische Driftweg $d_{grb}$ (in Metern) berechnet sich je nach gewählter Terminierungsmethode aus der Fallzeit ($t_{fall}$) multipliziert mit der Windgeschwindigkeit ($v_{wind}$):</p>
-        <p>$$d_{grb} = v_{wind} \cdot t_{fall}$$</p>
+                <h3>9.5. Asymmetrische Berechnung des GRB aufgrund von Wind-Drift</h3>
+        <p>Sofern die asymmetrische Wind-Drift Puffer Berechnung im Werkzeuge-Menü aktiviert ist, wird der <b>Ground Risk Buffer (GRB)</b> abhängig von der Windrichtung, der minimalen und maximalen Windgeschwindigkeit ($v_{min}$, $v_{max}$) sowie einer Windrichtungs-Varianz räumlich verschoben. Anstatt einer einfachen Vektorverschiebung wird eine <b>konservative Hüllkurve (Envelope)</b> berechnet, welche alle möglichen Winddriften innerhalb der gesetzten Parametergrenzen abdeckt.</p>
+        <p>Der Driftweg berechnet sich analog für $v_{min}$ und $v_{max}$ aus der Fallzeit ($t_{fall}$) multipliziert mit der jeweiligen Windgeschwindigkeit:</p>
+        <p>$$d_{min} = v_{min} \cdot t_{fall} \quad \text{und} \quad d_{max} = v_{max} \cdot t_{fall}$$</p>
         <p>Die Fallzeit ($t_{fall}$) hängt von der gewählten GRB-Methode ab:</p>
         <ul>
-            <li><b>Vereinfachter Ansatz (1:1 Regel / Simplified)</b>: Keine Auswirkung. Der Puffer bleibt symmetrisch ($d_{grb} = 0$), da hier laut Regelwerk keine dynamische Fallzeit definiert ist.</li>
+            <li><b>Vereinfachter Ansatz (1:1 Regel / Simplified)</b>: Keine Auswirkung. Der Puffer bleibt symmetrisch ($d_{min} = d_{max} = 0$), da hier laut Regelwerk keine dynamische Fallzeit definiert ist.</li>
             <li><b>Ballistischer Ansatz (Ballistic)</b>: Die Fallzeit ist die Zeit im freien Fall aus der Höhe $H_{CV}$:
                 $$t_{fall} = \sqrt{\frac{2 \cdot H_{CV}}{g}}$$
             </li>
@@ -572,13 +572,13 @@
             </li>
             <li><b>Fallschirm (Parachute)</b>: Die Fallzeit ergibt sich aus der verbleibenden Höhe geteilt durch die Sinkgeschwindigkeit am Fallschirm ($v_z$ / <code>parachuteDescentRate</code>):
                 $$t_{fall} = \frac{H_{CV}}{v_z}$$
-                <br><i>Hinweis:</i> Bei der Fallschirm-Methode wird der originäre symmetrische Puffer $s_{grb}$ zunächst um den Wind-Anteil reduziert, bevor die asymmetrische Verschiebung $d_{grb}$ angewendet wird. Dies verhindert, dass der Windeinfluss auf der Lee-Seite doppelt (symmetrisch + vektoriell) berechnet wird.
+                <br><i>Hinweis:</i> Bei der Fallschirm-Methode wird der originäre symmetrische Puffer $s_{grb}$ zunächst um den Maximal-Wind-Anteil reduziert, bevor die asymmetrische Hüllkurve angewendet wird.
             </li>
         </ul>
-        <p>Nach der Berechnung von $d_{grb}$ wird die gesamte GRB-Geometrie um diesen Vektor (in Windrichtung) verschoben. Dadurch ergeben sich die effektiven, asymmetrischen Seitenabstände:</p>
+        <p>Die Hüllkurve wird aufgespannt, indem der Puffer entlang der Minimal- und Maximal-Distanz ($d_{min}$ bis $d_{max}$) unter Berücksichtigung der Windvarianz verschoben wird. Die resultierende Geometrie ergibt sich aus der <b>Konvexen Hülle (Convex Hull)</b> all dieser Extrempunkte. Dadurch ergeben sich die effektiven, asymmetrischen Seitenabstände:</p>
         <ul>
-            <li><b>Luv (Wind zugewandt)</b>: $s_{grb, luv} = \max(s_{grb} - d_{grb}, -S_{CV})$ <i>(Eine Reduktion erfolgt maximal bis an die Grenze des CV)</i></li>
-            <li><b>Lee (Wind abgewandt)</b>: $s_{grb, lee} = s_{grb} + d_{grb}$</li>
+            <li><b>Luv (Wind zugewandt)</b>: $s_{grb, luv} = s_{grb} - d_{min}$ <i>(Keine unnatürliche Beschneidung nötig, da die konvexe Hülle bei $v_{min}=0$ automatisch die Fluggeografie schützt)</i></li>
+            <li><b>Lee (Wind abgewandt)</b>: $s_{grb, lee} = s_{grb} + d_{max}$</li>
         </ul>
         
         <!-- 10. JSON CONFIGURATION -->
@@ -1008,28 +1008,14 @@
 
         <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
         
-        <!-- 16. SOFTWARE ARCHITECTURE -->
-        <h2 id="architecture">🧰 16. Software-Architektur (Model-View-Presenter)</h2>
+        <!-- 16. WIND DRIFT -->
+        <h2 id="winddrift">💨 16. Asymmetrische Wind-Drift Puffer (Luv / Lee)</h2>
         <div class="card">
-            <p>Seit Version 0.8.0 basiert das QUCORE Plugin auf einer strikten <strong>Model-View-Presenter (MVP)</strong> Architektur, die eine saubere Trennung von Benutzeroberfläche (UI) und Berechnungslogik (Backend) gewährleistet:</p>
-            <ul>
-                <li><b>Dumb Views (Entkoppelte Dialoge)</b>: Alle grafischen Dialoge (z. B. <i>AltitudeTableDialog</i>, <i>ParameterDialog</i>) sind vollständig von der QGIS-Kartenansicht entkoppelt. Sie greifen nicht direkt auf die Karte zu, sondern kommunizieren Nutzeränderungen ausschließlich über native PyQt-Signale an das Haupt-Plugin (Presenter).</li>
-                <li><b>Map Tools</b>: Interaktive Karteneingaben wie Drag & Drop von Wegpunkten wurden in ein eigenständiges Modul (<code>map_tools.py</code>) ausgelagert, wodurch das Haupt-Plugin schlank und übersichtlich bleibt.</li>
-                <li><b>Format-Handler (Facade-Pattern)</b>: Das Importieren und Exportieren von Dateien (DIPUL, KML, GeoJSON, SkyDemon Flightplan, ArduPilot) wird über ein zentrales Facade-Modul (<code>importer_exporter.py</code>) gesteuert, welches die eigentliche Arbeit an spezialisierte Format-Handler im Unterordner <code>formats/</code> delegiert.</li>
-                <li><b>Zero-Dependency</b>: Das gesamte Plugin ist vollständig ohne externe Python-Pakete lauffähig (alle Berechnungen, Exporte und Zonal Statistics basieren auf QGIS/PyQt nativen Schnittstellen).</li>
-            </ul>
-        </div>
-
-        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
-        
-        <!-- 17. WIND DRIFT -->
-        <h2 id="winddrift">🌪️ 17. Asymmetrische Wind-Drift Puffer (Luv / Lee)</h2>
-        <div class="card">
-            <p>QUCORE ermöglicht die Berücksichtigung von Wind-Drift bei der Berechnung des Ground Risk Buffers (GRB). Dies führt zu einer physikalisch realistischeren, asymmetrischen Ausdehnung des GRB in Windrichtung.</p>
+            <p>QUCORE ermöglicht die Berücksichtigung von Wind-Drift bei der Berechnung des Ground Risk Buffers (GRB). Durch die Nutzung einer <b>konservativen Hüllkurve</b> führt dies zu einer physikalisch sicheren, asymmetrischen Ausdehnung des GRB in Windrichtung.</p>
             <ul>
                 <li><b>Aktivierung</b>: Die Funktion kann im Menüband unter <b>Werkzeuge/Tools &gt; Asymmetrische Wind-Drift Puffer (Luv / Lee)</b> aktiviert werden.</li>
-                <li><b>Einstellung</b>: Über den erscheinenden Dialog können die Windrichtung (0-360 Grad) und die Windstärke (in m/s) konfiguriert werden. Die Änderungen spiegeln sich in Echtzeit auf der Karte wider (Live-Aktualisierung).</li>
-                <li><b>Berechnungslimitierung</b>: Der GRB wird je nach SORA-Ansatz geometrisch als Vektor in Windrichtung verschoben (z. B. beim Fallschirm). Ein geometrischer Fallback in der Berechnung stellt sicher, dass der Puffer in Luv-Richtung niemals kleiner wird als die eigentliche Flight Geography (die Drohne muss in der FG bleiben dürfen).</li>
+                <li><b>Einstellung</b>: Über den Dialog können die Windrichtung, die Windrichtungs-Varianz (± Grad) sowie eine minimale und maximale Windgeschwindigkeit (in m/s) konfiguriert werden. Die Änderungen spiegeln sich in Echtzeit auf der Karte wider. Ein integriertes Kompass-Widget visualisiert dabei den resultierenden Strömungs-Fächer.</li>
+                <li><b>Geometrie-Logik (Hüllkurve)</b>: Der GRB wird nicht mehr bloß stumpf als Vektor verschoben. Stattdessen berechnet die Geometrie-Engine eine konvexe Hülle (Convex Hull), welche die Puffer an den Extrempunkten (Minimaler und Maximaler Drift inkl. Varianzwinkel) aufspannt. Dies schützt die Fluggeografie automatisch vor Unterschreitungen auf der Luv-Seite.</li>
                 <li><b>Ausgabe</b>: In den Wegpunkttabellen sowie im automatisch generierten <code>.docx</code>-Bericht wird der asymmetrische S_GRB Puffer als Luv/Lee-Wert ausgegeben (z. B. <code>50.0 / 250.0 m</code>).</li>
             </ul>
         </div>
