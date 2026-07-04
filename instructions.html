@@ -575,13 +575,34 @@
                 <br><i>Hinweis:</i> Bei der Fallschirm-Methode wird der originäre symmetrische Puffer $s_{grb}$ zunächst um den Maximal-Wind-Anteil reduziert, bevor die asymmetrische Hüllkurve angewendet wird.
             </li>
         </ul>
-        <p>Die Hüllkurve wird aufgespannt, indem der Puffer entlang der Minimal- und Maximal-Distanz ($d_{min}$ bis $d_{max}$) unter Berücksichtigung der Windvarianz verschoben wird. Die resultierende Geometrie ergibt sich aus der <b>Konvexen Hülle (Convex Hull)</b> all dieser Extrempunkte. Dadurch ergeben sich die effektiven, asymmetrischen Seitenabstände:</p>
-        <ul>
-            <li><b>Luv (Wind zugewandt)</b>: $s_{grb, luv} = s_{grb} - d_{min}$ <i>(Keine unnatürliche Beschneidung nötig, da die konvexe Hülle bei $v_{min}=0$ automatisch die Fluggeografie schützt)</i></li>
-            <li><b>Lee (Wind abgewandt)</b>: $s_{grb, lee} = s_{grb} + d_{max}$</li>
-        </ul>
-        
-        <!-- 10. JSON CONFIGURATION -->
+        <p>Um die Unvorhersehbarkeit natürlicher Windströmungen abzusichern, wird nicht nur ein einzelner Windvektor betrachtet, sondern ein vollständiges <b>Vektorfeld</b> aufgespannt, das durch die minimale und maximale Windgeschwindigkeit ($d_{min}$, $d_{max}$) sowie die <b>Windrichtungs-Varianz ($\nu$)</b> definiert ist. Die Berechnung des finalen GRB erfolgt dabei nach exakt folgenden Formeln und algorithmischen Schritten:</p>
+          
+          <ol>
+              <li><b>Berechnung der Drift-Vektoren ($\Delta x, \Delta y$)</b>: 
+                  <br>Ausgehend von der zentralen Windrichtung ($\alpha$, umgerechnet in Radiant) werden Translationen für die Basisgeometrie ermittelt.
+                  <br>
+                  Der <b>Sicherheits-Ankerpunkt</b> bei $v_{min}$ wird zentral berechnet:
+                  $$ \Delta x_{min} = d_{min} \cdot \sin(\alpha) \quad \text{und} \quad \Delta y_{min} = d_{min} \cdot \cos(\alpha) $$
+                  
+                  Die <b>maximale Ausdehnung</b> wird durch die Varianz $\nu$ zu einem Kegel aufgefächert. Die linke und rechte Kante ergeben sich als:
+                  $$ \Delta x_{left} = d_{max} \cdot \sin(\alpha - \nu) \quad \text{und} \quad \Delta y_{left} = d_{max} \cdot \cos(\alpha - \nu) $$
+                  $$ \Delta x_{right} = d_{max} \cdot \sin(\alpha + \nu) \quad \text{und} \quad \Delta y_{right} = d_{max} \cdot \cos(\alpha + \nu) $$
+                  
+                  Um bei großen Varianzen ($\nu > 15^{\circ}$) sicherzustellen, dass die resultierende Hüllkurve den echten Bogenverlauf nicht abschneidet, werden im Code automatisch interpolierte Zwischenvektoren in 15°-Schritten eingefügt ($N_{steps} = \lfloor \frac{\nu}{15^{\circ}} \rfloor$, $\Delta \nu = \frac{\nu}{N_{steps}}$):
+                  $$ \Delta x_{i,left} = d_{max} \cdot \sin(\alpha - \nu + i \cdot \Delta \nu) \quad \text{und} \quad \Delta y_{i,left} = d_{max} \cdot \cos(\alpha - \nu + i \cdot \Delta \nu) $$
+              </li>
+              <li><b>Geometrische Translation</b>: Die originäre, symmetrische Puffer-Geometrie (Basis-GRB) wird nun intern entlang <i>jedes einzelnen</i> dieser berechneten Driftvektoren (Zentrum, Randkanten und Zwischenschritte) verschoben. Alle so entstandenen Geometrien werden in einer abstrakten Sammlung (Geometry Collection) gebündelt.</li>
+              <li><b>Konvexe Hülle (Convex Hull)</b>: Auf diese gesammelte Geometriemenge wird der mathematische Algorithmus der <b>Konvexen Hülle</b> angewendet. Dieser Algorithmus umschließt alle verschobenen Randpunkte mit dem kleinstmöglichen konvexen Polygon. Die Nutzung der konvexen Hülle umgeht fehleranfällige und inperformante Boolesche Vereinigungen (Unions) und erzeugt eine lückenlose, glatte Umrandung.</li>
+          </ol>
+
+          <p><b>Behördliche Begründung (Sicherheitsnachweis):</b><br> 
+          Dieses Vorgehen garantiert eine physikalisch 100%ig konservative Hüllkurve. Jeder mögliche Absturzpunkt der Drohne unter den konfigurierten Wind- und Varianzeinflüssen liegt mathematisch nachweisbar strikt innerhalb dieses konvexen Polygons. Zudem wird durch diese Methodik das physikalische Verhalten auf der Luv-Seite korrekt abgebildet:</p>
+          <ul>
+              <li><b>Luv (Wind zugewandt)</b>: Ist $v_{min} = 0$, so verbleibt der Ankerpunkt am Ursprungsort. Die Konvexe Hülle schließt die Fluggeografie (FG) dadurch automatisch immer lückenlos ein. Ist $v_{min} > 0$ (konstanter Mindestwind), verschiebt sich die gesamte Hüllkurve physikalisch korrekt mit dem Wind. In diesem Fall kann der GRB auf der Luv-Seite den direkten Nahbereich der FG verlassen, da die Drohne während des Falls zwingend abgetrieben wird. Eine künstliche Bindung des GRB an die FG entfällt.</li>
+              <li><b>Lee (Wind abgewandt)</b>: Die Ausdehnung ergibt sich aus der maximalen Distanz $d_{max}$ plus dem originären symmetrischen Puffer $s_{grb}$, aufgefächert über den gesamten Varianz-Kegel $\nu$.</li>
+          </ul>
+          
+          <!-- 10. JSON CONFIGURATION -->
         <h2 id="json_config">⚙️ 10. JSON-Konfiguration (config.json) &amp; Schreibschutz</h2>
         <p>Das Plugin speichert alle globalen Voreinstellungen und Standardwerte in einer externen Konfigurationsdatei namens <code>config.json</code> im Plugin-Verzeichnis. Diese Datei wird beim ersten Start des Plugins automatisch mit LBA-konformen Standardwerten erzeugt und kann manuell oder über den Button in den erweiterten Einstellungen geöffnet werden. Dank des integrierten Schemas (<code>config.schema.json</code>) unterstützen moderne Editoren Auto-Vervollständigung und Echtzeit-Validierung.</p>
 
