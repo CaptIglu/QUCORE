@@ -1562,5 +1562,69 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             self.assertIsInstance(val, (int, float),
                 f"Value at index {i} must be numeric, got {type(val)}")
 
+    # ================================================================
+    # Import Smoke Test
+    # ================================================================
+
+    def test_all_modules_importable(self):
+        """
+        Smoke test: Verify that all QUCORE modules can be imported without errors.
+        Catches missing mock symbols, circular imports, and broken import chains.
+        """
+        import importlib
+        modules = [
+            'QUCORE.buffer_calculator',
+            'QUCORE.config_manager',
+            'QUCORE.translation_manager',
+            'QUCORE.importer_exporter',
+            'QUCORE.report_generator',
+            'QUCORE.parameter_dialog',
+            'QUCORE.altitude_table_dialog',
+            'QUCORE.advanced_settings_dialog',
+            'QUCORE.export_settings_dialog',
+            'QUCORE.vlos_calculator_dialog',
+            'QUCORE.sora_volume_widget',
+            'QUCORE.map_tools',
+            'QUCORE.zonal_stats_calculator',
+            'QUCORE.plugin',
+            'QUCORE.asymmetric_buffer_winddrift_dialog',
+        ]
+        for mod_name in modules:
+            with self.subTest(module=mod_name):
+                try:
+                    importlib.import_module(mod_name)
+                except ImportError as e:
+                    self.fail(f"Failed to import {mod_name}: {e}")
+
+    # ================================================================
+    # QGIS Plugin Contract Guard
+    # ================================================================
+
+    def test_plugin_qgis_contract(self):
+        """
+        Verify that DroneCorridorPlanner fulfills the QGIS plugin contract:
+        - __init__(self, iface) with exactly 2 parameters
+        - initGui() method exists and is callable
+        - unload() method exists and is callable
+        """
+        from QUCORE.plugin import DroneCorridorPlanner
+        import inspect
+
+        # Check __init__ signature
+        sig = inspect.signature(DroneCorridorPlanner.__init__)
+        param_names = list(sig.parameters.keys())
+        self.assertEqual(param_names, ['self', 'iface'],
+            f"__init__ signature must be (self, iface), got {param_names}")
+
+        # Check required methods exist
+        self.assertTrue(hasattr(DroneCorridorPlanner, 'initGui'),
+            "Plugin must have initGui method")
+        self.assertTrue(callable(getattr(DroneCorridorPlanner, 'initGui')),
+            "initGui must be callable")
+        self.assertTrue(hasattr(DroneCorridorPlanner, 'unload'),
+            "Plugin must have unload method")
+        self.assertTrue(callable(getattr(DroneCorridorPlanner, 'unload')),
+            "unload must be callable")
+
 if __name__ == "__main__":
     unittest.main()
