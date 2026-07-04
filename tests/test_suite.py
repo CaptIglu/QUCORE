@@ -53,6 +53,9 @@ class RealMockQgsGeometry:
         return self
     def transform(self, *args):
         pass
+    def translate(self, dx, dy):
+        """Mock: Wind drift translate — does nothing geometrically but must not crash."""
+        pass
     @staticmethod
     def fromPolygonXY(*args):
         return RealMockQgsGeometry(empty=False)
@@ -62,6 +65,12 @@ class RealMockQgsGeometry:
     @staticmethod
     def unaryUnion(*args):
         return RealMockQgsGeometry(empty=False)
+    @staticmethod
+    def collectGeometry(geom_list):
+        """Mock: Collects geometries into a GeometryCollection for convexHull."""
+        res = RealMockQgsGeometry(empty=False)
+        res._area = sum(getattr(g, '_area', 0.0) for g in geom_list)
+        return res
 
 class RealMockQgsPointXY:
     def __init__(self, x=0.0, y=0.0):
@@ -344,7 +353,11 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             "parachuteOpeningTimeGRB": 2.0,
             "parachuteDescentRate": 2.0,
             "additionalErrorLateral": 0.0,
-            "additionalErrorVertical": 0.0
+            "additionalErrorVertical": 0.0,
+            "enableAsymmetricBufferWinddrift": False,
+            "windDirection": 0.0,
+            "windDirectionVariance": 15.0,
+            "minWindVelocity": 0.0
         }
 
     def test_tc1_fixed_wing_parachute_manoeuvres_and_parachute_grb(self):
@@ -1419,6 +1432,135 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         
         # Verify label results was cleared
         planner.lbl_results.setText.assert_called_once()
+
+    # ================================================================
+    # Wind Drift / Asymmetric Buffer Tests
+    # ================================================================
+
+    def test_wind_drift_disabled_returns_zero_drift(self):
+        """
+        Verify that d_min and d_max are 0.0 when enableAsymmetricBufferWinddrift is False.
+        """
+        params = self.base_params.copy()
+        params["enableAsymmetricBufferWinddrift"] = False
+        params["groundRiskBufferMethod"] = "Parachute"
+        params["maxWindVelocity"] = 10.0
+        params["minWindVelocity"] = 3.0
+
+        r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(100.0, params)
+
+        self.assertEqual(d_min, 0.0, "d_min must be 0 when asymmetric is disabled")
+        self.assertEqual(d_max, 0.0, "d_max must be 0 when asymmetric is disabled")
+
+    def test_wind_drift_parachute_calculates_drift_and_reduces_grb(self):
+        """
+        Verify d_max/d_min for Parachute GRB and that s_grb is reduced by the
+        wind portion now handled as a vector.
+
+        Math (FixedWing, Baro, Parachute CV+GRB, v0=20, h=110):
+          h_cv = 110 + 1 + 14 + 28 = 153.0
+          t_fall = h_cv / v_z = 153 / 2 = 76.5
+          d_max = v_max * t_fall = 3.0 * 76.5 = 229.5
+          d_min = v_min * t_fall = 1.0 * 76.5 = 76.5
+          Original s_grb = 20*1 + 3*153/2 = 249.5
+          Reduced s_grb = max(0, 249.5 - 229.5) = 20.0
+          r_grb = r_cv + 20.0 = 92.0 + 20.0 = 112.0
+        """
+        params = self.base_params.copy()
+        params.update({
+            "uas_type": "FixedWing",
+            "altimetry": "Baro",
+            "maxOpsSpeedV0": 20.0,
+            "maxCharacteristicDimension": 3.6,
+            "corridorWidth": 50.0,
+            "lateralContingencyManoeuvreType": "Parachute",
+            "parachuteOpeningTimeLateral": 2.0,
+            "verticalContingencyManoeuvreType": "Parachute",
+            "parachuteOpeningTimeVertical": 2.0,
+            "groundRiskBufferMethod": "Parachute",
+            "parachuteOpeningTimeGRB": 1.0,
+            "maxWindVelocity": 3.0,
+            "minWindVelocity": 1.0,
+            "parachuteDescentRate": 2.0,
+            "enableAsymmetricBufferWinddrift": True,
+        })
+
+        r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(110.0, params)
+
+        # FG and CV stay unchanged
+        self.assertAlmostEqual(r_fg, 25.0, places=4)
+        self.assertAlmostEqual(r_cv, 92.0, places=4)
+        self.assertAlmostEqual(h_cv, 153.0, places=4)
+
+        # Drift distances
+        self.assertAlmostEqual(d_max, 229.5, places=4)
+        self.assertAlmostEqual(d_min, 76.5, places=4)
+
+        # r_grb reduced: r_cv + max(0, 249.5 - 229.5) = 92 + 20 = 112
+        self.assertAlmostEqual(r_grb, 112.0, places=4)
+
+    def test_wind_drift_simplified_method_ignores_wind(self):
+        """
+        Verify that Simplified GRB returns d_min=d_max=0 even when asymmetric is enabled.
+        The Simplified 1:1 rule does not use wind in the standard formulas.
+        """
+        params = self.base_params.copy()
+        params.update({
+            "enableAsymmetricBufferWinddrift": True,
+            "groundRiskBufferMethod": "Simplified",
+            "maxWindVelocity": 15.0,
+            "minWindVelocity": 5.0,
+        })
+
+        r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(100.0, params)
+
+        self.assertEqual(d_min, 0.0, "Simplified should produce no wind drift")
+        self.assertEqual(d_max, 0.0, "Simplified should produce no wind drift")
+
+    def test_wind_drift_ballistic_calculates_drift(self):
+        """
+        Verify d_max for Ballistic GRB with asymmetric enabled.
+        t_fall = sqrt(2 * h_cv / g), d_max = v_max * t_fall
+        """
+        import math
+        params = self.base_params.copy()
+        params.update({
+            "uas_type": "Multikopter",
+            "altimetry": "Baro",
+            "maxOpsSpeedV0": 10.0,
+            "maxCharacteristicDimension": 1.5,
+            "maxPitchAngle": 45.0,
+            "corridorWidth": 50.0,
+            "groundRiskBufferMethod": "Ballistic",
+            "enableAsymmetricBufferWinddrift": True,
+            "maxWindVelocity": 10.0,
+            "minWindVelocity": 2.0,
+        })
+
+        r_fg, r_cv, r_grb, h_cv, d_min, d_max = BufferCalculator.calculate_buffer_widths(100.0, params)
+
+        t_fall = math.sqrt(2.0 * h_cv / 9.81)
+        self.assertAlmostEqual(d_max, 10.0 * t_fall, places=4)
+        self.assertAlmostEqual(d_min, 2.0 * t_fall, places=4)
+
+    # ================================================================
+    # Return Signature Guard
+    # ================================================================
+
+    def test_calculate_buffer_widths_returns_six_values(self):
+        """
+        Guard: Verify that calculate_buffer_widths always returns exactly 6 values.
+        Protects against accidental signature changes.
+        """
+        params = self.base_params.copy()
+        result = BufferCalculator.calculate_buffer_widths(100.0, params)
+
+        self.assertIsInstance(result, tuple, "Must return a tuple")
+        self.assertEqual(len(result), 6,
+            f"Must return exactly 6 values (r_fg, r_cv, r_grb, h_cv, d_min, d_max), got {len(result)}")
+        for i, val in enumerate(result):
+            self.assertIsInstance(val, (int, float),
+                f"Value at index {i} must be numeric, got {type(val)}")
 
 if __name__ == "__main__":
     unittest.main()
