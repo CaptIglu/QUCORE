@@ -3,7 +3,7 @@ import os
 import math
 import uuid
 import tempfile
-from PyQt5.QtCore import Qt, QVariant
+from PyQt5.QtCore import Qt, QVariant, QMetaType
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import (
     QAction,
@@ -1123,13 +1123,14 @@ class DroneCorridorPlanner(object):
         # Special initialization for waypoints to add fields
         exists = self.is_layer_valid(self.lyr_waypoints)
         if not exists:
+            from qgis.core import QMetaType
             self.lyr_waypoints = QgsVectorLayer("Point?crs=EPSG:4326", "Wegpunkte", "memory")
             # Fields
             self.lyr_waypoints.dataProvider().addAttributes([
-                QgsField("index", QVariant.Int),
-                QgsField("altitude", QVariant.Double),
-                QgsField("speed", QVariant.Double),
-                QgsField("fg_width", QVariant.Double)
+                QgsField("index", QMetaType.Int),
+                QgsField("altitude", QMetaType.Double),
+                QgsField("speed", QMetaType.Double),
+                QgsField("fg_width", QMetaType.Double)
             ])
             self.lyr_waypoints.updateFields()
             self.style_point_layer(self.lyr_waypoints, "45,156,219,255", "255,255,255,255", 3.0)
@@ -2424,7 +2425,7 @@ class DroneCorridorPlanner(object):
         adding a hidden 'qucore_state' field to the Wegpunkte layer.
         Returns a tuple: (success_boolean, error_msg_string)
         """
-        from qgis.core import QgsVectorFileWriter, QgsProject, QgsField, QgsFeature, QgsGeometry, QgsVectorLayer
+        from qgis.core import QgsVectorFileWriter, QgsProject, QgsField, QgsFeature, QgsGeometry, QgsVectorLayer, QMetaType
         from PyQt5.QtCore import QVariant
         import os
 
@@ -2440,13 +2441,13 @@ class DroneCorridorPlanner(object):
         # 2. Add the field "qucore_state" temporarily to waypoints memory layer
         dp = self.lyr_waypoints.dataProvider()
         fields = self.lyr_waypoints.fields()
-        state_idx = fields.indexOf("qucore_state")
         
-        if state_idx == -1:
-            dp.addAttributes([QgsField("qucore_state", QVariant.String, len=100000)])
+        if "qucore_state" not in [f.name() for f in fields]:
+            dp.addAttributes([QgsField("qucore_state", QMetaType.QString, len=100000)])
             self.lyr_waypoints.updateFields()
             fields = self.lyr_waypoints.fields()
-            state_idx = fields.indexOf("qucore_state")
+        
+        state_idx = fields.indexOf("qucore_state")
 
         # Set the state JSON attribute on the first feature of Wegpunkte
         self.lyr_waypoints.startEditing()

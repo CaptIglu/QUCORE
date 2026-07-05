@@ -245,6 +245,12 @@ qt_core.Qt = MagicMock()
 qt_core.QRectF = DummyClass
 qt_core.QPointF = DummyClass
 qt_core.QVariant = DummyClass
+
+class MockQMetaType:
+    Int = 2
+    Double = 6
+    QString = 10
+qt_core.QMetaType = MockQMetaType
 qt_core.QUrl = DummyClass
 qt_core.pyqtSignal = MagicMock
 qt_core.QDateTime = DummyClass
