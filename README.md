@@ -1,4 +1,4 @@
-# QUCORE – Flexible Drohnenflugplanung (FG, CV, GRB & AA) in QGIS
+# QUCORE – Flexible Drohnenflugplanung in QGIS (FG, CV, GRB & AA)
 
 🇩🇪 **Deutsch** | 🇬🇧 [**English Version**](#english-version)
 
@@ -20,21 +20,12 @@
 * **Interaktive Routenplanung:** Setze Wegpunkte direkt auf der Karte per Klick.
 * **Echtzeit-Berechnung:** Buffers (FG/CV/GRB) passen sich beim Verschieben von Wegpunkten per Drag-and-Drop sofort an.
 * **Wegpunktspezifische Parameter:** Höhe, Geschwindigkeit und Korridorbreite können für jeden Wegpunkt individuell festgelegt werden.
+* **Asymmetrische Pufferberechnung über Wind-Drift:** Optional: Asymmetrische GRB Berechnung über min/max Windstärke und Windrichtung
 * **SORA-Demografie-Analyse:** Automatische Ermittlung der durchschnittlichen Bevölkerungsdichte im Adjacent Area (AA) sowie Angabe der maximalen Bevölkerungsdichte im Ground Risk Buffer (GRB) zur präzisen Risikobewertung.
 * **VLOS-Rechner & Visualisierung:** Automatische Berechnung und Anzeige der ALOS/DLOS-Reichweite um die Pilotenposition.
 * **Multilingual:** Volle Unterstützung für Deutsch (DE) und Englisch (EN).
 * **Umfangreiche Dateischnittstellen (Import/Export):** Unterstützt KML, .dipul (DIPUL-Standard), SkyDemon (.flightplan), QGroundControl (.plan), MissionPlanner / Ardupilot (.waypoints), GeoJSON, GeoPackage und automatisierte SORA-Word-Dokumente (.docx) inklusive Kartenausschnitt.
 
-### Dateiformate im Vergleich (Matrix)
-
-| Format | Geometrie | Wegpunkt-Höhen | Wegpunkt-Geschw. | Pilotenposition | Berechnungsparameter | Round-Trip fähig? |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| GeoPackage (`.gpkg`) | Ja | Ja | Ja | Ja | Ja | Ja (Vollständig) |
-| GeoJSON (`.geojson`) | Ja | Ja | Ja | Ja | Ja | Ja (Vollständig) |
-| KML (`.kml`) | Ja | Ja | Ja | Ja | Ja | Ja (Vollständig) |
-| dipul (`.dipul`) | Ja | Nur global | Nur global | Ja | Nur global | Eingeschränkt |
-| SkyDemon (`.flightplan`) | Ja | Nur global | Nein | Nein | Nein | Nur Route / Wegpunkte |
-| QGC / Ardupilot (`.plan` / `.waypoints`) | Ja | Ja | Ja | Nein | Nein | Nur Route / Wegpunkte |
 ---
 
 ## Lizenz & Nutzungsbedingungen
@@ -49,11 +40,6 @@ Die Nutzung dieses Plugins für **private und nicht-kommerzielle Zwecke** sowie 
 ### 3. Gewährleistungsausschluss
 Die Software wird ohne Mängelgewähr ("As-Is") zur Verfügung gestellt. Der Autor übernimmt keinerlei Haftung für die Richtigkeit der Berechnungen oder eventuelle Schäden im Betrieb.
 
----
-
-*Entwickelt mit ❤️ für die UAS-Community.*
-
----
 
 <a id="english-version"></a>
 # QUCORE – QGIS variable drone flight planning of FG, CV & GRB (English)
@@ -74,21 +60,12 @@ Die Software wird ohne Mängelgewähr ("As-Is") zur Verfügung gestellt. Der Aut
 * **Interactive Route Planning:** Add waypoints directly on the map with a simple click.
 * **Real-time Calculation:** Safety buffers (FG/CV/GRB) adapt instantly when moving waypoints via drag-and-drop.
 * **Waypoint-specific Parameters:** Altitude, speed, and corridor width can be customized individually for each waypoint.
+* **Asymmetric buffer calculation based on wind drift:** Optional: Asymmetric GRB calculation based on minimum/maximum wind speed and wind direction
 * **SORA Demographic Analysis:** Automatic determination of the average population density in the Adjacent Area (AA) and the maximum population density in the Ground Risk Buffer (GRB) for precise risk assessment.
 * **VLOS Calculator & Visualization:** Automatic calculation and display of the ALOS/DLOS range around the pilot's position.
 * **Multilingual:** Full support for German (DE) and English (EN).
 * **Extensive File Interfaces (Import/Export):** Supports KML, .dipul (DIPUL standard), SkyDemon (.flightplan), QGroundControl (.plan), MissionPlanner / Ardupilot (.waypoints), GeoJSON, GeoPackage, and automated SORA Word documents (.docx) including map clippings.
 
-### File Format Comparison (Matrix)
-
-| Format | Geometry | Waypoint Heights | Waypoint Speeds | Pilot Position | Calculation Params | Round-Trip Capable? |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| GeoPackage (`.gpkg`) | Yes | Yes | Yes | Yes | Yes | Yes (Full) |
-| GeoJSON (`.geojson`) | Yes | Yes | Yes | Yes | Yes | Yes (Full) |
-| KML (`.kml`) | Yes | Yes | Yes | Yes | Yes | Yes (Full) |
-| dipul (`.dipul`) | Yes | Global only | Global only | Yes | Global only | Limited |
-| SkyDemon (`.flightplan`) | Yes | Global only | No | No | No | Route / Waypoints only |
-| QGC / Ardupilot (`.plan` / `.waypoints`) | Yes | Yes | Yes | No | No | Route / Waypoints only |
 ---
 
 ## License & Terms of Use
