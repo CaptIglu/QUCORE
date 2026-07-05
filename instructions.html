@@ -397,6 +397,79 @@
             <li><b><code>.plan</code> (QGroundControl JSON) / <code>.waypoints</code> (MissionPlanner/Ardupilot)</b>: Import- und Export-Schnittstelle speziell für den operativen Drohnenflug. Beim Import werden ausschließlich Wegpunkte (MAVLink Command 16) inkl. Höhe sowie Geschwindigkeitsänderungen (Command 178) ausgelesen. Alle weiteren MAVLink-Kommandos sowie Fence-Definitionen (Command 5001/5002) werden vom System strikt ignoriert, da Containment-Geometrien wie CV und GRB ausschließlich autark in QUCORE berechnet werden.</li>
         </ul>
 
+        <br>
+        <h4>Dateiformate im Vergleich (Matrix)</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Format</th>
+                    <th>Geometrie</th>
+                    <th>Wegpunkt-Höhen</th>
+                    <th>Wegpunkt-Geschw.</th>
+                    <th>Pilotenposition</th>
+                    <th>Berechnungsparameter</th>
+                    <th>Round-Trip fähig?</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>GeoPackage (<code>.gpkg</code>)</td>
+                    <td>Ja</td>
+                    <td>Ja</td>
+                    <td>Ja</td>
+                    <td>Ja</td>
+                    <td>Ja</td>
+                    <td>Ja (Vollständig)</td>
+                </tr>
+                <tr>
+                    <td>GeoJSON (<code>.geojson</code>)</td>
+                    <td>Ja</td>
+                    <td>Ja</td>
+                    <td>Ja</td>
+                    <td>Ja</td>
+                    <td>Ja</td>
+                    <td>Ja (Vollständig)</td>
+                </tr>
+                <tr>
+                    <td>KML (<code>.kml</code>)</td>
+                    <td>Ja</td>
+                    <td>Ja</td>
+                    <td>Ja</td>
+                    <td>Ja</td>
+                    <td>Ja</td>
+                    <td>Ja (Vollständig)</td>
+                </tr>
+                <tr>
+                    <td>dipul (<code>.dipul</code>)</td>
+                    <td>Ja</td>
+                    <td>Nur global</td>
+                    <td>Nur global</td>
+                    <td>Ja</td>
+                    <td>Nur global</td>
+                    <td>Eingeschränkt (Vollständig bei QUCORE-Dateien)</td>
+                </tr>
+                <tr>
+                    <td>SkyDemon (<code>.flightplan</code>)</td>
+                    <td>Ja</td>
+                    <td>Nur global</td>
+                    <td>Nein</td>
+                    <td>Nein</td>
+                    <td>Nein</td>
+                    <td>Nur Route / Wegpunkte</td>
+                </tr>
+                <tr>
+                    <td>QGC / Ardupilot (<code>.plan</code> / <code>.waypoints</code>)</td>
+                    <td>Ja</td>
+                    <td>Ja</td>
+                    <td>Ja</td>
+                    <td>Nein</td>
+                    <td>Nein</td>
+                    <td>Nur Route / Wegpunkte</td>
+                </tr>
+            </tbody>
+        </table>
+        <p style="font-size: 11.5px; color: #7f8c8d; margin-top: 5px;"><i>* Hinweis: GeoPackage, GeoJSON und aus QUCORE exportierte KML-Dateien speichern den 100% exakten Zustand Ihrer Planung (einschließlich aller SORA-Parameter) für die spätere Weiterbearbeitung.</i></p>
+
         <h3>8.2. Aktivierten QGIS Vektor-Layer einlesen</h3>
         <p>Dieses hochentwickelte Feature erlaubt es Ihnen, bestehende Geometriedaten direkt aus einem in QGIS ausgewählten Vektor-Layer (z. B. Shapefile, GeoJSON, GPX oder Geopackage) als Wegpunkte einzulesen. Klicken Sie dazu auf den Button <b>Aktivierten QGIS-Layer einlesen</b> im Hauptpanel oder wählen Sie <b>Datei &gt; Importieren aus aktivem QGIS-Layer...</b> im Menüband.</p>
 

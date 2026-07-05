@@ -25,6 +25,16 @@
 * **Multilingual:** Volle Unterstützung für Deutsch (DE) und Englisch (EN).
 * **Umfangreiche Dateischnittstellen (Import/Export):** Unterstützt KML, .dipul (DIPUL-Standard), SkyDemon (.flightplan), QGroundControl (.plan), MissionPlanner / Ardupilot (.waypoints), GeoJSON, GeoPackage und automatisierte SORA-Word-Dokumente (.docx) inklusive Kartenausschnitt.
 
+### Dateiformate im Vergleich (Matrix)
+
+| Format | Geometrie | Wegpunkt-Höhen | Wegpunkt-Geschw. | Pilotenposition | Berechnungsparameter | Round-Trip fähig? |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| GeoPackage (`.gpkg`) | Ja | Ja | Ja | Ja | Ja | Ja (Vollständig) |
+| GeoJSON (`.geojson`) | Ja | Ja | Ja | Ja | Ja | Ja (Vollständig) |
+| KML (`.kml`) | Ja | Ja | Ja | Ja | Ja | Ja (Vollständig) |
+| dipul (`.dipul`) | Ja | Nur global | Nur global | Ja | Nur global | Eingeschränkt |
+| SkyDemon (`.flightplan`) | Ja | Nur global | Nein | Nein | Nein | Nur Route / Wegpunkte |
+| QGC / Ardupilot (`.plan` / `.waypoints`) | Ja | Ja | Ja | Nein | Nein | Nur Route / Wegpunkte |
 ---
 
 ## Lizenz & Nutzungsbedingungen
@@ -69,6 +79,16 @@ Die Software wird ohne Mängelgewähr ("As-Is") zur Verfügung gestellt. Der Aut
 * **Multilingual:** Full support for German (DE) and English (EN).
 * **Extensive File Interfaces (Import/Export):** Supports KML, .dipul (DIPUL standard), SkyDemon (.flightplan), QGroundControl (.plan), MissionPlanner / Ardupilot (.waypoints), GeoJSON, GeoPackage, and automated SORA Word documents (.docx) including map clippings.
 
+### File Format Comparison (Matrix)
+
+| Format | Geometry | Waypoint Heights | Waypoint Speeds | Pilot Position | Calculation Params | Round-Trip Capable? |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| GeoPackage (`.gpkg`) | Yes | Yes | Yes | Yes | Yes | Yes (Full) |
+| GeoJSON (`.geojson`) | Yes | Yes | Yes | Yes | Yes | Yes (Full) |
+| KML (`.kml`) | Yes | Yes | Yes | Yes | Yes | Yes (Full) |
+| dipul (`.dipul`) | Yes | Global only | Global only | Yes | Global only | Limited |
+| SkyDemon (`.flightplan`) | Yes | Global only | No | No | No | Route / Waypoints only |
+| QGC / Ardupilot (`.plan` / `.waypoints`) | Yes | Yes | Yes | No | No | Route / Waypoints only |
 ---
 
 ## License & Terms of Use
