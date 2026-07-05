@@ -23,7 +23,7 @@
 * **SORA-Demografie-Analyse:** Automatische Ermittlung der durchschnittlichen Bevölkerungsdichte im Adjacent Area (AA) sowie Angabe der maximalen Bevölkerungsdichte im Ground Risk Buffer (GRB) zur präzisen Risikobewertung.
 * **VLOS-Rechner & Visualisierung:** Automatische Berechnung und Anzeige der ALOS/DLOS-Reichweite um die Pilotenposition.
 * **Multilingual:** Volle Unterstützung für Deutsch (DE) und Englisch (EN).
-* **Umfangreiche Exporte:** Unterstützt KML, .dipul (DIPUL-Standard), SkyDemon (.flightplan), GeoJSON, GeoPackage und automatisierte SORA-Word-Dokumente (.docx) inklusive Kartenausschnitt.
+* **Umfangreiche Dateischnittstellen (Import/Export):** Unterstützt KML, .dipul (DIPUL-Standard), SkyDemon (.flightplan), QGroundControl (.plan), MissionPlanner / Ardupilot (.waypoints), GeoJSON, GeoPackage und automatisierte SORA-Word-Dokumente (.docx) inklusive Kartenausschnitt.
 
 ---
 
@@ -67,7 +67,7 @@ Die Software wird ohne Mängelgewähr ("As-Is") zur Verfügung gestellt. Der Aut
 * **SORA Demographic Analysis:** Automatic determination of the average population density in the Adjacent Area (AA) and the maximum population density in the Ground Risk Buffer (GRB) for precise risk assessment.
 * **VLOS Calculator & Visualization:** Automatic calculation and display of the ALOS/DLOS range around the pilot's position.
 * **Multilingual:** Full support for German (DE) and English (EN).
-* **Extensive Exports:** Supports KML, .dipul (DIPUL standard), SkyDemon (.flightplan), GeoJSON, and automated SORA Word documents (.docx) including map clippings.
+* **Extensive File Interfaces (Import/Export):** Supports KML, .dipul (DIPUL standard), SkyDemon (.flightplan), QGroundControl (.plan), MissionPlanner / Ardupilot (.waypoints), GeoJSON, GeoPackage, and automated SORA Word documents (.docx) including map clippings.
 
 ---
 

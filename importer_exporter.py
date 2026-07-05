@@ -50,6 +50,14 @@ class ImporterExporter:
         return GeoJsonHandler.export_geojson(file_path, waypoints, pilot_pos, params, geometry_type)
 
     @staticmethod
+    def import_waypoints(file_path):
+        return ArduPilotHandler.import_waypoints(file_path)
+
+    @staticmethod
+    def import_plan(file_path):
+        return ArduPilotHandler.import_plan(file_path)
+
+    @staticmethod
     def export_plan(file_path, waypoints, pilot_pos, params, geometry_type="Corridor", geofence_type="FG", resolution=8, mp_compat=True):
         return ArduPilotHandler.export_plan(file_path, waypoints, pilot_pos, params, geometry_type, geofence_type, resolution, mp_compat)
 

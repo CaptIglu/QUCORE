@@ -1626,5 +1626,58 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         self.assertTrue(callable(getattr(DroneCorridorPlanner, 'unload')),
             "unload must be callable")
 
+    def test_import_waypoints_success(self):
+        import tempfile
+        from QUCORE.formats.ardupilot_handler import ArduPilotHandler
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.waypoints') as tmp:
+            tmp.write("QGC WPL 110\n")
+            tmp.write("0\t1\t0\t16\t0\t0\t0\t0\t54.0\t7.0\t10.0\t1\n") # Dummy Home
+            tmp.write("1\t0\t3\t178\t1.0\t15.0\t-1.0\t0.0\t54.0\t7.0\t0.0\t1\n") # DO_CHANGE_SPEED
+            tmp.write("2\t0\t3\t16\t0.0\t0.0\t0.0\t0.0\t54.1\t7.1\t20.0\t1\n") # NAV_WAYPOINT
+            tmp_path = tmp.name
+
+        try:
+            waypoints, pilot_pos, width, max_height, params, geom_type, warnings = ArduPilotHandler.import_waypoints(tmp_path)
+            self.assertEqual(len(waypoints), 1)
+            # Waypoint should be (lon, lat, alt, speed, width)
+            # 7.1 is lon, 54.1 is lat, 20.0 is alt, 15.0 is speed (from DO_CHANGE_SPEED)
+            self.assertAlmostEqual(waypoints[0][0], 7.1)
+            self.assertAlmostEqual(waypoints[0][1], 54.1)
+            self.assertAlmostEqual(waypoints[0][2], 20.0)
+            self.assertAlmostEqual(waypoints[0][3], 15.0)
+            self.assertEqual(geom_type, "Corridor")
+        finally:
+            os.unlink(tmp_path)
+
+    def test_import_plan_success(self):
+        import tempfile, json
+        from QUCORE.formats.ardupilot_handler import ArduPilotHandler
+        
+        plan_data = {
+            "fileType": "Plan",
+            "mission": {
+                "items": [
+                    { "command": 178, "params": [1, 25.0, 0, 0, 0, 0, 0] },
+                    { "command": 16, "params": [0, 0, 0, 0, 54.2, 7.2, 30.0] },
+                    { "command": 5001, "params": [0, 0, 0, 0, 54.3, 7.3, 40.0] }, # Fence point to ignore
+                    { "command": 5002, "params": [0, 0, 0, 0, 54.4, 7.4, 40.0] }  # Exclusion fence point to ignore
+                ]
+            }
+        }
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.plan') as tmp:
+            json.dump(plan_data, tmp)
+            tmp_path = tmp.name
+
+        try:
+            waypoints, pilot_pos, width, max_height, params, geom_type, warnings = ArduPilotHandler.import_plan(tmp_path)
+            self.assertEqual(len(waypoints), 1) # Ignore the fence point
+            self.assertAlmostEqual(waypoints[0][0], 7.2)
+            self.assertAlmostEqual(waypoints[0][1], 54.2)
+            self.assertAlmostEqual(waypoints[0][2], 30.0)
+            self.assertAlmostEqual(waypoints[0][3], 25.0)
+            self.assertEqual(geom_type, "Corridor")
+        finally:
+            os.unlink(tmp_path)
+
 if __name__ == "__main__":
     unittest.main()

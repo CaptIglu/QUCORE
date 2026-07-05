@@ -9,6 +9,99 @@ from .utils import unpack_waypoint, tr
 
 class ArduPilotHandler:
     @staticmethod
+    def import_waypoints(file_path):
+        def_spd = float(ConfigManager.get_default('maxOpsSpeedV0'))
+        def_w = float(ConfigManager.get_default('corridorWidth'))
+        def_alt = float(ConfigManager.get_default('maxFlightHeight'))
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            
+        if not lines or not lines[0].startswith("QGC WPL 110"):
+            raise ValueError(tr("error_invalid_waypoints_format", "Ungültiges oder nicht unterstütztes Waypoints-Format (QGC WPL 110 erwartet)."))
+            
+        waypoints = []
+        current_speed = def_spd
+        
+        for line in lines[1:]:
+            parts = line.strip().split('\t')
+            if len(parts) < 12:
+                continue
+                
+            seq = int(parts[0])
+            command = int(parts[3])
+            
+            # Ignore FENCE_POINT (5001) and MAV_CMD_NAV_FENCE_POLYGON_VERTEX_EXCLUSION (5002)
+            if command in [5001, 5002]:
+                continue
+                
+            if command == 178: # DO_CHANGE_SPEED
+                current_speed = float(parts[5])
+            elif command == 16: # NAV_WAYPOINT
+                # Skip sequence 0 which is typically the dummy home position in QGC WPL
+                if seq == 0:
+                    continue
+                lat = float(parts[8])
+                lon = float(parts[9])
+                alt = float(parts[10])
+                waypoints.append((lon, lat, alt, current_speed, def_w))
+                
+        params = {
+            "maxFlightHeight": max((wp[2] for wp in waypoints)) if waypoints else def_alt,
+            "maxOpsSpeedV0": max((wp[3] for wp in waypoints)) if waypoints else def_spd,
+            "maxCommandableSpeedVmax": max((wp[3] for wp in waypoints)) if waypoints else def_spd,
+            "corridorWidth": def_w
+        }
+        
+        return waypoints, None, def_w, params["maxFlightHeight"], params, "Corridor", []
+
+    @staticmethod
+    def import_plan(file_path):
+        def_spd = float(ConfigManager.get_default('maxOpsSpeedV0'))
+        def_w = float(ConfigManager.get_default('corridorWidth'))
+        def_alt = float(ConfigManager.get_default('maxFlightHeight'))
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            
+        if data.get("fileType") != "Plan":
+            raise ValueError(tr("error_invalid_plan_format", "Ungültiges QGC Plan-Format."))
+            
+        mission = data.get("mission", {})
+        items = mission.get("items", [])
+        
+        waypoints = []
+        current_speed = def_spd
+        
+        for item in items:
+            command = item.get("command")
+            
+            # Ignore FENCE_POINT (5001) and 5002
+            if command in [5001, 5002]:
+                continue
+                
+            if command == 178: # DO_CHANGE_SPEED
+                cmd_params = item.get("params", [])
+                if len(cmd_params) > 1:
+                    current_speed = float(cmd_params[1])
+            elif command == 16: # NAV_WAYPOINT
+                cmd_params = item.get("params", [])
+                if len(cmd_params) >= 7:
+                    lat = float(cmd_params[4])
+                    lon = float(cmd_params[5])
+                    alt = float(cmd_params[6])
+                    waypoints.append((lon, lat, alt, current_speed, def_w))
+                    
+        params = {
+            "maxFlightHeight": max((wp[2] for wp in waypoints)) if waypoints else def_alt,
+            "maxOpsSpeedV0": max((wp[3] for wp in waypoints)) if waypoints else def_spd,
+            "maxCommandableSpeedVmax": max((wp[3] for wp in waypoints)) if waypoints else def_spd,
+            "corridorWidth": def_w
+        }
+        
+        return waypoints, None, def_w, params["maxFlightHeight"], params, "Corridor", []
+
+    @staticmethod
     def export_plan(file_path, waypoints, pilot_pos, params, geometry_type="Corridor", geofence_type="FG", resolution=8, mp_compat=True):
         
         # Temporarily set resolution

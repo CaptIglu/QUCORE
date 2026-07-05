@@ -1298,7 +1298,7 @@ class DroneCorridorPlanner(object):
         layout.addWidget(header)
         
         # Table setup
-        table = QTableWidget(5, 7)
+        table = QTableWidget(6, 7)
         table.setObjectName("FormatsTableWidget")
         table.setHorizontalHeaderLabels([
             self.tr("matrix_col_format", "Format"),
@@ -1322,12 +1322,14 @@ class DroneCorridorPlanner(object):
         # Row 2: KML (.kml)
         # Row 3: dipul (.dipul)
         # Row 4: SkyDemon (.flightplan)
+        # Row 5: QGC / Ardupilot (.plan / .waypoints)
         rows_data = [
             ("GeoPackage (.gpkg)", self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes_full", "Ja (Vollständig)")),
             ("GeoJSON (.geojson)", self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes_full", "Ja (Vollständig)")),
             ("KML (.kml)", self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes_full", "Ja (Vollständig)")),
             ("dipul (.dipul)", self.tr("yes", "Ja"), self.tr("global_only", "Nur global"), self.tr("global_only", "Nur global"), self.tr("yes", "Ja"), self.tr("global_only", "Nur global"), self.tr("limited_qucore", "Eingeschränkt (Vollständig bei QUCORE-Dateien)")),
-            ("SkyDemon (.flightplan)", self.tr("yes", "Ja"), self.tr("global_only", "Nur global"), self.tr("no", "Nein"), self.tr("no", "Nein"), self.tr("no", "Nein"), self.tr("route_only", "Nur Route / Wegpunkte"))
+            ("SkyDemon (.flightplan)", self.tr("yes", "Ja"), self.tr("global_only", "Nur global"), self.tr("no", "Nein"), self.tr("no", "Nein"), self.tr("no", "Nein"), self.tr("route_only", "Nur Route / Wegpunkte")),
+            ("QGC / Ardupilot (.plan / .waypoints)", self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("yes", "Ja"), self.tr("no", "Nein"), self.tr("no", "Nein"), self.tr("route_only", "Nur Route / Wegpunkte"))
         ]
         
         for r_idx, row in enumerate(rows_data):
@@ -3274,7 +3276,7 @@ class DroneCorridorPlanner(object):
             self.gui, 
             self.tr("dialog_import_title", "Datei importieren"), 
             last_dir, 
-            self.tr("import_file_filter", "Planungsdateien (*.gpkg *.geojson *.kml *.dipul *.flightplan);;GeoPackage - Voller Zustand (*.gpkg);;GeoJSON - Voller Zustand (*.geojson);;KML Geometriedatei - Voller Zustand (*.kml);;dipul Planungsdatei - Eingeschränkter Zustand (*.dipul);;SkyDemon Flugplan - Nur Route (*.flightplan)")
+            self.tr("import_file_filter", "Planungsdateien (*.gpkg *.geojson *.kml *.dipul *.flightplan *.waypoints *.plan);;GeoPackage - Voller Zustand (*.gpkg);;GeoJSON - Voller Zustand (*.geojson);;KML Geometriedatei - Voller Zustand (*.kml);;dipul Planungsdatei - Eingeschränkter Zustand (*.dipul);;SkyDemon Flugplan - Nur Route (*.flightplan);;QGroundControl Planungsdatei (*.plan);;MissionPlanner / Ardupilot Wegpunkte (*.waypoints)")
         )
         if not file_path:
             return
@@ -3299,6 +3301,18 @@ class DroneCorridorPlanner(object):
                 imported_geom_type = geom_type
             elif file_path.lower().endswith('.geojson'):
                 waypoints, pilot_pos, width, max_height, params, geom_type, warnings = ImporterExporter.import_geojson(file_path)
+                self.waypoints = waypoints
+                self.pilot_pos = pilot_pos
+                self.params.update(params)
+                imported_geom_type = geom_type
+            elif file_path.lower().endswith('.waypoints'):
+                waypoints, pilot_pos, width, max_height, params, geom_type, warnings = ImporterExporter.import_waypoints(file_path)
+                self.waypoints = waypoints
+                self.pilot_pos = pilot_pos
+                self.params.update(params)
+                imported_geom_type = geom_type
+            elif file_path.lower().endswith('.plan'):
+                waypoints, pilot_pos, width, max_height, params, geom_type, warnings = ImporterExporter.import_plan(file_path)
                 self.waypoints = waypoints
                 self.pilot_pos = pilot_pos
                 self.params.update(params)

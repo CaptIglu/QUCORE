@@ -114,7 +114,7 @@ A clean Facade module that delegates all spatial format serialization to specifi
 - `GeoJsonHandler`: Imports/exports GeoJSON formats.
 - `DipulHandler`: Imports/exports `.dipul` JSON schemas.
 - `FlightplanHandler`: Imports/exports SkyDemon `.flightplan` structures.
-- `ArduPilotHandler`: Exports QGroundControl `.plan` and Ardupilot `.waypoints` mission/geofence files.
+- `ArduPilotHandler`: Imports and exports QGroundControl `.plan` and MissionPlanner/Ardupilot `.waypoints` mission files, with explicit filtering of unneeded MAVLink commands and fence exclusions to protect the integrity of QUCORE's generated safety volumes.
 
 ### `map_tools.py`
 Houses `WaypointMapTool`, bridging the QGIS canvas and the presenter without hard dependencies on `plugin.py`. Uses dependency injected callbacks to transmit coordinates.

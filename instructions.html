@@ -394,6 +394,7 @@
             </li>
             <li><b><code>.kml</code> (XML)</b>: Zur Weiterverwendung in Google Earth, Drohnen-GCS oder Webkarten. <b>Premium-Funktion:</b> Exportiert die Flugplanung exakt so, wie sie auf dem Bildschirm definiert wurde (inklusive individueller Flughöhen, Fluggeschwindigkeiten und FG-Breiten pro Wegpunkt). Der Pfad ist in 3D mit <code>relativeToGround</code> modelliert, und die Puffer-Polygone schmiegen sich über <code>clampToGround</code> und <code>tessellate</code> perfekt an das Geländeprofil an. Ein pauschalisierendes Abfragen über den Einstellungsdialog entfällt beim KML-Export vollständig.</li>
             <li><b><code>.flightplan</code> (SkyDemon XML)</b>: Zur direkten Übernahme in die SkyDemon-Navigationssoftware.</li>
+            <li><b><code>.plan</code> (QGroundControl JSON) / <code>.waypoints</code> (MissionPlanner/Ardupilot)</b>: Import- und Export-Schnittstelle speziell für den operativen Drohnenflug. Beim Import werden ausschließlich Wegpunkte (MAVLink Command 16) inkl. Höhe sowie Geschwindigkeitsänderungen (Command 178) ausgelesen. Alle weiteren MAVLink-Kommandos sowie Fence-Definitionen (Command 5001/5002) werden vom System strikt ignoriert, da Containment-Geometrien wie CV und GRB ausschließlich autark in QUCORE berechnet werden.</li>
         </ul>
 
         <h3>8.2. Aktivierten QGIS Vektor-Layer einlesen</h3>

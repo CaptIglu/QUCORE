@@ -1460,8 +1460,8 @@
         "en": "The file '{name}' already exists.\n\nDo you want to overwrite this file? The existing layer group '{group}' in QGIS will be updated."
     },
     "import_file_filter": {
-        "de": "Planungsdateien (*.gpkg *.geojson *.kml *.dipul *.flightplan);;GeoPackage - Voller Zustand (*.gpkg);;GeoJSON - Voller Zustand (*.geojson);;KML Geometriedatei - Voller Zustand (*.kml);;dipul Planungsdatei - Eingeschränkter Zustand (*.dipul);;SkyDemon Flugplan - Nur Route (*.flightplan)",
-        "en": "Planning Files (*.gpkg *.geojson *.kml *.dipul *.flightplan);;GeoPackage - Full State (*.gpkg);;GeoJSON - Full State (*.geojson);;KML Geometry - Full State (*.kml);;dipul Planning - Limited State (*.dipul);;SkyDemon Flightplan - Route Only (*.flightplan)"
+        "de": "Planungsdateien (*.gpkg *.geojson *.kml *.dipul *.flightplan *.waypoints *.plan);;GeoPackage - Voller Zustand (*.gpkg);;GeoJSON - Voller Zustand (*.geojson);;KML Geometriedatei - Voller Zustand (*.kml);;dipul Planungsdatei - Eingeschränkter Zustand (*.dipul);;SkyDemon Flugplan - Nur Route (*.flightplan);;QGroundControl Planungsdatei (*.plan);;MissionPlanner / Ardupilot Wegpunkte (*.waypoints)",
+        "en": "Planning Files (*.gpkg *.geojson *.kml *.dipul *.flightplan *.waypoints *.plan);;GeoPackage - Full State (*.gpkg);;GeoJSON - Full State (*.geojson);;KML Geometry - Full State (*.kml);;dipul Planning - Limited State (*.dipul);;SkyDemon Flightplan - Route Only (*.flightplan);;QGroundControl Plan (*.plan);;MissionPlanner / Ardupilot Waypoints (*.waypoints)"
     },
     "export_file_filter": {
         "de": "GeoPackage - Voller Zustand (*.gpkg);;GeoJSON - Voller Zustand (*.geojson);;KML Geometriedatei - Voller Zustand (*.kml);;dipul Planungsdatei - Eingeschränkter Zustand (*.dipul);;SkyDemon Flugplan - Nur Route (*.flightplan);;QGroundControl Planungsdatei (*.plan);;MissionPlanner / Ardupilot Wegpunkte (*.waypoints);;SORA Dokumentation (*.docx)",
