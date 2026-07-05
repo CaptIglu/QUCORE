@@ -141,6 +141,7 @@ qt_widgets.QGroupBox = MockQWidget
 qt_widgets.QPushButton = MockQWidget
 qt_widgets.QDialogButtonBox = MockQWidget
 qt_widgets.QCheckBox = MockQWidget
+qt_widgets.QLineEdit = MockQWidget
 qt_widgets.QApplication = MagicMock
 class MockQHeaderView:
     Stretch = 1
@@ -236,6 +237,7 @@ qt_gui.QPolygonF = DummyClass
 qt_gui.QPainterPath = DummyClass
 qt_gui.QIcon = DummyClass
 qt_gui.QDesktopServices = DummyClass
+qt_gui.QPixmap = DummyClass
 sys.modules['PyQt5.QtGui'] = qt_gui
 
 qt_core = types.ModuleType("QtCore")
@@ -245,6 +247,8 @@ qt_core.QPointF = DummyClass
 qt_core.QVariant = DummyClass
 qt_core.QUrl = DummyClass
 qt_core.pyqtSignal = MagicMock
+qt_core.QDateTime = DummyClass
+qt_core.QSettings = DummyClass
 sys.modules['PyQt5.QtCore'] = qt_core
 
 # Mock PyQt5.QtXml for standalone tests
