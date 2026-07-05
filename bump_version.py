@@ -7,7 +7,7 @@ def main():
     if "-h" in sys.argv or "--help" in sys.argv:
         print("Usage: python bump_version.py <new_version>")
         print("\nDescription:")
-        print("  Updates the version number in metadata.txt and plugin.py")
+        print("  Updates the version number in metadata.txt and info_dialogs.py")
         print("  to the specified semantic version (e.g. 0.7.2).")
         sys.exit(0)
 
@@ -23,7 +23,6 @@ def main():
         
     script_dir = os.path.dirname(os.path.abspath(__file__))
     metadata_path = os.path.join(script_dir, "metadata.txt")
-    plugin_path = os.path.join(script_dir, "plugin.py")
     
     # 1. Update metadata.txt
     if os.path.exists(metadata_path):
@@ -42,22 +41,24 @@ def main():
         print("Error: metadata.txt not found!")
         sys.exit(1)
         
-    # 2. Update plugin.py
-    if os.path.exists(plugin_path):
-        with open(plugin_path, 'r', encoding='utf-8') as f:
-            plugin_content = f.read()
+    info_dialogs_path = os.path.join(script_dir, "info_dialogs.py")
+    
+    # 2. Update info_dialogs.py
+    if os.path.exists(info_dialogs_path):
+        with open(info_dialogs_path, 'r', encoding='utf-8') as f:
+            dialogs_content = f.read()
             
         # Replace version = self.metadata.get('version', '...')
         pattern = r"(version\s*=\s*self\.metadata\.get\(\s*['\"]version['\"]\s*,\s*['\"])[^'\"]+(['\"]\s*\))"
-        new_plugin, count = re.subn(pattern, r"\g<1>" + new_version + r"\g<2>", plugin_content)
+        new_dialogs, count = re.subn(pattern, r"\g<1>" + new_version + r"\g<2>", dialogs_content)
         if count > 0:
-            with open(plugin_path, 'w', encoding='utf-8', newline='\r\n') as f:
-                f.write(new_plugin)
-            print(f"Updated plugin.py fallback version to {new_version}")
+            with open(info_dialogs_path, 'w', encoding='utf-8', newline='\r\n') as f:
+                f.write(new_dialogs)
+            print(f"Updated info_dialogs.py fallback version to {new_version}")
         else:
-            print("Warning: version fallback pattern not found in plugin.py")
+            print("Warning: version fallback pattern not found in info_dialogs.py")
     else:
-        print("Error: plugin.py not found!")
+        print("Error: info_dialogs.py not found!")
         sys.exit(1)
         
     print("Version bump completed successfully!")
