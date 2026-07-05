@@ -1123,7 +1123,6 @@ class DroneCorridorPlanner(object):
         # Special initialization for waypoints to add fields
         exists = self.is_layer_valid(self.lyr_waypoints)
         if not exists:
-            from qgis.core import QMetaType
             self.lyr_waypoints = QgsVectorLayer("Point?crs=EPSG:4326", "Wegpunkte", "memory")
             # Fields
             self.lyr_waypoints.dataProvider().addAttributes([
@@ -2425,7 +2424,7 @@ class DroneCorridorPlanner(object):
         adding a hidden 'qucore_state' field to the Wegpunkte layer.
         Returns a tuple: (success_boolean, error_msg_string)
         """
-        from qgis.core import QgsVectorFileWriter, QgsProject, QgsField, QgsFeature, QgsGeometry, QgsVectorLayer, QMetaType
+        from qgis.core import QgsVectorFileWriter, QgsProject, QgsField, QgsFeature, QgsGeometry, QgsVectorLayer
         from PyQt5.QtCore import QVariant
         import os
 
