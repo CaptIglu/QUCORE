@@ -409,7 +409,7 @@ class AdvancedSettingsDialog(QDialog):
             
             self.spin_lw_fg.setValue(ConfigManager.get_param(self.config_params, "linewidth_fg"))
             self.update_color_button(self.btn_col_fg, ConfigManager.get_param(self.config_params, "color_fg"))
-            self.spin_op_fg.setValue(ConfigManager.get_param(self.config_params, "opacity_fg"))
+            self.spin_op_fg.setValue(int(ConfigManager.get_param(self.config_params, "opacity_fg")))
             
             self.spin_lw_cv.setValue(ConfigManager.get_param(self.config_params, "linewidth_cv"))
             self.update_color_button(self.btn_col_cv, ConfigManager.get_param(self.config_params, "color_cv"))
