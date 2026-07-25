@@ -1,21 +1,16 @@
 QUCORE - QGIS UAS Corridor Outlining & Routing Engine
-Copyright (c) 2026 QUCORE-Entwickler (https://github.com/CaptIglu)
+Copyright (C) 2026 Tim Strohbach (tim.strohbach  [at] gmx.de)
 
-Nutzungsvereinbarung (End-User License Agreement)
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
 
-1. Private und nicht-kommerzielle Nutzung:
-Die private, akademische und nicht-kommerzielle Nutzung dieser Software ist kostenfrei gestattet. 
-Modifikationen für den privaten Gebrauch sind erlaubt. Das Erstellen von Forks (Abspaltungen) 
-zu kommerziellen Zwecken oder der Weiterverkauf der Software ist strengstens untersagt.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-2. Kommerzielle Nutzung (Testphase):
-Gewerbliche und kommerzielle Nutzer dürfen diese Software für einen Zeitraum von maximal 
-einem (1) Monat ab Installation kostenfrei zu Evaluationszwecken testen.
-
-3. Kommerzielle Nutzung (nach der Testphase):
-Für eine Weiternutzung nach Ablauf der einmonatigen Testphase ist eine kommerzielle Lizenz 
-erforderlich. Bitte kontaktieren Sie den Autor unter tim.strohbach [at] gmx.de für eine entsprechende Lizenzierung.
-
-4. Gewährleistungsausschluss:
-DIE SOFTWARE WIRD "AS IS" (WIE BESEHEN) UND OHNE JEGLICHE GARANTIE ODER GEWÄHRLEISTUNG GELIEFERT. 
-DER AUTOR ÜBERNIMMT KEINE HAFTUNG FÜR SCHÄDEN, DIE DURCH DIE NUTZUNG DIESER SOFTWARE ENTSTEHEN.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.

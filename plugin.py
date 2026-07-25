@@ -728,15 +728,23 @@ class DroneCorridorPlanner(object):
             is_commercial_unlocked = True
             
         if hasattr(self, 'lbl_trial_warning'):
-            if days_since_install > 30 and not is_commercial_unlocked:
+            if is_commercial_unlocked:
+                self.lbl_trial_warning.setText(
+                    "<div style='color: #2c3e50; font-size: 10px; font-weight: normal; margin-top: 4px; text-align: center;'>"
+                    + self.tr("license_supporter_active", "Registrierter Commercial Supporter") +
+                    "</div>"
+                )
+                self.lbl_trial_warning.setVisible(True)
+            elif days_since_install > 30:
                 self.lbl_trial_warning.setText(
                     "<div style='color: #eb5757; font-size: 10px; font-weight: bold; margin-top: 4px; text-align: center;'>"
-                    + self.tr("license_expired_warning", "⚠️ Testphase für kommerzielle Nutzung abgelaufen (Kommerzielle Nutzung erfordert eine Lizenz. Die private Nutzung ist weiterhin gestattet. Support: tim.strohbach@gmx.de)") +
+                    + self.tr("license_expired_warning", "Kommerzielle Nutzung? Unterstütze mit einer Commercial Supporter License (Major-Version-Lizenz, Rechnung inklusive).") +
                     "</div>"
                 )
                 self.lbl_trial_warning.setVisible(True)
             else:
                 self.lbl_trial_warning.setVisible(False)
+
             
         self.apply_translations()
         self.update_undo_redo_buttons()

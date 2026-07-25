@@ -40,7 +40,7 @@ class AboutDialog(QDialog):
         title_layout.setSpacing(4)
         
         name = self.metadata.get('name', 'QUCORE (Variable UAS Corridor Planning)')
-        version = self.metadata.get('version', '0.8.5')
+        version = self.metadata.get('version', '0.9.0')
         
         lbl_name = QLabel(f'<span style="font-size: 16px; font-weight: bold; color: #2c3e50;">{name}</span>')
         lbl_version = QLabel(f'<span style="font-size: 12px; color: #7f8c8d; font-weight: 500;">Version {version}</span>')
@@ -54,20 +54,13 @@ class AboutDialog(QDialog):
         
         layout.addLayout(header_layout)
         
-        # Description / About text
-        description = self.metadata.get('description', '')
-        about = self.metadata.get('about', '')
-        
-        desc_html = f"""
-        <div style="font-size: 11.5px; line-height: 1.5; color: #2c3e50;">
-            <p style="margin-bottom: 8px;">{description}</p>
-            <p style="margin-top: 0px; margin-bottom: 0px;">{about}</p>
-        </div>
-        """
-        lbl_desc = QLabel(desc_html)
-        lbl_desc.setWordWrap(True)
-        lbl_desc.setTextFormat(Qt.RichText)
-        layout.addWidget(lbl_desc)
+        # Subtitle / Short description
+        subtitle_text = self.tr("about_subtitle", "QUCORE – QGIS UAS Corridor Outlining & Routing Engine (GPLv2+ Open Source)")
+        lbl_subtitle = QLabel(f'<div style="font-size: 12px; color: #34495e; font-weight: 500; margin-top: 2px; margin-bottom: 4px;">{subtitle_text}</div>')
+        lbl_subtitle.setWordWrap(True)
+        lbl_subtitle.setTextFormat(Qt.RichText)
+        layout.addWidget(lbl_subtitle)
+
         
         # Metadata Table
         category = self.metadata.get('category', 'Vector')
@@ -122,7 +115,7 @@ class AboutDialog(QDialog):
         layout.addWidget(lbl_table)
         
         # License Group Box (Dynamic Status & Activation Button)
-        self.grp_license = QGroupBox(self.tr("license_status_title", "Lizenzierung und Testzeitraum"))
+        self.grp_license = QGroupBox(self.tr("license_status_title", "Lizenzierung & Commercial Supporter"))
         lay_lic = QHBoxLayout(self.grp_license)
         lay_lic.setContentsMargins(10, 10, 10, 10)
         lay_lic.setSpacing(10)
@@ -142,6 +135,20 @@ class AboutDialog(QDialog):
         # Initialize/update the license UI details
         self.update_license_ui()
         
+        # Aviation Safety & Disclaimer Box
+        tr_disclaimer_title = self.tr('aviation_disclaimer_title', 'Flugsicherheit & Haftungsausschluss')
+        tr_disclaimer_text = self.tr('aviation_disclaimer_text', 'Achtung: QUCORE dient als Unterstützungswerkzeug für die Flugplanung. Die SORA-Berechnungen entbinden den Fernpiloten nicht von der eigenverantwortlichen Prüfung und Einhaltung aller gesetzlichen Vorgaben (EASA/LBA). Nutzung auf eigene Gefahr. Keine Gewährleistung für die Richtigkeit der berechneten Geodaten.')
+        
+        disclaimer_html = f"""
+        <div style="padding: 10px 12px; background-color: #fdf2f2; border-left: 4px solid #e74c3c; border-radius: 4px; color: #555555; font-size: 11px; line-height: 1.4;">
+            <strong style="color: #c0392b;">{tr_disclaimer_title}:</strong> {tr_disclaimer_text}
+        </div>
+        """
+        lbl_disclaimer = QLabel(disclaimer_html)
+        lbl_disclaimer.setWordWrap(True)
+        lbl_disclaimer.setTextFormat(Qt.RichText)
+        layout.addWidget(lbl_disclaimer)
+
         # Compatibility Note
         tr_qgis_compatibility = self.tr('about_qgis_compatibility', 'Entwickelt für QGIS 3.44.10-Solothurn LTR. Nur hier wird die beste Kompatibilität erwartet.')
         tr_note = self.tr('about_note', 'Hinweis')
@@ -184,7 +191,7 @@ class AboutDialog(QDialog):
         if is_commercial_unlocked:
             bg_color = "#e8f8f5"
             border_color = "#2ecc71"
-            title_text = self.tr("license_activated", "Aktiviert (Kommerzielle Lizenz)")
+            title_text = self.tr("license_activated", "Aktiviert (Registrierter Commercial Supporter)")
             
             # Extract email if possible
             display_email = "In Konfigurationsdatei freigeschaltet"
@@ -197,20 +204,20 @@ class AboutDialog(QDialog):
             btn_text = self.tr("btn_change_license_key", "Lizenzschlüssel ändern...")
             status_style = "color: #27ae60; font-weight: bold; font-size: 11px;"
         elif remaining_days < 0:
-            bg_color = "#fdf2f2"
-            border_color = "#ec7063"
-            title_text = self.tr("license_expired", "Abgelaufen (Kommerzielle Lizenz erforderlich)")
-            sub_text = self.tr("license_expired_desc", "Die 30-tägige Testphase für die kommerzielle Nutzung ist abgelaufen (kommerzielle Nutzung erfordert eine Lizenz). Die private Nutzung ist weiterhin gestattet.")
-            btn_text = self.tr("btn_enter_license_key", "Lizenzschlüssel eingeben...")
-            status_style = "color: #c0392b; font-weight: bold; font-size: 11px;"
-        else:
             bg_color = "#fef9e7"
             border_color = "#f39c12"
-            title_text = self.tr("license_not_activated", "Nicht aktiviert (Testphase)")
-            days_str = self.tr("license_days", "{days} Tage").format(days=max(0, remaining_days))
-            sub_text = f"<b>{days_str}</b> von 30 Tagen verbleibend."
+            title_text = self.tr("license_expired", "Empfehlung: Commercial Supporter License")
+            sub_text = self.tr("license_expired_desc", "QUCORE ist Open Source (GPLv2+). Für die gewerbliche Nutzung gibt es die Möglichkeit einer Commercial Supporter License (Major-Version-Lizenz). Kontakt: tim.strohbach  [at] gmx.de")
             btn_text = self.tr("btn_enter_license_key", "Lizenzschlüssel eingeben...")
             status_style = "color: #d35400; font-weight: bold; font-size: 11px;"
+        else:
+            bg_color = "#e8f8f5"
+            border_color = "#3498db"
+            title_text = self.tr("license_not_activated", "Freie Open-Source Software (GPLv2+)")
+            days_str = self.tr("license_days", "{days} Tage").format(days=max(0, remaining_days))
+            sub_text = f"Kostenfrei für private & akademische Nutzung. Testphase für kommerzielle Nutzung (noch <b>{days_str}</b>)."
+            btn_text = self.tr("btn_enter_license_key", "Lizenzschlüssel eingeben...")
+            status_style = "color: #2980b9; font-weight: bold; font-size: 11px;"
             
         license_html = f"""
         <div style="padding: 8px; background-color: {bg_color}; border: 1px solid {border_color}; border-radius: 4px;">
@@ -225,7 +232,7 @@ class AboutDialog(QDialog):
         from .plugin import verify_license_key
         
         dlg = QDialog(self)
-        dlg.setWindowTitle(self.tr("license_prompt_title", "Lizenzschlüssel eingeben"))
+        dlg.setWindowTitle(self.tr("license_prompt_title", "Commercial Supporter Schlüssel eingeben"))
         layout = QVBoxLayout(dlg)
         
         lbl_email = QLabel(self.tr("license_prompt_email", "E-Mail (Registrierter Nutzer):"))
@@ -265,22 +272,23 @@ class AboutDialog(QDialog):
                 QMessageBox.information(
                     self,
                     self.tr("license_success_title", "Aktivierung erfolgreich"),
-                    self.tr("license_success_text", "Lizenz erfolgreich aktiviert! Vielen Dank für die Unterstützung von QUCORE.")
+                    self.tr("license_success_text", "Commercial Supporter License erfolgreich aktiviert! Vielen Dank für die Unterstützung von QUCORE.")
                 )
                 
                 # Refresh our dialog UI
                 self.update_license_ui()
                 
                 # Refresh the main plugin panel if it exists!
-                if hasattr(self.plugin, 'lbl_trial_warning') and self.plugin.lbl_trial_warning:
-                    self.plugin.lbl_trial_warning.setVisible(False)
+                if hasattr(self.plugin, 'update_trial_warning'):
+                    self.plugin.update_trial_warning()
             else:
                 # Show error message
                 QMessageBox.warning(
                     self,
                     self.tr("license_invalid_title", "Ungültiger Lizenzschlüssel"),
-                    self.tr("license_invalid_text", "Ungültiger Lizenzschlüssel oder falsche E-Mail-Adresse. Wenden Sie sich bei Fragen an tim.strohbach@gmx.de.")
+                    self.tr("license_invalid_text", "Ungültiger Lizenzschlüssel oder falsche E-Mail-Adresse. Wenden Sie sich bei Fragen an tim.strohbach  [at] gmx.de.")
                 )
+
 
 
 class FormatsInfoDialog(QDialog):

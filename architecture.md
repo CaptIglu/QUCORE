@@ -1,6 +1,6 @@
-# QUCORE QGIS Plugin: Architecture Analysis (v0.8.1)
+# QUCORE QGIS Plugin: Architecture Analysis (v0.9.0)
 
-This document provides a comprehensive analysis of the macro-structure of the **QUCORE** QGIS plugin codebase following the v0.8.1 refactoring cycle. It maps the end-to-end data flow, defines the public interfaces of each module, and demonstrates the Model-View-Presenter (MVP) architecture.
+This document provides a comprehensive analysis of the macro-structure of the **QUCORE** QGIS plugin codebase following the v0.8.5 release cycle. It maps the end-to-end data flow, defines the public interfaces of each module, and demonstrates the Model-View-Presenter (MVP) architecture.
 
 ---
 
@@ -23,6 +23,8 @@ graph TD
     ParamDlg[ParameterDialog]:::view
     AltDlg[AltitudeTableDialog]:::view
     PopDlg[PopulationDensityDialog]:::view
+    WindDlg[AsymmetricBufferWinddriftDialog]:::view
+    InfoDlg[AboutDialog / FormatsInfoDialog <info_dialogs.py>]:::view
     SoraWidget[SoraVolumeWidget]:::view
 
     %% Model Layer (Pure Logic & Data - Decoupled)
@@ -31,7 +33,7 @@ graph TD
     ZonalStats[ZonalStatsCalculator]:::model
     ReportGen[ReportGenerator]:::model
     ImpExp[ImporterExporter Facade]:::model
-    Fmts[formats/ Handlers]:::model
+    Fmts[formats/ Handlers: Kml, GeoJson, Dipul, Flightplan, ArduPilot]:::model
 
     %% External Systems
     Canvas[QGIS Map Canvas]:::ext
@@ -45,9 +47,12 @@ graph TD
     Presenter -->|Read / Write Settings| ConfMgr
     Presenter -->|Initialize / Show| ParamDlg
     Presenter -->|Initialize / Show| AltDlg
+    Presenter -->|Initialize / Show| WindDlg
+    Presenter -->|Initialize / Show| InfoDlg
     
     AltDlg -.->|PyQt Signals Only| Presenter
     ParamDlg -.->|PyQt Signals Only| Presenter
+    WindDlg -.->|PyQt Signals Only| Presenter
     
     Presenter -->|Process Raster Density| ZonalStats
     Presenter -->|Generate Report Document| ReportGen
@@ -69,6 +74,7 @@ The plugin operates on five primary data flows:
    - Geometries are reprojected from WGS84 to local UTM zones (via `get_utm_epsg(lon, lat)`) to eliminate spatial distortion.
    - For `Corridor` geometries, tapered capsules are computed for each segment and immediately reprojected back to WGS84.
    - For `Polygon` geometries, variable segment buffering or uniform shape buffering is performed.
+   - When asymmetric wind drift is enabled, an envelope calculation adjusts the Ground Risk Buffer (GRB) according to wind direction, velocity bounds, and parachute descent rate.
 5. **GUI Update**: The standard geometries (`FG`, `CV`, `GRB`, `AGA`) are pushed to QGIS memory vector layers, styled via color/opacity configurations, and the map canvas refreshes.
 
 ### Flow B: Waypoint Parameterization & Custom Altitudes
@@ -108,13 +114,19 @@ The mathematical engine, completely decoupled from QGIS GUI.
 - `BufferCalculator.calculate_buffer_widths(h, params)`: Calculates buffer radii `(r_fg, r_cv, r_grb, h_cv, d_grb)` for a single flight height $h$ based on the input parameters. It computes an additional asymmetric wind-drift vector `d_grb` to shift the GRB based on wind velocity and parachute fall time.
 - `BufferCalculator.generate_buffers(waypoints, params, geometry_type)`: Generates and returns a tuple of WGS84 geometries: `(fg_geom, cv_geom, grb_geom, aga_geom)`. The GRB geometry applies an asymmetric translation in UTM-space and falls back to a union with FG to limit Luv shrinking.
 
+### `asymmetric_buffer_winddrift_dialog.py`
+Dedicated interactive view component featuring a real-time `WindCompassWidget` for configuring wind velocity bounds, wind direction variance, and parachute descent metrics for asymmetric Ground Risk Buffer calculations.
+
 ### `importer_exporter.py` & `formats/`
-A clean Facade module that delegates all spatial format serialization to specific handler modules.
+A clean Facade module that delegates all spatial format serialization to specific handler modules:
 - `KmlHandler`: Imports/exports standard KML files.
 - `GeoJsonHandler`: Imports/exports GeoJSON formats.
 - `DipulHandler`: Imports/exports `.dipul` JSON schemas.
 - `FlightplanHandler`: Imports/exports SkyDemon `.flightplan` structures.
-- `ArduPilotHandler`: Imports and exports QGroundControl `.plan` and MissionPlanner/Ardupilot `.waypoints` mission files, with explicit filtering of unneeded MAVLink commands and fence exclusions to protect the integrity of QUCORE's generated safety volumes.
+- `ArduPilotHandler`: Imports and exports QGroundControl `.plan` and MissionPlanner / Ardupilot `.waypoints` mission files, with explicit filtering of unneeded MAVLink commands and fence exclusions to protect the integrity of QUCORE's generated safety volumes.
+
+### `info_dialogs.py`
+Contains the static information views (`AboutDialog` and `FormatsInfoDialog`), including license verification UI, trial tracker, and format capability comparison matrix.
 
 ### `map_tools.py`
 Houses `WaypointMapTool`, bridging the QGIS canvas and the presenter without hard dependencies on `plugin.py`. Uses dependency injected callbacks to transmit coordinates.
@@ -124,12 +136,14 @@ Handles Word report serialization and template substitution. Uses a zero-depende
 
 ---
 
-## 4. Resolved Structural Couplings (v0.8.0 Refactoring)
+## 4. Resolved Structural Couplings (v0.8.0 - v0.8.5 Refactoring)
 
-In version 0.8.0, the codebase underwent a massive architectural overhaul to resolve several legacy "God Object" and tight-coupling issues:
+In versions 0.8.0 through 0.8.5, the codebase underwent architectural overhauls to resolve legacy God Object and tight-coupling issues:
 
-1. **Config Decoupling**: Default parameter resolution no longer requires heavy GUI instantiation of `ParameterDialog`. `plugin.py` and `advanced_settings_dialog.py` now query `ConfigManager` directly, cutting overhead during headless testing.
-2. **Dumb Views (Dialog Separation)**: The `AltitudeTableDialog` was completely decoupled from the QGIS Map Canvas. It no longer injects text labels or vertex markers itself; it simply emits native PyQt signals (`sigWaypointFocused`, `sigToggleWaypointLabels`) that the main `DroneCorridorPlanner` presenter intercepts and processes.
-3. **Map Tool Extraction**: `WaypointMapTool` was extracted from the monolithic `plugin.py` into `map_tools.py` using weak references and callback injection to prevent memory leaks and circular dependencies.
-4. **Importer/Exporter Decomposing**: The 1,400+ line `importer_exporter.py` module was broken down into a sleek Facade pattern. The actual parsing logic is now strictly isolated by file extension into the `formats/` sub-package.
-5. **Unified Async Workflows**: The `PopulationDensityDialog` was rewritten to utilize dynamic GUI updates (via `QTableWidget`) and parallel task spawner factories (`create_task`), eliminating hardcoded layouts and unifying analysis across all volumetric zones (AA, GRB, CV, FG).
+1. **Config Decoupling**: Default parameter resolution no longer requires heavy GUI instantiation of `ParameterDialog`. `plugin.py` and `advanced_settings_dialog.py` query `ConfigManager` directly, cutting overhead during headless testing.
+2. **Dumb Views (Dialog Separation)**: `AltitudeTableDialog` and `AsymmetricBufferWinddriftDialog` were completely decoupled from the QGIS Map Canvas. They emit native PyQt signals that the main `DroneCorridorPlanner` presenter intercepts and processes.
+3. **Info Dialog Extraction**: `AboutDialog` and `FormatsInfoDialog` were extracted to `info_dialogs.py`.
+4. **Map Tool Extraction**: `WaypointMapTool` was extracted from `plugin.py` into `map_tools.py` using weak references and callback injection to prevent memory leaks and circular dependencies.
+5. **Importer/Exporter Decomposing**: The monolithic `importer_exporter.py` module was broken down into a Facade pattern. Actual parsing logic is strictly isolated by file extension into the `formats/` sub-package (including `.plan` and `.waypoints`).
+6. **Unified Async Workflows**: `PopulationDensityDialog` utilizes dynamic GUI updates (via `QTableWidget`) and parallel task spawner factories (`create_task`), eliminating hardcoded layouts and unifying analysis across all volumetric zones (AA, GRB, CV, FG).
+

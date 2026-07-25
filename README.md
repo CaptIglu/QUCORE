@@ -20,7 +20,7 @@
 * **Interaktive Routenplanung:** Setze Wegpunkte direkt auf der Karte per Klick.
 * **Echtzeit-Berechnung:** Buffers (FG/CV/GRB) passen sich beim Verschieben von Wegpunkten per Drag-and-Drop sofort an.
 * **Wegpunktspezifische Parameter:** Höhe, Geschwindigkeit und Korridorbreite können für jeden Wegpunkt individuell festgelegt werden.
-* **Asymmetrische Pufferberechnung über Wind-Drift:** Optional: Asymmetrische GRB Berechnung über min/max Windstärke und Windrichtung
+* **Asymmetrische Pufferberechnung über Wind-Drift:** Optional: Asymmetrische GRB Berechnung über min/max Windstärke und Windrichtung.
 * **SORA-Demografie-Analyse:** Automatische Ermittlung der durchschnittlichen Bevölkerungsdichte im Adjacent Area (AA) sowie Angabe der maximalen Bevölkerungsdichte im Ground Risk Buffer (GRB) zur präzisen Risikobewertung.
 * **VLOS-Rechner & Visualisierung:** Automatische Berechnung und Anzeige der ALOS/DLOS-Reichweite um die Pilotenposition.
 * **Multilingual:** Volle Unterstützung für Deutsch (DE) und Englisch (EN).
@@ -28,17 +28,18 @@
 
 ---
 
-## Lizenz & Nutzungsbedingungen
+## Lizenz & Commercial Supporter Modell
 
-### 1. Private & Nicht-kommerzielle Nutzung
-Die Nutzung dieses Plugins für **private und nicht-kommerzielle Zwecke** sowie zu Ausbildungszwecken ist vollständig **kostenfrei**. Du darfst den Code für deinen privaten Gebrauch anpassen.
+### 1. Freie Open-Source Lizenz (GPLv2+)
+QUCORE ist freie Open-Source-Software, lizenziert unter der **GNU General Public License v2.0 oder neuer (GPL-2.0-or-later)**.
 
-### 2. Kommerzielle Nutzung (Unternehmen / Behörden)
-* **Testphase:** Gewerbliche Nutzer dürfen das Plugin für einen Zeitraum von **1 Monat** kostenfrei testen und evaluieren.
-* **Nach der Testphase:** Für eine dauerhafte kommerzielle Nutzung kontaktieren Sie bitte den Autor unter **tim.strohbach [at] gmx.de** für eine entsprechende Lizenzierung. 
+### 2. Commercial Supporter License (Empfehlung für gewerbliche Nutzer)
+Wenn Sie oder Ihr Unternehmen QUCORE kommerziell nutzen und einen geschäftlichen Mehrwert daraus ziehen, bitten wir Sie herzlich, QUCORE als **Commercial Supporter** zu unterstützen.
+* **Gültigkeit:** Gilt jeweils für die gesamte **Major-Version** .
+* **Erwerb & Aktivierung:** Kontaktieren Sie den Autor unter **tim.strohbach  [at] gmx.de** für eine Rechnung und Ihren Freischaltschlüssel. Der Schlüssel entfernt den Hinweistext und schaltet den Status *"Registrierter Commercial Supporter"* frei.
 
-### 3. Gewährleistungsausschluss
-Die Software wird ohne Mängelgewähr ("As-Is") zur Verfügung gestellt. Der Autor übernimmt keinerlei Haftung für die Richtigkeit der Berechnungen oder eventuelle Schäden im Betrieb.
+### 3. Flugsicherheit & Gewährleistungsausschluss
+> **Wichtiger Hinweis:** QUCORE dient als Unterstützungswerkzeug für die Flugplanung. Die berechneten SORA-Puffer entbinden den Fernpiloten und Betreiber nicht von der eigenverantwortlichen Prüfung und Einhaltung aller gesetzlichen Vorgaben der Luftfahrtbehörden (EASA/LBA). **Nutzung auf eigene Gefahr. Keine Gewährleistung für die Richtigkeit der berechneten Geodaten.**
 
 
 <a id="english-version"></a>
@@ -60,7 +61,7 @@ Die Software wird ohne Mängelgewähr ("As-Is") zur Verfügung gestellt. Der Aut
 * **Interactive Route Planning:** Add waypoints directly on the map with a simple click.
 * **Real-time Calculation:** Safety buffers (FG/CV/GRB) adapt instantly when moving waypoints via drag-and-drop.
 * **Waypoint-specific Parameters:** Altitude, speed, and corridor width can be customized individually for each waypoint.
-* **Asymmetric buffer calculation based on wind drift:** Optional: Asymmetric GRB calculation based on minimum/maximum wind speed and wind direction
+* **Asymmetric buffer calculation based on wind drift:** Optional: Asymmetric GRB calculation based on minimum/maximum wind speed and wind direction.
 * **SORA Demographic Analysis:** Automatic determination of the average population density in the Adjacent Area (AA) and the maximum population density in the Ground Risk Buffer (GRB) for precise risk assessment.
 * **VLOS Calculator & Visualization:** Automatic calculation and display of the ALOS/DLOS range around the pilot's position.
 * **Multilingual:** Full support for German (DE) and English (EN).
@@ -68,17 +69,18 @@ Die Software wird ohne Mängelgewähr ("As-Is") zur Verfügung gestellt. Der Aut
 
 ---
 
-## License & Terms of Use
+## License & Commercial Supporter Model
 
-### 1. Private & Non-Commercial Use
-The use of this plugin for **private, academic, and non-commercial purposes** is completely **free of charge**. You are allowed to adapt the code for your private use.
+### 1. Free Open-Source License (GPLv2+)
+QUCORE is free open-source software licensed under the **GNU General Public License v2.0 or later (GPL-2.0-or-later)**. 
 
-### 2. Commercial Use (Companies / Public Authorities)
-* **Trial Period:** Commercial users are allowed to test and evaluate the plugin free of charge for a period of **1 month**.
-* **After the Trial Period:** For permanent commercial use, please contact the author at **tim.strohbach [at] gmx.de** for appropriate licensing.
+### 2. Commercial Supporter License (Recommended for Commercial Users)
+If you or your company use QUCORE commercially and derive value from it, we kindly invite you to support as a **Commercial Supporter**.
+* **Validity:** Valid for the entire **Major Version** release cycle.
+* **Purchase & Activation:** Contact the author at **tim.strohbach  [at] gmx.de** to receive an invoice and your supporter key. Entering the key removes the reminder banner and unlocks the *"Registered Commercial Supporter"* status.
 
-### 3. Disclaimer of Warranty
-The software is provided "as-is" without warranty of any kind. The author assumes no liability for the correctness of the calculations or any damage occurring during operations.
+### 3. Aviation Safety & Disclaimer
+> **Important Notice:** QUCORE serves as a planning support tool. SORA buffer calculations do not exempt remote pilots or operators from independent verification and full compliance with aviation regulations (EASA/LBA). **Use at your own risk. No warranty for the accuracy of calculated spatial data.**
 
 ---
 

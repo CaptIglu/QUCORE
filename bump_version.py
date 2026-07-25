@@ -57,11 +57,21 @@ def main():
             print(f"Updated info_dialogs.py fallback version to {new_version}")
         else:
             print("Warning: version fallback pattern not found in info_dialogs.py")
-    else:
-        print("Error: info_dialogs.py not found!")
-        sys.exit(1)
-        
+    # 3. Update architecture.md
+    arch_path = os.path.join(script_dir, "architecture.md")
+    if os.path.exists(arch_path):
+        with open(arch_path, 'r', encoding='utf-8') as f:
+            arch_content = f.read()
+        new_arch, count = re.subn(r"Architecture Analysis \(v\d+\.\d+\.\d+\)", f"Architecture Analysis (v{new_version})", arch_content)
+        if count > 0:
+            with open(arch_path, 'w', encoding='utf-8', newline='\n') as f:
+                f.write(new_arch)
+            print(f"Updated architecture.md to version v{new_version}")
+        else:
+            print("Warning: Architecture Analysis pattern not found in architecture.md")
+
     print("Version bump completed successfully!")
 
 if __name__ == "__main__":
     main()
+
