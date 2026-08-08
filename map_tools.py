@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import math
 import weakref
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtGui import QColor
 from qgis.gui import QgsMapTool, QgsMapMouseEvent, QgsVertexMarker
 from qgis.core import QgsPointXY
 from .config_manager import ConfigManager
@@ -21,18 +21,18 @@ class WaypointMapTool(QgsMapTool):
         
     def activate(self):
         super(WaypointMapTool, self).activate()
-        self.canvas.setCursor(Qt.CrossCursor)
+        self.canvas.setCursor(Qt.CursorShape.CrossCursor)
         self.update_midpoint_markers()
         
     def deactivate(self):
         super(WaypointMapTool, self).deactivate()
-        self.canvas.setCursor(Qt.ArrowCursor)
+        self.canvas.setCursor(Qt.CursorShape.ArrowCursor)
         self.clear_midpoint_markers()
         
     def clear_midpoint_markers(self):
         """Removes all midpoint markers from the map canvas."""
         if hasattr(self, 'midpoint_markers'):
-            import sip
+            from qgis.PyQt import sip
             for marker_info in self.midpoint_markers:
                 marker = marker_info.get('marker')
                 if marker and not sip.isdeleted(marker):
@@ -104,9 +104,9 @@ class WaypointMapTool(QgsMapTool):
             })
 
     def canvasPressEvent(self, e: QgsMapMouseEvent):
-        if e.button() == Qt.LeftButton:
+        if e.button() == Qt.MouseButton.LeftButton:
             # Check if we clicked close to an existing waypoint (in pixel coordinates)
-            click_pixel = e.pos()
+            click_pixel = e.pixelPoint()
             closest_idx = -1
             min_dist = 15.0 # pixel threshold for drag selection
             
@@ -128,7 +128,7 @@ class WaypointMapTool(QgsMapTool):
                 self.plugin.push_undo() # Push state before dragging
                 self.dragging_idx = closest_idx
                 self.plugin.is_dragging = True
-                self.canvas.setCursor(Qt.ClosedHandCursor)
+                self.canvas.setCursor(Qt.CursorShape.ClosedHandCursor)
                 self.clear_midpoint_markers() # Hide midpoint crosses during active drag
             else:
                 # Check if we clicked close to a midpoint marker
@@ -185,7 +185,7 @@ class WaypointMapTool(QgsMapTool):
                     # Immediately enter drag mode on this new waypoint for fluid UX
                     self.dragging_idx = insert_idx
                     self.plugin.is_dragging = True
-                    self.canvas.setCursor(Qt.ClosedHandCursor)
+                    self.canvas.setCursor(Qt.CursorShape.ClosedHandCursor)
                     self.clear_midpoint_markers() # Hide midpoint crosses during active drag
                     
                     self.plugin.rebuild_and_calculate()
@@ -209,7 +209,7 @@ class WaypointMapTool(QgsMapTool):
                     self.plugin.waypoints.append((pt_wgs.x(), pt_wgs.y(), def_alt, def_spd, def_fg))
                     self.plugin.rebuild_and_calculate()
                 
-        elif e.button() == Qt.RightButton:
+        elif e.button() == Qt.MouseButton.RightButton:
             # Right-click exits waypoint editing mode
             self.plugin.btn_draw_wp.setChecked(False)
             self.canvas.unsetMapTool(self)
@@ -229,7 +229,7 @@ class WaypointMapTool(QgsMapTool):
             self.plugin.rebuild_and_calculate()
         else:
             # Check if hovering near a waypoint
-            hover_pixel = e.pos()
+            hover_pixel = e.pixelPoint()
             hover_idx = -1
             min_dist = 15.0
             
@@ -246,7 +246,7 @@ class WaypointMapTool(QgsMapTool):
                     hover_idx = idx
                     
             if hover_idx != -1:
-                self.canvas.setCursor(Qt.OpenHandCursor)
+                self.canvas.setCursor(Qt.CursorShape.OpenHandCursor)
             else:
                 # Check if hovering near a midpoint marker
                 hover_midpoint = False
@@ -265,22 +265,22 @@ class WaypointMapTool(QgsMapTool):
                             hover_midpoint = True
                             
                 if hover_midpoint:
-                    self.canvas.setCursor(Qt.PointingHandCursor)
+                    self.canvas.setCursor(Qt.CursorShape.PointingHandCursor)
                 else:
-                    self.canvas.setCursor(Qt.CrossCursor)
+                    self.canvas.setCursor(Qt.CursorShape.CrossCursor)
             
     def canvasReleaseEvent(self, e: QgsMapMouseEvent):
-        if e.button() == Qt.LeftButton and self.dragging_idx != -1:
+        if e.button() == Qt.MouseButton.LeftButton and self.dragging_idx != -1:
             # Finish dragging
             self.dragging_idx = -1
             self.plugin.is_dragging = False
-            self.canvas.setCursor(Qt.OpenHandCursor)
+            self.canvas.setCursor(Qt.CursorShape.OpenHandCursor)
             self.plugin.rebuild_and_calculate()
 
     def canvasDoubleClickEvent(self, e: QgsMapMouseEvent):
         """Double-click on a waypoint to delete it."""
-        if e.button() == Qt.LeftButton:
-            click_pixel = e.pos()
+        if e.button() == Qt.MouseButton.LeftButton:
+            click_pixel = e.pixelPoint()
             closest_idx = -1
             min_dist = 15.0
             

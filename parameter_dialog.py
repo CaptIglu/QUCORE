@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtWidgets import (
     QDialog,
     QVBoxLayout,
     QHBoxLayout,
@@ -416,11 +416,11 @@ class ParameterDialog(QDialog):
         # ----------------------------------------------------
         # BUTTONS
         # ----------------------------------------------------
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel | QDialogButtonBox.RestoreDefaults)
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.RestoreDefaults)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         
-        btn_restore = button_box.button(QDialogButtonBox.RestoreDefaults)
+        btn_restore = button_box.button(QDialogButtonBox.StandardButton.RestoreDefaults)
         if btn_restore:
             btn_restore.clicked.connect(self.restore_defaults)
             btn_restore.setText(self.tr("msg_restore_defaults_title", "Standardwerte wiederherstellen"))
@@ -464,7 +464,7 @@ class ParameterDialog(QDialog):
         v0 = self.spin_v0.value()
         vmax = self.spin_vmax.value()
         if v0 > vmax:
-            from PyQt5.QtWidgets import QMessageBox
+            from qgis.PyQt.QtWidgets import QMessageBox
             title = self.tr("msg_speed_ops_vs_cmd_title", "Ungültige Geschwindigkeitseinstellung")
             text = self.tr("msg_speed_ops_vs_cmd_text", "Die maximale Betriebsgeschwindigkeit (v0 = {v0:.1f} m/s) darf nicht größer sein als die maximale kommandierbare Geschwindigkeit (v_max = {vmax:.1f} m/s).\nBitte korrigieren Sie die Werte.").format(v0=v0, vmax=vmax)
             QMessageBox.warning(self, title, text)
@@ -474,7 +474,7 @@ class ParameterDialog(QDialog):
         width = self.spin_corridor_width.value()
         min_width = 3.0 * cd
         if width < min_width:
-            from PyQt5.QtWidgets import QMessageBox
+            from qgis.PyQt.QtWidgets import QMessageBox
             title = self.tr("msg_cd_warning_title", "Einstellung korrigiert")
             text = self.tr("msg_cd_warning_text", "Die Flight Geography Breite ({width:.1f} m) muss mindestens 3-mal so groß wie die Charakteristische Dimension des UAS (CD = {cd:.1f} m, 3x CD = {min_width:.1f} m) sein.\nDie Breite wurde automatisch auf {min_width:.1f} m angepasst.").format(width=width, cd=cd, min_width=min_width)
             QMessageBox.warning(self, title, text)
@@ -483,11 +483,11 @@ class ParameterDialog(QDialog):
         super(ParameterDialog, self).accept()
 
     def restore_defaults(self):
-        from PyQt5.QtWidgets import QMessageBox
+        from qgis.PyQt.QtWidgets import QMessageBox
         title = self.tr("msg_restore_defaults_title", "Standardwerte wiederherstellen")
         text = self.tr("msg_restore_defaults_text", "Möchten Sie wirklich alle Parameter auf die Standardwerte aus der config.json zurücksetzen?")
-        reply = QMessageBox.question(self, title, text, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        if reply == QMessageBox.Yes:
+        reply = QMessageBox.question(self, title, text, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
 
                 
             # Block signals temporarily to prevent redundant calculations during reset

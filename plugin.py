@@ -3,9 +3,9 @@ import os
 import math
 import uuid
 import tempfile
-from PyQt5.QtCore import Qt, QVariant, QMetaType
-from PyQt5.QtGui import QIcon, QColor
-from PyQt5.QtWidgets import (
+from qgis.PyQt.QtCore import Qt, QVariant, QMetaType
+from qgis.PyQt.QtGui import QIcon, QColor
+from qgis.PyQt.QtWidgets import (
     QAction,
     QMessageBox,
     QFileDialog,
@@ -243,7 +243,7 @@ class DroneCorridorPlanner(object):
                 defaults.pop(old_key)
         
         # Check QSettings for license activation to override commercial_unlocked
-        from PyQt5.QtCore import QSettings
+        from qgis.PyQt.QtCore import QSettings
         settings = QSettings()
         saved_key = str(settings.value("QUCORE/license_key", ""))
         
@@ -289,7 +289,7 @@ class DroneCorridorPlanner(object):
         
         # Add Help Action
         self.help_action = QAction(
-            self.iface.mainWindow().style().standardIcon(QStyle.SP_MessageBoxQuestion),
+            self.iface.mainWindow().style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxQuestion),
             self.tr("menu_instructions", "Anleitung / Hilfe..."),
             self.iface.mainWindow()
         )
@@ -466,7 +466,7 @@ class DroneCorridorPlanner(object):
             self.gui = QDialog(self.iface.mainWindow())
             self.gui.setWindowTitle(self.tr("dialog_title", "QUCORE – UAS-Korridorplanung (FG/CV/GRB)"))
             self.gui.resize(330, 580)
-            self.gui.setWindowFlags(Qt.Tool)
+            self.gui.setWindowFlags(Qt.WindowType.Tool)
             
             
             # Close dialog when QGIS is about to quit to prevent blocking modal exit dialogs
@@ -478,8 +478,12 @@ class DroneCorridorPlanner(object):
             layout = QVBoxLayout(self.gui)
             
             # Create a Menu Bar at the top of the dialog
-            from PyQt5.QtWidgets import QMenuBar
+            from qgis.PyQt.QtWidgets import QMenuBar
             self.menu_bar = QMenuBar(self.gui)
+            # On macOS Qt makes menu bars native (moved to the system menu bar) by
+            # default. A Qt.Tool dialog never claims the native bar, so the menus
+            # would be unreachable. Force in-dialog rendering, as on Windows/Linux.
+            self.menu_bar.setNativeMenuBar(False)
             layout.setMenuBar(self.menu_bar)
             
             # File Menu
@@ -565,7 +569,7 @@ class DroneCorridorPlanner(object):
             
             # Header
             self.header_label = QLabel("<b>Drohnen-Sicherheitskorridore</b><br>Kartenbasierte interaktive Planung")
-            self.header_label.setAlignment(Qt.AlignCenter)
+            self.header_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(self.header_label)
             
             # Geometry type dropdown
@@ -580,7 +584,7 @@ class DroneCorridorPlanner(object):
             # Wind-drift active indicator
             self.lbl_winddrift_active = QLabel("Asym. Wind-Drift Pufferberechnung aktiv")
             self.lbl_winddrift_active.setStyleSheet("color: #e67e22; font-size: 10px; font-weight: bold;")
-            self.lbl_winddrift_active.setAlignment(Qt.AlignRight)
+            self.lbl_winddrift_active.setAlignment(Qt.AlignmentFlag.AlignRight)
             layout.addWidget(self.lbl_winddrift_active)
             self.lbl_winddrift_active.setVisible(False)
             
@@ -618,13 +622,13 @@ class DroneCorridorPlanner(object):
             
             self.btn_undo = QPushButton()
             self.btn_undo.setFixedSize(30, 30)
-            self.btn_undo.setIcon(self.gui.style().standardIcon(QStyle.SP_ArrowBack))
+            self.btn_undo.setIcon(self.gui.style().standardIcon(QStyle.StandardPixmap.SP_ArrowBack))
             self.btn_undo.clicked.connect(self.undo)
             lay_wp_row.addWidget(self.btn_undo)
             
             self.btn_redo = QPushButton()
             self.btn_redo.setFixedSize(30, 30)
-            self.btn_redo.setIcon(self.gui.style().standardIcon(QStyle.SP_ArrowForward))
+            self.btn_redo.setIcon(self.gui.style().standardIcon(QStyle.StandardPixmap.SP_ArrowForward))
             self.btn_redo.clicked.connect(self.redo)
             lay_wp_row.addWidget(self.btn_redo)
             
@@ -672,7 +676,7 @@ class DroneCorridorPlanner(object):
             self.lbl_results = QLabel()
             self.lbl_results.setWordWrap(True)
             self.lbl_results.setStyleSheet("font-size: 11px; color: #333; padding: 2px;")
-            self.lbl_results.setTextFormat(Qt.RichText)
+            self.lbl_results.setTextFormat(Qt.TextFormat.RichText)
             lay_results.addWidget(self.lbl_results)
             
             # Sora dynamic visualization widget
@@ -699,24 +703,24 @@ class DroneCorridorPlanner(object):
             
             # Status Label
             self.lbl_status = QLabel()
-            self.lbl_status.setAlignment(Qt.AlignCenter)
+            self.lbl_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(self.lbl_status)
             
             # Trial Warning Label
             self.lbl_trial_warning = QLabel()
-            self.lbl_trial_warning.setAlignment(Qt.AlignCenter)
+            self.lbl_trial_warning.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.lbl_trial_warning.setWordWrap(True)
             layout.addWidget(self.lbl_trial_warning)
             
         # Check trial status and display warning if necessary
-        from PyQt5.QtCore import QSettings, QDateTime
+        from qgis.PyQt.QtCore import QSettings, QDateTime
         settings = QSettings()
         install_date_str = settings.value("QUCORE/install_date", "")
         if not install_date_str:
-            install_date_str = QDateTime.currentDateTime().toString(Qt.ISODate)
+            install_date_str = QDateTime.currentDateTime().toString(Qt.DateFormat.ISODate)
             settings.setValue("QUCORE/install_date", install_date_str)
             
-        install_date = QDateTime.fromString(install_date_str, Qt.ISODate)
+        install_date = QDateTime.fromString(install_date_str, Qt.DateFormat.ISODate)
         days_since_install = install_date.daysTo(QDateTime.currentDateTime())
         
         is_commercial_unlocked = self.params.get("commercial_unlocked", False)
@@ -961,8 +965,8 @@ class DroneCorridorPlanner(object):
         """
         Opens the local HTML help guide in the user's default web browser.
         """
-        from PyQt5.QtCore import QUrl
-        from PyQt5.QtGui import QDesktopServices
+        from qgis.PyQt.QtCore import QUrl
+        from qgis.PyQt.QtGui import QDesktopServices
         
         help_path = os.path.join(self.plugin_dir, "instructions.html")
         if os.path.exists(help_path):
@@ -1005,7 +1009,7 @@ class DroneCorridorPlanner(object):
                 
         from .info_dialogs import AboutDialog
         dlg = AboutDialog(self.gui if self.gui else self.iface.mainWindow(), metadata, self)
-        dlg.exec_()
+        dlg.exec()
 
     def show_formats_info_dialog(self):
         """
@@ -1013,7 +1017,7 @@ class DroneCorridorPlanner(object):
         """
         from .info_dialogs import FormatsInfoDialog
         dlg = FormatsInfoDialog(self.gui if self.gui else self.iface.mainWindow(), self)
-        dlg.exec_()
+        dlg.exec()
 
     def on_geometry_type_changed(self, index):
         types = ["Corridor", "Circle", "Polygon"]
@@ -1119,7 +1123,7 @@ class DroneCorridorPlanner(object):
         self.lyr_fg = self.setup_layer(self.lyr_fg, "Polygon?crs=EPSG:4326", "Flight Geography (FG)", self.style_polygon_layer, hex_to_rgba(color_fg, opacity_fg), hex_to_border_rgba(color_fg), lw_fg)
             
         # 4. Route Centerline
-        self.lyr_route = self.setup_layer(self.lyr_route, "LineString?crs=EPSG:4326", "Flugweg (Mittelachse)", self.style_line_layer, hex_to_border_rgba(color_route), lw_route, Qt.DashLine)
+        self.lyr_route = self.setup_layer(self.lyr_route, "LineString?crs=EPSG:4326", "Flugweg (Mittelachse)", self.style_line_layer, hex_to_border_rgba(color_route), lw_route, Qt.PenStyle.DashLine)
 
         # 5. Adjacent Area (AA)
         self.lyr_aga = self.setup_layer(self.lyr_aga, "Polygon?crs=EPSG:4326", "Adjacent Area (AA)", self.style_aga_layer, color_adj, opacity_adj, lw_aga)
@@ -1134,10 +1138,10 @@ class DroneCorridorPlanner(object):
             self.lyr_waypoints = QgsVectorLayer("Point?crs=EPSG:4326", "Wegpunkte", "memory")
             # Fields
             self.lyr_waypoints.dataProvider().addAttributes([
-                QgsField("index", QMetaType.Int),
-                QgsField("altitude", QMetaType.Double),
-                QgsField("speed", QMetaType.Double),
-                QgsField("fg_width", QMetaType.Double)
+                QgsField("index", QMetaType.Type.Int),
+                QgsField("altitude", QMetaType.Type.Double),
+                QgsField("speed", QMetaType.Type.Double),
+                QgsField("fg_width", QMetaType.Type.Double)
             ])
             self.lyr_waypoints.updateFields()
             self.style_point_layer(self.lyr_waypoints, "45,156,219,255", "255,255,255,255", 3.0)
@@ -1449,7 +1453,7 @@ class DroneCorridorPlanner(object):
         """
         Handles clicks when setting pilot position is active.
         """
-        if button == Qt.LeftButton:
+        if button == Qt.MouseButton.LeftButton:
             pt_wgs = self.transform_to_wgs84(point)
             self.pilot_pos = pt_wgs
             
@@ -1922,7 +1926,7 @@ class DroneCorridorPlanner(object):
         # Connect live preview callback
         dialog.on_change_callback = self.on_parameter_dialog_changed
         
-        if dialog.exec_() == QDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             self.push_undo() # Push state before finalizing accepted changes
             self.on_parameter_dialog_changed(dialog.get_parameters())
         else:
@@ -1985,7 +1989,7 @@ class DroneCorridorPlanner(object):
 
     def open_advanced_settings_dialog(self):
         dialog = AdvancedSettingsDialog(self.gui, self.config_path, ConfigManager.get_param(self.params, "stepSize"), current_params=self.params)
-        if dialog.exec_() == QDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             self.push_undo()
             self.params.update(dialog.get_all_params())
             self.rebuild_and_calculate(force_restyle=True)
@@ -2017,7 +2021,7 @@ class DroneCorridorPlanner(object):
 
         dialog = VlosCalculatorDialog(self.gui, uas_type, cd, current_params=self.params)
         dialog.on_change_callback = on_vlos_changed
-        dialog.exec_()
+        dialog.exec()
 
     def open_population_density_dialog(self):
         # Check if either layer is valid and contains non-empty features
@@ -2055,7 +2059,7 @@ class DroneCorridorPlanner(object):
             lyr_fg=self.lyr_fg, 
             current_params=self.params
         )
-        dialog.exec_()
+        dialog.exec()
 
     def open_asymmetric_buffer_winddrift_dialog(self):
         from .asymmetric_buffer_winddrift_dialog import WindDriftDialog
@@ -2115,7 +2119,7 @@ class DroneCorridorPlanner(object):
         def handle_finished(result):
             self.on_clear_focus()
             self.gui.setEnabled(True)  # Re-enable parent UI
-            if result == QDialog.Accepted:
+            if result == QDialog.DialogCode.Accepted:
                 # Commit changes and add to undo stack
                 self.undo_stack.append(list(original_waypoints))
                 self.redo_stack.clear()
@@ -2178,7 +2182,7 @@ class DroneCorridorPlanner(object):
         
     def on_clear_focus(self):
         if hasattr(self, 'focus_marker') and self.focus_marker:
-            import sip
+            from qgis.PyQt import sip
             if not sip.isdeleted(self.focus_marker):
                 try:
                     if self.canvas and self.canvas.scene():
@@ -2194,9 +2198,9 @@ class DroneCorridorPlanner(object):
             self.gui, 
             self.tr("msg_reset_title", "Planung zurücksetzen"), 
             self.tr("msg_reset_text", "Möchten Sie die gesamte Route, den Piloten und alle berechneten Korridore löschen?"),
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             self.push_undo() # Save state before reset
             # Clear state
             self.waypoints = []
@@ -2216,7 +2220,7 @@ class DroneCorridorPlanner(object):
 
     def import_active_layer(self):
         from qgis.core import QgsWkbTypes, QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsProject, QgsVectorLayer, NULL
-        from PyQt5.QtWidgets import QMessageBox
+        from qgis.PyQt.QtWidgets import QMessageBox
         
         layer = self.iface.activeLayer()
         if not layer or not isinstance(layer, QgsVectorLayer):
@@ -2433,7 +2437,7 @@ class DroneCorridorPlanner(object):
         Returns a tuple: (success_boolean, error_msg_string)
         """
         from qgis.core import QgsVectorFileWriter, QgsProject, QgsField, QgsFeature, QgsGeometry, QgsVectorLayer
-        from PyQt5.QtCore import QVariant
+        from qgis.PyQt.QtCore import QVariant
         import os
 
         if not self.waypoints:
@@ -2450,7 +2454,7 @@ class DroneCorridorPlanner(object):
         fields = self.lyr_waypoints.fields()
         
         if "qucore_state" not in [f.name() for f in fields]:
-            dp.addAttributes([QgsField("qucore_state", QMetaType.QString, len=100000)])
+            dp.addAttributes([QgsField("qucore_state", QMetaType.Type.QString, len=100000)])
             self.lyr_waypoints.updateFields()
             fields = self.lyr_waypoints.fields()
         
@@ -2535,7 +2539,7 @@ class DroneCorridorPlanner(object):
             pts_wgs.append(pts_wgs[0])
             poly_test = QgsGeometry.fromPolygonXY([pts_wgs])
             if poly_test and not poly_test.isGeosValid():
-                from PyQt5.QtWidgets import QMessageBox
+                from qgis.PyQt.QtWidgets import QMessageBox
                 QMessageBox.warning(
                     self.gui,
                     self.tr("msg_self_intersecting_polygon_title", "Ungültige Geometrie"),
@@ -2551,7 +2555,7 @@ class DroneCorridorPlanner(object):
         and adds them permanently to the QGIS project.
         """
         from qgis.core import QgsProject, QgsVectorLayer
-        from PyQt5.QtWidgets import QFileDialog, QMessageBox, QInputDialog
+        from qgis.PyQt.QtWidgets import QFileDialog, QMessageBox, QInputDialog
         
         if not self.waypoints:
             QMessageBox.warning(
@@ -2564,7 +2568,7 @@ class DroneCorridorPlanner(object):
         if not self.check_geometry_validity():
             return
 
-        from PyQt5.QtCore import QDate
+        from qgis.PyQt.QtCore import QDate
         from qgis.core import QgsSettings
         settings = QgsSettings()
         last_dir = settings.value("/QUCORE/last_export_dir", "")
@@ -2590,13 +2594,13 @@ class DroneCorridorPlanner(object):
         settings.setValue("/QUCORE/last_export_dir", os.path.dirname(file_path))
 
         # Ask user for the layer group name, using remembered name from reactivation if available
-        from PyQt5.QtWidgets import QLineEdit
+        from qgis.PyQt.QtWidgets import QLineEdit
         default_group_name = self.last_persistent_group_name if self.last_persistent_group_name else "QUCORE-Persistente_Layer"
         group_name, ok = QInputDialog.getText(
             self.gui,
             self.tr("group_name_dialog_title", "Layer-Gruppe benennen"),
             self.tr("group_name_dialog_label", "Geben Sie einen Namen für die Layer-Gruppe im QGIS-Projekt ein:"),
-            QLineEdit.Normal,
+            QLineEdit.EchoMode.Normal,
             default_group_name
         )
         if not ok:
@@ -2616,9 +2620,9 @@ class DroneCorridorPlanner(object):
                 self.tr("msg_overwrite_confirm_title", "Datei überschreiben?"),
                 self.tr("msg_overwrite_confirm_text", "Die Datei '{name}' existiert bereits.\n\nMöchten Sie diese Datei überschreiben? Die bestehende Layer-Gruppe '{group}' in QGIS wird dabei aktualisiert.")
                     .format(name=os.path.basename(file_path), group=group_name),
-                QMessageBox.Yes | QMessageBox.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
-            if reply != QMessageBox.Yes:
+            if reply != QMessageBox.StandardButton.Yes:
                 return
 
             # Remove layers referencing this GPKG file to avoid lock and duplicate layers
@@ -2754,7 +2758,7 @@ class DroneCorridorPlanner(object):
         to select one for reactivation. Restores the complete planning state
         including all per-waypoint values and calculation parameters.
         """
-        from PyQt5.QtWidgets import QMessageBox, QInputDialog
+        from qgis.PyQt.QtWidgets import QMessageBox, QInputDialog
 
         groups = self.find_reactivatable_groups()
 
@@ -2775,9 +2779,9 @@ class DroneCorridorPlanner(object):
                 self.gui,
                 self.tr("reactivate_confirm_title", "QUCORE Gruppe reaktivieren?"),
                 self.tr("reactivate_confirm_text", "Möchten Sie die Planung aus der Gruppe '{name}' zum Bearbeiten reaktivieren?\n\nDie aktuelle Planung wird dabei ersetzt.").format(name=group_name),
-                QMessageBox.Yes | QMessageBox.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
-            if reply == QMessageBox.Yes:
+            if reply == QMessageBox.StandardButton.Yes:
                 selected_group = groups[0]
         else:
             # Multiple groups – show selection dialog
@@ -2837,7 +2841,7 @@ class DroneCorridorPlanner(object):
         """
         import uuid
         import tempfile
-        from PyQt5.QtCore import QSize
+        from qgis.PyQt.QtCore import QSize
         from qgis.core import (
             QgsRectangle, 
             QgsCoordinateTransform, 
@@ -3044,7 +3048,7 @@ class DroneCorridorPlanner(object):
         if not self.check_geometry_validity():
             return
             
-        from PyQt5.QtCore import QDate
+        from qgis.PyQt.QtCore import QDate
         from qgis.core import QgsSettings
         settings = QgsSettings()
         last_dir = settings.value("/QUCORE/last_export_dir", "")
@@ -3181,7 +3185,7 @@ class DroneCorridorPlanner(object):
         is_qgc_plan = file_path.lower().endswith('.plan')
         is_waypoints_export = file_path.lower().endswith('.waypoints')
         dialog = ExportSettingsDialog(self.gui, default_h, default_spd, default_fg, params=self.params, is_qgc_plan=is_qgc_plan, is_waypoints_export=is_waypoints_export)
-        if dialog.exec_() != QDialog.Accepted:
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return
             
         values = dialog.get_values()
@@ -3276,7 +3280,7 @@ class DroneCorridorPlanner(object):
         if not self.check_geometry_validity():
             return
             
-        from PyQt5.QtCore import QDate
+        from qgis.PyQt.QtCore import QDate
         from qgis.core import QgsSettings
         settings = QgsSettings()
         last_dir = settings.value("/QUCORE/last_export_dir", "")

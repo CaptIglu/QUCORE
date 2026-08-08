@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-from PyQt5.QtCore import Qt, QUrl
-from PyQt5.QtGui import QDesktopServices, QColor
-from PyQt5.QtWidgets import (
+from qgis.PyQt.QtCore import Qt, QUrl
+from qgis.PyQt.QtGui import QDesktopServices, QColor
+from qgis.PyQt.QtWidgets import (
     QDialog,
     QVBoxLayout,
     QHBoxLayout,
@@ -109,13 +109,13 @@ class AdvancedSettingsDialog(QDialog):
         # Add column header label row
         header_layout = QHBoxLayout()
         header_width = QLabel(self.tr("header_lw", "<b>Stärke</b>"))
-        header_width.setAlignment(Qt.AlignCenter)
+        header_width.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_width.setFixedWidth(80)
         header_color = QLabel(self.tr("header_col", "<b>Farbe</b>"))
-        header_color.setAlignment(Qt.AlignCenter)
+        header_color.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_color.setFixedWidth(70)
         header_opac = QLabel(self.tr("header_op", "<b>Deckkraft</b>"))
-        header_opac.setAlignment(Qt.AlignCenter)
+        header_opac.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_opac.setFixedWidth(80)
         
         header_layout.addWidget(header_width)
@@ -251,7 +251,7 @@ class AdvancedSettingsDialog(QDialog):
         self.tabs.addTab(self.tab_general, self.tr("tab_interpolation", "Interpolationsschrittweite"))
         
         # Bottom Dialog Buttons
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
@@ -383,8 +383,8 @@ class AdvancedSettingsDialog(QDialog):
     def restore_defaults(self):
         title = self.tr("msg_restore_defaults_title", "Standardwerte wiederherstellen")
         text = self.tr("msg_restore_defaults_text", "Möchten Sie wirklich alle Parameter auf die Standardwerte aus der config.json zurücksetzen?")
-        reply = QMessageBox.question(self, title, text, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        if reply == QMessageBox.Yes:
+        reply = QMessageBox.question(self, title, text, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
             fresh_config = {}
             if self.config_path and os.path.exists(self.config_path):
                 try:
@@ -466,7 +466,7 @@ class AdvancedSettingsDialog(QDialog):
             h_lay.addWidget(spin_o)
         else:
             dummy = QLabel("N/A")
-            dummy.setAlignment(Qt.AlignCenter)
+            dummy.setAlignment(Qt.AlignmentFlag.AlignCenter)
             dummy.setFixedWidth(80)
             dummy.setStyleSheet("color: #888; font-style: italic;")
             h_lay.addWidget(dummy)

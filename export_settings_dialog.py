@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtWidgets import (
     QDialog,
     QFormLayout,
     QDoubleSpinBox,
@@ -15,15 +15,23 @@ from PyQt5.QtWidgets import (
     QMessageBox
 )
 from .translation_manager import TranslationManager
+from .config_manager import ConfigManager
 
 class ExportSettingsDialog(QDialog):
-    def __init__(self, parent=None, default_height=100.0, default_speed=30.0, default_fg_width=50.0, params=None, is_qgc_plan=False, is_waypoints_export=False):
+    def __init__(self, parent=None, default_height=None, default_speed=None, default_fg_width=None, params=None, is_qgc_plan=False, is_waypoints_export=False):
         super(ExportSettingsDialog, self).__init__(parent)
         self.resize(350, 220)
         self.setModal(True)
         self.params = params if params is not None else {}
         self.is_qgc_plan = is_qgc_plan
         self.is_waypoints_export = is_waypoints_export
+
+        if default_height is None:
+            default_height = float(ConfigManager.get_param(self.params, "maxFlightHeight"))
+        if default_speed is None:
+            default_speed = float(ConfigManager.get_param(self.params, "maxOpsSpeedV0"))
+        if default_fg_width is None:
+            default_fg_width = float(ConfigManager.get_param(self.params, "corridorWidth"))
         
         # Load translations
         # self.tr_strings logic removed in favor of TranslationManager
@@ -58,8 +66,9 @@ class ExportSettingsDialog(QDialog):
         form_layout = QFormLayout()
         
         if not self.is_qgc_plan and not self.is_waypoints_export:
+            h_lim = ConfigManager.get_limit("maxFlightHeight")
             self.spin_height = QDoubleSpinBox()
-            self.spin_height.setRange(0.0, 2000.0)
+            self.spin_height.setRange(h_lim.get("min", 0.0), h_lim.get("max", 2000.0))
             self.spin_height.setDecimals(1)
             self.spin_height.setSingleStep(5.0)
             self.spin_height.setValue(default_height)
@@ -67,8 +76,9 @@ class ExportSettingsDialog(QDialog):
             self.spin_height.setStyleSheet("QDoubleSpinBox { padding: 4px; font-weight: bold; }")
             form_layout.addRow(self.tr("label_export_height", "Konstante Flughöhe (m):"), self.spin_height)
             
+            spd_lim = ConfigManager.get_limit("maxOpsSpeedV0")
             self.spin_speed = QDoubleSpinBox()
-            self.spin_speed.setRange(0.1, 200.0)
+            self.spin_speed.setRange(spd_lim.get("min", 0.1), spd_lim.get("max", 200.0))
             self.spin_speed.setDecimals(1)
             self.spin_speed.setSingleStep(1.0)
             self.spin_speed.setValue(default_speed)
@@ -76,8 +86,9 @@ class ExportSettingsDialog(QDialog):
             self.spin_speed.setStyleSheet("QDoubleSpinBox { padding: 4px; font-weight: bold; }")
             form_layout.addRow(self.tr("label_export_speed", "Konstante Geschwindigkeit (m/s):"), self.spin_speed)
             
+            fg_lim = ConfigManager.get_limit("corridorWidth")
             self.spin_fg_width = QDoubleSpinBox()
-            self.spin_fg_width.setRange(1.0, 5000.0)
+            self.spin_fg_width.setRange(fg_lim.get("min", 1.0), fg_lim.get("max", 5000.0))
             self.spin_fg_width.setDecimals(1)
             self.spin_fg_width.setSingleStep(5.0)
             self.spin_fg_width.setValue(default_fg_width)
@@ -123,7 +134,7 @@ class ExportSettingsDialog(QDialog):
         main_layout.addLayout(form_layout)
         
         # Buttons
-        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
         self.button_box.setStyleSheet("QDialogButtonBox { margin-top: 10px; }")
@@ -147,12 +158,12 @@ class ExportSettingsDialog(QDialog):
                     self.check_mp_compat.isChecked())
 
     def on_geofence_check_changed(self, state):
-        enabled = (state == Qt.Checked)
+        enabled = (state == Qt.CheckState.Checked)
         self.combo_geofence.setEnabled(enabled)
         self.spin_resolution.setEnabled(enabled)
 
     def on_mp_compat_changed(self, state):
-        if state != Qt.Checked:
+        if state != Qt.CheckState.Checked:
             QMessageBox.warning(
                 self,
                 self.tr("warn_mp_compat_title", "Kompatibilitäts-Warnung"),

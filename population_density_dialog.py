@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtGui import QFont
+from qgis.PyQt.QtWidgets import (
     QDialog,
     QVBoxLayout,
     QHBoxLayout,
@@ -122,11 +122,11 @@ class PopulationDensityDialog(QDialog):
         ])
         
         header = self.table_widget.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.Stretch)
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         
         self.table_widget.verticalHeader().setVisible(False)
-        self.table_widget.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table_widget.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table_widget.setAlternatingRowColors(True)
         self.table_widget.setStyleSheet("QTableWidget { background-color: #ffffff; }")
         self.table_widget.setMinimumHeight(160)
@@ -140,11 +140,11 @@ class PopulationDensityDialog(QDialog):
         
         for row, zone_name in enumerate(zones):
             item_zone = QTableWidgetItem(zone_name)
-            item_zone.setFont(QFont("Arial", 9, QFont.Bold))
+            item_zone.setFont(QFont("Arial", 9, QFont.Weight.Bold))
             self.table_widget.setItem(row, 0, item_zone)
             for col in range(1, 5):
                 item = QTableWidgetItem("---")
-                item.setTextAlignment(Qt.AlignCenter)
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.table_widget.setItem(row, col, item)
                 
         results_layout.addWidget(self.table_widget)
@@ -183,7 +183,7 @@ class PopulationDensityDialog(QDialog):
         layout.addWidget(self.lbl_combined_note)
         
         # Bottom Close Button
-        button_box = QDialogButtonBox(QDialogButtonBox.Close)
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
 
@@ -304,7 +304,7 @@ class PopulationDensityDialog(QDialog):
     def check_and_restore_ui(self):
         """Restores cursor and calculation button once all active tasks are completed or failed."""
         if not self.active_tasks:
-            self.setCursor(Qt.ArrowCursor)
+            self.setCursor(Qt.CursorShape.ArrowCursor)
             self.btn_calculate.setEnabled(True)
             self.btn_calculate.setText(self.tr("btn_calculate_pop", "Berechnung starten"))
 
@@ -338,7 +338,7 @@ class PopulationDensityDialog(QDialog):
         self.active_tasks.clear()
         self.btn_calculate.setEnabled(False)
         self.btn_calculate.setText(self.tr("btn_calculating", "Berechnung läuft..."))
-        self.setCursor(Qt.WaitCursor)
+        self.setCursor(Qt.CursorShape.WaitCursor)
         
         # Determine stats enum constants based on QGIS version API
         try:

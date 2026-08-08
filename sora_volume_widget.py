@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from PyQt5.QtWidgets import QWidget
-from PyQt5.QtGui import QPainter, QColor, QPen, QBrush, QFont, QTextDocument
-from PyQt5.QtCore import Qt, QRectF
+from qgis.PyQt.QtWidgets import QWidget
+from qgis.PyQt.QtGui import QPainter, QColor, QPen, QBrush, QFont, QTextDocument
+from qgis.PyQt.QtCore import Qt, QRectF
 
 class SoraVolumeWidget(QWidget):
     def __init__(self, parent=None, tr_fn=None):
@@ -142,7 +142,7 @@ class SoraVolumeWidget(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         
         # Dynamic theme styling based on current QGIS/OS theme
         bg_color = self.palette().color(self.backgroundRole())
@@ -160,9 +160,9 @@ class SoraVolumeWidget(QWidget):
         # Fallback if no waypoints
         if not self.has_data:
             painter.setPen(QPen(header_text_color))
-            painter.setFont(QFont("Arial", 9, QFont.StyleItalic))
+            painter.setFont(QFont("Arial", 9, QFont.Weight.Normal, True))
             waiting_txt = self.tr("viz_waiting", "Warten auf Puffer-Berechnung...")
-            painter.drawText(self.rect(), Qt.AlignCenter, waiting_txt)
+            painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, waiting_txt)
             painter.end()
             return
             
@@ -188,9 +188,9 @@ class SoraVolumeWidget(QWidget):
         
         # 0. Adjacent Area (AA) ( blue dashed ) - Outermost bounding box
         aa_rect = QRectF(10, 5, W - 20, 102.0)
-        aa_pen = QPen(color_aa, 2, Qt.DashLine)
+        aa_pen = QPen(color_aa, 2, Qt.PenStyle.DashLine)
         painter.setPen(aa_pen)
-        painter.setBrush(Qt.NoBrush)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRect(aa_rect)
         
         # Label for AA (moved down to arrow)
@@ -262,10 +262,10 @@ class SoraVolumeWidget(QWidget):
         # =====================================================================
         # DIVIDER TEXT: VERTIKAL (NICHT MASSSTÄBLICH)
         # =====================================================================
-        painter.setFont(QFont("Arial", 8, QFont.Bold))
+        painter.setFont(QFont("Arial", 8, QFont.Weight.Bold))
         painter.setPen(QPen(header_text_color))
         vert_title = self.tr("viz_vertical_title", "Vertikal (nicht maßstäblich)")
-        painter.drawText(QRectF(10, H_half - 12, W - 20, 16), Qt.AlignCenter, vert_title)
+        painter.drawText(QRectF(10, H_half - 12, W - 20, 16), Qt.AlignmentFlag.AlignCenter, vert_title)
         
         # =====================================================================
         # BOTTOM BLOCK: VERTICAL BUFFER LAYERS (DIPUL SCHEMATIC - SPACE OPTIMIZED)

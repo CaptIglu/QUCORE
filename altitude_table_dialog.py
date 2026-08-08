@@ -2,10 +2,10 @@
 import os
 import json
 import math
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QBrush
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtGui import QColor, QBrush
 from .config_manager import ConfigManager
-from PyQt5.QtWidgets import (
+from qgis.PyQt.QtWidgets import (
     QDialog,
     QVBoxLayout,
     QHBoxLayout,
@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (
 )
 from .translation_manager import TranslationManager
 
-from PyQt5.QtCore import pyqtSignal
+from qgis.PyQt.QtCore import pyqtSignal
 
 class AltitudeTableDialog(QDialog):
     sigToggleWaypointLabels = pyqtSignal(bool)
@@ -114,29 +114,29 @@ class AltitudeTableDialog(QDialog):
             
             # 0. Waypoint label item (read-only)
             item_wp = QTableWidgetItem(f"{self.tr('col_wp', 'Wegpunkt')} {idx + 1}")
-            item_wp.setFlags(item_wp.flags() & ~Qt.ItemIsEditable)
+            item_wp.setFlags(item_wp.flags() & ~Qt.ItemFlag.ItemIsEditable)
             item_wp.setForeground(QBrush(QColor(130, 130, 130)))
             self.table.setItem(idx, 0, item_wp)
             
             # 1. Position item (editable, Lat/Lon 5 decimals)
             lat_lon_str = f"{lat:.5f}, {lon:.5f}"
             item_pos = QTableWidgetItem(lat_lon_str)
-            item_pos.setTextAlignment(Qt.AlignCenter)
+            item_pos.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.table.setItem(idx, 1, item_pos)
             
             # 2. Altitude item (editable)
             item_alt = QTableWidgetItem(f"{alt:.1f}")
-            item_alt.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            item_alt.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             self.table.setItem(idx, 2, item_alt)
             
             # 3. Speed item (editable)
             item_spd = QTableWidgetItem(f"{spd:.1f}")
-            item_spd.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            item_spd.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             self.table.setItem(idx, 3, item_spd)
             
             # 4. FG Width item (editable)
             item_fg = QTableWidgetItem(f"{fg:.1f}")
-            item_fg.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            item_fg.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             self.table.setItem(idx, 4, item_fg)
             
         # Initialize total label early so recalculate_distances_and_durations can update it
@@ -166,7 +166,7 @@ class AltitudeTableDialog(QDialog):
         self.table.setColumnWidth(7, target_width)
         
         # Stretch the coordinate column (col 1) to absorb any remaining space beautifully
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         
         self.update_table_editable_states()
         
@@ -198,7 +198,7 @@ class AltitudeTableDialog(QDialog):
         btn_delete_wp.setToolTip(self.tr("btn_delete_wp_tooltip", "Löscht den ausgewählten Wegpunkt (auch per Entf-Taste)."))
         lay_buttons.addWidget(btn_delete_wp)
         
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         lay_buttons.addWidget(button_box)
@@ -218,20 +218,20 @@ class AltitudeTableDialog(QDialog):
             item_alt = self.table.item(r, 2)
             if item_alt:
                 if should_edit:
-                    item_alt.setFlags(item_alt.flags() | Qt.ItemIsEditable)
+                    item_alt.setFlags(item_alt.flags() | Qt.ItemFlag.ItemIsEditable)
                     item_alt.setForeground(QBrush(QColor(0, 0, 0)))
                 else:
-                    item_alt.setFlags(item_alt.flags() & ~Qt.ItemIsEditable)
+                    item_alt.setFlags(item_alt.flags() & ~Qt.ItemFlag.ItemIsEditable)
                     item_alt.setForeground(QBrush(QColor(130, 130, 130)))
                 
             # Column 3 (Speed)
             item_spd = self.table.item(r, 3)
             if item_spd:
                 if should_edit:
-                    item_spd.setFlags(item_spd.flags() | Qt.ItemIsEditable)
+                    item_spd.setFlags(item_spd.flags() | Qt.ItemFlag.ItemIsEditable)
                     item_spd.setForeground(QBrush(QColor(0, 0, 0)))
                 else:
-                    item_spd.setFlags(item_spd.flags() & ~Qt.ItemIsEditable)
+                    item_spd.setFlags(item_spd.flags() & ~Qt.ItemFlag.ItemIsEditable)
                     item_spd.setForeground(QBrush(QColor(130, 130, 130)))
         self.table.blockSignals(False)
 
@@ -241,7 +241,7 @@ class AltitudeTableDialog(QDialog):
             self.lbl_polygon_uniform_warning.setVisible(not checked)
             
         if checked:
-            from PyQt5.QtWidgets import QMessageBox
+            from qgis.PyQt.QtWidgets import QMessageBox
             QMessageBox.warning(
                 self,
                 self.tr("variable_polygon_buffers_warning_title", "Sicherheitsrelevanter Hinweis"),
@@ -266,7 +266,7 @@ class AltitudeTableDialog(QDialog):
         """
         selected_rows = sorted(set(item.row() for item in self.table.selectedItems()), reverse=True)
         if not selected_rows:
-            from PyQt5.QtWidgets import QMessageBox
+            from qgis.PyQt.QtWidgets import QMessageBox
             QMessageBox.information(self, 
                 self.tr("msg_delete_wp_title", "Wegpunkt löschen"),
                 self.tr("msg_delete_wp_no_sel", "Bitte wählen Sie zuerst eine Zeile in der Tabelle aus."))
@@ -341,8 +341,8 @@ class AltitudeTableDialog(QDialog):
             item_dist = self.table.item(r, 8)
             if not item_dist:
                 item_dist = QTableWidgetItem()
-                item_dist.setFlags(item_dist.flags() & ~Qt.ItemIsEditable)
-                item_dist.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                item_dist.setFlags(item_dist.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                item_dist.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
                 item_dist.setForeground(QBrush(QColor(130, 130, 130)))
                 self.table.setItem(r, 8, item_dist)
             item_dist.setText(dist_str)
@@ -372,8 +372,8 @@ class AltitudeTableDialog(QDialog):
             item_dur = self.table.item(r, 9)
             if not item_dur:
                 item_dur = QTableWidgetItem()
-                item_dur.setFlags(item_dur.flags() & ~Qt.ItemIsEditable)
-                item_dur.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                item_dur.setFlags(item_dur.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                item_dur.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
                 item_dur.setForeground(QBrush(QColor(130, 130, 130)))
                 self.table.setItem(r, 9, item_dur)
             item_dur.setText(dur_str)
@@ -436,8 +436,8 @@ class AltitudeTableDialog(QDialog):
         item_cv = self.table.item(row, 5)
         if not item_cv:
             item_cv = QTableWidgetItem()
-            item_cv.setFlags(item_cv.flags() & ~Qt.ItemIsEditable)
-            item_cv.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            item_cv.setFlags(item_cv.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            item_cv.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             item_cv.setForeground(QBrush(QColor(130, 130, 130)))
             self.table.setItem(row, 5, item_cv)
         item_cv.setText(f"{s_cv:.1f}")
@@ -445,8 +445,8 @@ class AltitudeTableDialog(QDialog):
         item_grb = self.table.item(row, 6)
         if not item_grb:
             item_grb = QTableWidgetItem()
-            item_grb.setFlags(item_grb.flags() & ~Qt.ItemIsEditable)
-            item_grb.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            item_grb.setFlags(item_grb.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            item_grb.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             item_grb.setForeground(QBrush(QColor(130, 130, 130)))
             self.table.setItem(row, 6, item_grb)
             
@@ -461,8 +461,8 @@ class AltitudeTableDialog(QDialog):
         item_hcv = self.table.item(row, 7)
         if not item_hcv:
             item_hcv = QTableWidgetItem()
-            item_hcv.setFlags(item_hcv.flags() & ~Qt.ItemIsEditable)
-            item_hcv.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            item_hcv.setFlags(item_hcv.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            item_hcv.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             item_hcv.setForeground(QBrush(QColor(130, 130, 130)))
             self.table.setItem(row, 7, item_hcv)
         item_hcv.setText(f"{h_cv:.1f}")
@@ -507,7 +507,7 @@ class AltitudeTableDialog(QDialog):
                     try:
                         spd_val = float(item_spd.text().replace(',', '.'))
                         if spd_val > max_vel:
-                            from PyQt5.QtWidgets import QMessageBox
+                            from qgis.PyQt.QtWidgets import QMessageBox
                             title = self.tr("msg_speed_limit_title", "Geschwindigkeit überschritten")
                             text = self.tr("msg_speed_limit_text", 
                                            "Die eingegebene Geschwindigkeit ({spd_val:.1f} m/s) darf die maximale "
@@ -516,7 +516,7 @@ class AltitudeTableDialog(QDialog):
                             QMessageBox.warning(self, title, text)
                             item_spd.setText(f"{max_vel:.1f}")
                         elif uas_type == "FixedWing" and spd_val < stall_vel:
-                            from PyQt5.QtWidgets import QMessageBox
+                            from qgis.PyQt.QtWidgets import QMessageBox
                             title = self.tr("msg_stall_limit_title", "Unterschreitung der Stall-Speed")
                             text = self.tr("msg_stall_limit_text", 
                                            "Die eingegebene Geschwindigkeit ({spd_val:.1f} m/s) darf die eingestellte "
@@ -541,7 +541,7 @@ class AltitudeTableDialog(QDialog):
                     try:
                         fg_val = float(item_fg.text().replace(',', '.'))
                         if fg_val < min_fg:
-                            from PyQt5.QtWidgets import QMessageBox
+                            from qgis.PyQt.QtWidgets import QMessageBox
                             title = self.tr("msg_fg_limit_title", "Flight Geography Breite zu gering")
                             text = self.tr("msg_fg_limit_text", 
                                            "Die Flight Geography Breite ({fg_val:.1f} m) muss mindestens 3-mal so groß wie die "
@@ -561,10 +561,10 @@ class AltitudeTableDialog(QDialog):
                 self.on_change_callback()
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_C and (event.modifiers() & Qt.ControlModifier):
+        if event.key() == Qt.Key.Key_C and (event.modifiers() & Qt.KeyboardModifier.ControlModifier):
             self.copy_selection_to_clipboard()
             event.accept()
-        elif event.key() == Qt.Key_Delete:
+        elif event.key() == Qt.Key.Key_Delete:
             self.delete_selected_waypoint()
             event.accept()
         else:

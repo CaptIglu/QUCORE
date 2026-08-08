@@ -1,9 +1,9 @@
 [general]
 name=QUCORE (Variable UAS Corridor Planning)
-qgisMinimumVersion=3.0
-qgisMaximumVersion=3.99
+qgisMinimumVersion=3.38
+qgisMaximumVersion=4.99
 description=QUCORE (QGIS UAS Corridor Outlining & Routing Engine) is a SORA-compliant QGIS Plugin for variable UAS Corridor Planning. Includes Flight Geography (FG), Contingency Volume (CV), and Ground Risk Buffer (GRB) calculations based on official guidelines.
-version=0.9.0
+version=1.0.0
 author=Tim Strohbach
 email=tim.strohbach  [at] gmx.de
 about=Interactive drone route and safety buffer planning tool in QGIS (GPLv2+ Open Source). Free for private & academic use. Commercial users are invited to support via a Commercial Supporter License (€99/user per Major Version). Software provided as planning support - use at your own risk. No warranty for the accuracy of calculated spatial data.

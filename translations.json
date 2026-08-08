@@ -1614,5 +1614,33 @@
   "about_subtitle": {
     "de": "QUCORE – QGIS UAS Corridor Outlining & Routing Engine (GPLv2+ Open Source)",
     "en": "QUCORE – QGIS UAS Corridor Outlining & Routing Engine (GPLv2+ Open Source)"
+  },
+  "license_prompt_email": {
+    "de": "E-Mail (Registrierter Nutzer):",
+    "en": "Email (Registered User):"
+  },
+  "license_prompt_key": {
+    "de": "Lizenzschlüssel (z.B. ABCD-1234-...):",
+    "en": "License Key (e.g. ABCD-1234-...):"
+  },
+  "license_empty_error": {
+    "de": "Bitte E-Mail und Schlüssel eingeben.",
+    "en": "Please enter email and license key."
+  },
+  "msg_import_warnings_title": {
+    "de": "Import mit Warnungen",
+    "en": "Import with Warnings"
+  },
+  "msg_import_warnings_text": {
+    "de": "Der Import war erfolgreich, aber einige Daten wurden aufgrund von Validierungsfehlern (Sicherheitscheck) angepasst oder ignoriert.\nBitte überprüfen Sie das QGIS Message Log für Details.",
+    "en": "Import was successful, but some data was adjusted or skipped due to validation constraints.\nPlease check the QGIS Message Log for details."
+  },
+  "error_calc_terminated_title": {
+    "de": "Berechnung abgebrochen",
+    "en": "Calculation Terminated"
+  },
+  "error_calc_terminated_text": {
+    "de": "Die Zonalstatistik-Berechnung wurde abgebrochen.",
+    "en": "The zonal statistics calculation was terminated."
   }
 }

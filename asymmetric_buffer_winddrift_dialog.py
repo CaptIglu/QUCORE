@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import math
-from PyQt5.QtCore import Qt, pyqtSignal, QRectF, QPointF
-from PyQt5.QtGui import QPainter, QColor, QPen, QFont, QPolygonF, QBrush
-from PyQt5.QtWidgets import (
+from qgis.PyQt.QtCore import Qt, pyqtSignal, QRectF, QPointF
+from qgis.PyQt.QtGui import QPainter, QColor, QPen, QFont, QPolygonF, QBrush
+from qgis.PyQt.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGroupBox,
     QCheckBox, QDoubleSpinBox, QLabel, QPushButton, QWidget
 )
@@ -26,7 +26,7 @@ class WindCompassWidget(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         rect = self.rect()
         side = min(rect.width(), rect.height())
@@ -34,7 +34,7 @@ class WindCompassWidget(QWidget):
         radius = (side / 2.0) - 10.0
         
         # Draw background circle
-        painter.setPen(Qt.NoPen)
+        painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor("#a0a0a0"))
         painter.drawEllipse(center, radius, radius)
         
@@ -75,7 +75,7 @@ class WindCompassWidget(QWidget):
             x = label_radius * math.cos(rad)
             y = label_radius * math.sin(rad)
             text_rect = QRectF(x - 10, y - 10, 20, 20)
-            painter.drawText(text_rect, Qt.AlignCenter, text)
+            painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, text)
             
         # Draw Arrow indicating where the wind blows FROM (Meteorological convention)
         arrow_angle = self.direction
@@ -113,9 +113,9 @@ class WindCompassWidget(QWidget):
             
             pen = QPen(QColor(80, 80, 80)) # dunkelgrau
             pen.setWidth(5)
-            pen.setCapStyle(Qt.RoundCap)
+            pen.setCapStyle(Qt.PenCapStyle.RoundCap)
             painter.setPen(pen)
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
             
             start_angle = int((90 - self.variance) * 16)
             span_angle = int((2 * self.variance) * 16)
@@ -131,13 +131,13 @@ class WindCompassWidget(QWidget):
         painter.setPen(QColor(255, 255, 255))
         
         text_rect_speed = QRectF(-inner_radius, -15.0, inner_radius*2.0, 30.0)
-        painter.drawText(text_rect_speed, Qt.AlignCenter, str(int(self.speed)))
+        painter.drawText(text_rect_speed, Qt.AlignmentFlag.AlignCenter, str(int(self.speed)))
         
         font.setPixelSize(14)
         font.setBold(False)
         painter.setFont(font)
         text_rect_unit = QRectF(-inner_radius, 15.0, inner_radius*2.0, 20.0)
-        painter.drawText(text_rect_unit, Qt.AlignCenter, "m/s")
+        painter.drawText(text_rect_unit, Qt.AlignmentFlag.AlignCenter, "m/s")
 
 
 class WindDriftDialog(QDialog):
@@ -153,7 +153,7 @@ class WindDriftDialog(QDialog):
         
     def init_ui(self):
         layout = QVBoxLayout(self)
-        layout.setSizeConstraint(QVBoxLayout.SetFixedSize)
+        layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetFixedSize)
         
         # Enable Checkbox
         self.chk_enable = QCheckBox(self.tr("wind_drift_enable", "Asymmetrische Wind-Drift Puffer Berechnung aktivieren"))
@@ -187,7 +187,7 @@ class WindDriftDialog(QDialog):
         
         # Compass
         self.compass = WindCompassWidget()
-        lay_settings.addWidget(self.compass, 0, Qt.AlignCenter)
+        lay_settings.addWidget(self.compass, 0, Qt.AlignmentFlag.AlignCenter)
         
         # Controls
         lay_controls = QHBoxLayout()
@@ -251,7 +251,7 @@ class WindDriftDialog(QDialog):
         # GRB Method selection
         lay_grb = QHBoxLayout()
         lbl_grb = QLabel(self.tr("wind_drift_grb_method", "GRB Methode (Terminierung):"))
-        from PyQt5.QtWidgets import QComboBox
+        from qgis.PyQt.QtWidgets import QComboBox
         self.cmb_grb = QComboBox()
         self.cmb_grb.addItems(["Simplified", "Parachute", "Ballistic", "Glide"])
         idx = self.cmb_grb.findText(current_method)
@@ -267,7 +267,7 @@ class WindDriftDialog(QDialog):
         
         layout.addStretch()
         
-        btn_close = QPushButton("Schließen")
+        btn_close = QPushButton(self.tr("btn_close", "Schließen"))
         btn_close.clicked.connect(self.accept)
         layout.addWidget(btn_close)
 

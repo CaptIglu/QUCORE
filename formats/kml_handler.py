@@ -18,7 +18,7 @@ class KmlHandler:
         def_alt = float(ConfigManager.get_default('maxFlightHeight'))
         def_spd = float(ConfigManager.get_default('maxOpsSpeedV0'))
         def_w = float(ConfigManager.get_default('corridorWidth'))
-        from PyQt5.QtXml import QDomDocument
+        from qgis.PyQt.QtXml import QDomDocument
         
         doc = QDomDocument()
         with open(file_path, 'rb') as f:

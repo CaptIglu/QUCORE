@@ -287,15 +287,16 @@ class ArduPilotHandler:
             fence_path = f"{base_path}_Fence-{geofence_type}.waypoints"
             
             orig_res = getattr(BufferCalculator, 'BUFFER_SEGMENTS', 8)
+            mod_name = getattr(BufferCalculator, '__module__', 'buffer_calculator')
             try:
                 import sys
-                if 'QUCORE.buffer_calculator' in sys.modules:
-                    sys.modules['QUCORE.buffer_calculator'].BUFFER_SEGMENTS = resolution
+                if mod_name in sys.modules:
+                    setattr(sys.modules[mod_name], 'BUFFER_SEGMENTS', resolution)
                 BufferCalculator.BUFFER_SEGMENTS = resolution
                 fg_geom, cv_geom, grb_geom, aga_geom = BufferCalculator.generate_buffers(waypoints, params, geometry_type)
             finally:
-                if 'QUCORE.buffer_calculator' in sys.modules:
-                    sys.modules['QUCORE.buffer_calculator'].BUFFER_SEGMENTS = orig_res
+                if mod_name in sys.modules:
+                    setattr(sys.modules[mod_name], 'BUFFER_SEGMENTS', orig_res)
                 BufferCalculator.BUFFER_SEGMENTS = orig_res
 
             if geofence_type == "FG":

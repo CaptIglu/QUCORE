@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QDialogButtonBox, 
+from qgis.PyQt.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QDialogButtonBox, 
                              QTableWidget, QTableWidgetItem, QPushButton, QHeaderView, QGroupBox, QLineEdit, QMessageBox)
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt, QSettings, QDateTime
+from qgis.PyQt.QtGui import QPixmap
+from qgis.PyQt.QtCore import Qt, QSettings, QDateTime
 
 class AboutDialog(QDialog):
     def __init__(self, parent, metadata, plugin):
@@ -32,7 +32,7 @@ class AboutDialog(QDialog):
         icon_path = os.path.join(self.plugin_dir, "icon.png")
         if os.path.exists(icon_path):
             pixmap = QPixmap(icon_path)
-            lbl_icon.setPixmap(pixmap.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            lbl_icon.setPixmap(pixmap.scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         header_layout.addWidget(lbl_icon)
         
         # Title and Version Info
@@ -40,7 +40,7 @@ class AboutDialog(QDialog):
         title_layout.setSpacing(4)
         
         name = self.metadata.get('name', 'QUCORE (Variable UAS Corridor Planning)')
-        version = self.metadata.get('version', '0.9.0')
+        version = self.metadata.get('version', '1.0.0')
         
         lbl_name = QLabel(f'<span style="font-size: 16px; font-weight: bold; color: #2c3e50;">{name}</span>')
         lbl_version = QLabel(f'<span style="font-size: 12px; color: #7f8c8d; font-weight: 500;">Version {version}</span>')
@@ -58,7 +58,7 @@ class AboutDialog(QDialog):
         subtitle_text = self.tr("about_subtitle", "QUCORE – QGIS UAS Corridor Outlining & Routing Engine (GPLv2+ Open Source)")
         lbl_subtitle = QLabel(f'<div style="font-size: 12px; color: #34495e; font-weight: 500; margin-top: 2px; margin-bottom: 4px;">{subtitle_text}</div>')
         lbl_subtitle.setWordWrap(True)
-        lbl_subtitle.setTextFormat(Qt.RichText)
+        lbl_subtitle.setTextFormat(Qt.TextFormat.RichText)
         layout.addWidget(lbl_subtitle)
 
         
@@ -110,7 +110,7 @@ class AboutDialog(QDialog):
         
         lbl_table = QLabel(table_html)
         lbl_table.setWordWrap(True)
-        lbl_table.setTextFormat(Qt.RichText)
+        lbl_table.setTextFormat(Qt.TextFormat.RichText)
         lbl_table.setOpenExternalLinks(True)
         layout.addWidget(lbl_table)
         
@@ -121,14 +121,14 @@ class AboutDialog(QDialog):
         lay_lic.setSpacing(10)
         
         self.lbl_license_status = QLabel()
-        self.lbl_license_status.setTextFormat(Qt.RichText)
+        self.lbl_license_status.setTextFormat(Qt.TextFormat.RichText)
         self.lbl_license_status.setWordWrap(True)
         lay_lic.addWidget(self.lbl_license_status, 1)
         
         self.btn_license = QPushButton()
         self.btn_license.setFixedWidth(180)
         self.btn_license.clicked.connect(self.on_license_button_clicked)
-        lay_lic.addWidget(self.btn_license, 0, Qt.AlignVCenter)
+        lay_lic.addWidget(self.btn_license, 0, Qt.AlignmentFlag.AlignVCenter)
         
         layout.addWidget(self.grp_license)
         
@@ -146,7 +146,7 @@ class AboutDialog(QDialog):
         """
         lbl_disclaimer = QLabel(disclaimer_html)
         lbl_disclaimer.setWordWrap(True)
-        lbl_disclaimer.setTextFormat(Qt.RichText)
+        lbl_disclaimer.setTextFormat(Qt.TextFormat.RichText)
         layout.addWidget(lbl_disclaimer)
 
         # Compatibility Note
@@ -160,11 +160,11 @@ class AboutDialog(QDialog):
         """
         lbl_note = QLabel(note_html)
         lbl_note.setWordWrap(True)
-        lbl_note.setTextFormat(Qt.RichText)
+        lbl_note.setTextFormat(Qt.TextFormat.RichText)
         layout.addWidget(lbl_note)
         
         # Button Box
-        btn_box = QDialogButtonBox(QDialogButtonBox.Ok)
+        btn_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
         btn_box.accepted.connect(self.accept)
         layout.addWidget(btn_box)
 
@@ -181,10 +181,10 @@ class AboutDialog(QDialog):
         # Get trial details
         install_date_str = settings.value("QUCORE/install_date", "")
         if not install_date_str:
-            install_date_str = QDateTime.currentDateTime().toString(Qt.ISODate)
+            install_date_str = QDateTime.currentDateTime().toString(Qt.DateFormat.ISODate)
             settings.setValue("QUCORE/install_date", install_date_str)
             
-        install_date = QDateTime.fromString(install_date_str, Qt.ISODate)
+        install_date = QDateTime.fromString(install_date_str, Qt.DateFormat.ISODate)
         days_since_install = install_date.daysTo(QDateTime.currentDateTime())
         remaining_days = 30 - days_since_install
         
@@ -245,12 +245,12 @@ class AboutDialog(QDialog):
         layout.addWidget(lbl_key)
         layout.addWidget(le_key)
         
-        btn_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        btn_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         btn_box.accepted.connect(dlg.accept)
         btn_box.rejected.connect(dlg.reject)
         layout.addWidget(btn_box)
         
-        if dlg.exec_() == QDialog.Accepted:
+        if dlg.exec() == QDialog.DialogCode.Accepted:
             email = le_email.text().strip()
             key = le_key.text().strip()
             
@@ -322,9 +322,9 @@ class FormatsInfoDialog(QDialog):
         ])
         
         # Style table
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        table.setEditTriggers(QTableWidget.NoEditTriggers)
-        table.setSelectionMode(QTableWidget.NoSelection)
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
         table.setAlternatingRowColors(True)
         
         # Data Rows
@@ -341,7 +341,7 @@ class FormatsInfoDialog(QDialog):
             for c_idx, val in enumerate(row):
                 item = QTableWidgetItem(val)
                 if c_idx > 0:
-                    item.setTextAlignment(Qt.AlignCenter)
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 table.setItem(r_idx, c_idx, item)
                 
         layout.addWidget(table)

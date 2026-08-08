@@ -2,8 +2,8 @@
 import os
 import json
 from .config_manager import ConfigManager
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtWidgets import (
     QDialog,
     QVBoxLayout,
     QHBoxLayout,
@@ -109,7 +109,7 @@ class VlosCalculatorDialog(QDialog):
         layout.addWidget(output_group)
         
         # Bottom Close Button
-        button_box = QDialogButtonBox(QDialogButtonBox.Close)
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
 

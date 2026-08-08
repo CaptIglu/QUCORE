@@ -1,6 +1,6 @@
-# QUCORE QGIS Plugin: Architecture Analysis (v0.9.0)
+# QUCORE QGIS Plugin: Architecture Analysis (v1.0.0)
 
-This document provides a comprehensive analysis of the macro-structure of the **QUCORE** QGIS plugin codebase following the v0.8.5 release cycle. It maps the end-to-end data flow, defines the public interfaces of each module, and demonstrates the Model-View-Presenter (MVP) architecture.
+This document provides a comprehensive analysis of the macro-structure of the **QUCORE** (QGIS UAS Corridor Outlining & Routing Engine) plugin codebase following the v0.9.0 release cycle and the cross-platform / QGIS 4.x compatibility audit. It maps the end-to-end data flow, defines the public interfaces of each module, and demonstrates the decoupled Model-View-Presenter (MVP) architecture.
 
 ---
 
@@ -24,12 +24,16 @@ graph TD
     AltDlg[AltitudeTableDialog]:::view
     PopDlg[PopulationDensityDialog]:::view
     WindDlg[AsymmetricBufferWinddriftDialog]:::view
+    ExpDlg[ExportSettingsDialog]:::view
+    VlosDlg[VlosCalculatorDialog]:::view
+    AdvDlg[AdvancedSettingsDialog]:::view
     InfoDlg[AboutDialog / FormatsInfoDialog <info_dialogs.py>]:::view
     SoraWidget[SoraVolumeWidget]:::view
 
     %% Model Layer (Pure Logic & Data - Decoupled)
     BufCalc[BufferCalculator]:::model
     ConfMgr[ConfigManager]:::model
+    TrMgr[TranslationManager]:::model
     ZonalStats[ZonalStatsCalculator]:::model
     ReportGen[ReportGenerator]:::model
     ImpExp[ImporterExporter Facade]:::model
@@ -45,14 +49,19 @@ graph TD
     Presenter -->|Draw / Manage Layers| QGIS
     Presenter -->|Update Data / Trigger Calculation| BufCalc
     Presenter -->|Read / Write Settings| ConfMgr
+    Presenter -->|Resolve Localized Strings| TrMgr
     Presenter -->|Initialize / Show| ParamDlg
     Presenter -->|Initialize / Show| AltDlg
     Presenter -->|Initialize / Show| WindDlg
+    Presenter -->|Initialize / Show| ExpDlg
+    Presenter -->|Initialize / Show| VlosDlg
+    Presenter -->|Initialize / Show| AdvDlg
     Presenter -->|Initialize / Show| InfoDlg
     
     AltDlg -.->|PyQt Signals Only| Presenter
     ParamDlg -.->|PyQt Signals Only| Presenter
     WindDlg -.->|PyQt Signals Only| Presenter
+    AdvDlg -.->|PyQt Signals Only| Presenter
     
     Presenter -->|Process Raster Density| ZonalStats
     Presenter -->|Generate Report Document| ReportGen
@@ -103,11 +112,18 @@ The plugin operates on five primary data flows:
 
 ## 3. Core Module Interfaces
 
-### `config_manager.py`
-Provides a strict validation and clamp wrapper around raw parameters.
+### `config_manager.py` & JSON Schemas
+Provides a strict validation and clamp wrapper around raw parameters, preventing magic numbers in UI code:
 - `ConfigManager.get_instance()`: Returns the singleton instance.
-- `ConfigManager.get_default_params()`: Returns a copy of the default parameters dictionary.
+- `ConfigManager.get_default_params()`: Returns a copy of the default parameters dictionary from `config.json`.
+- `ConfigManager.get_default(key)`: Returns default fallback value for a specific key.
+- `ConfigManager.get_limit(key)`: Returns the schema-defined bounds (`min`, `max`, `step`, `decimals`) from `config_limits.json`.
 - `ConfigManager.get_param(params_dict, key)`: Returns the value of `key` from `params_dict`. If missing, falls back to `config.json` defaults. Automatically clamps values according to bounds loaded from `config_limits.json`.
+
+### `translation_manager.py` & `translations.json`
+Provides a decoupled internationalization service:
+- `TranslationManager.tr(key, lang="de", default="")`: Resolves localized strings dynamically.
+- `translations.json`: Centralized translation catalog covering all UI elements, labels, dialog titles, table headers, and error messages in German and English.
 
 ### `buffer_calculator.py`
 The mathematical engine, completely decoupled from QGIS GUI.
@@ -136,14 +152,34 @@ Handles Word report serialization and template substitution. Uses a zero-depende
 
 ---
 
-## 4. Resolved Structural Couplings (v0.8.0 - v0.8.5 Refactoring)
+## 4. Cross-Platform & Dual-Version Architecture (QGIS 3.x LTR & QGIS 4.x / Qt6)
 
-In versions 0.8.0 through 0.8.5, the codebase underwent architectural overhauls to resolve legacy God Object and tight-coupling issues:
+Following the comprehensive macOS / QGIS 4 porting audit, QUCORE strictly implements dual-version compatibility patterns that operate identically on **QGIS 3.38 – 3.44+ LTR (PyQt5 / Qt 5.15)** and **QGIS 4.x (PyQt6 / Qt 6.x)** across Windows, macOS, and Linux:
 
-1. **Config Decoupling**: Default parameter resolution no longer requires heavy GUI instantiation of `ParameterDialog`. `plugin.py` and `advanced_settings_dialog.py` query `ConfigManager` directly, cutting overhead during headless testing.
-2. **Dumb Views (Dialog Separation)**: `AltitudeTableDialog` and `AsymmetricBufferWinddriftDialog` were completely decoupled from the QGIS Map Canvas. They emit native PyQt signals that the main `DroneCorridorPlanner` presenter intercepts and processes.
-3. **Info Dialog Extraction**: `AboutDialog` and `FormatsInfoDialog` were extracted to `info_dialogs.py`.
-4. **Map Tool Extraction**: `WaypointMapTool` was extracted from `plugin.py` into `map_tools.py` using weak references and callback injection to prevent memory leaks and circular dependencies.
-5. **Importer/Exporter Decomposing**: The monolithic `importer_exporter.py` module was broken down into a Facade pattern. Actual parsing logic is strictly isolated by file extension into the `formats/` sub-package (including `.plan` and `.waypoints`).
-6. **Unified Async Workflows**: `PopulationDensityDialog` utilizes dynamic GUI updates (via `QTableWidget`) and parallel task spawner factories (`create_task`), eliminating hardcoded layouts and unifying analysis across all volumetric zones (AA, GRB, CV, FG).
+1. **Unified Qt Abstraction via `qgis.PyQt`**:
+   - Direct `from PyQt5 import ...` statements are completely prohibited across the codebase.
+   - All modules import through QGIS's official shim (`from qgis.PyQt.QtWidgets import ...`, `from qgis.PyQt.QtCore import ...`, `from qgis.PyQt.QtGui import ...`, `from qgis.PyQt.QtXml import ...`, `from qgis.PyQt import sip`).
+2. **Fully Qualified Scoped Enums**:
+   - Enums are accessed via full scope paths (e.g., `Qt.AlignmentFlag.AlignCenter`, `QDialogButtonBox.StandardButton.Ok`, `QMessageBox.StandardButton.Yes`, `QTableWidget.EditTrigger.NoEditTriggers`, `QHeaderView.ResizeMode.Stretch`, `QPainter.RenderHint.Antialiasing`, `QPen.PenStyle.DashLine`, `QBrush.BrushStyle.NoBrush`, `Qt.CursorShape.WaitCursor`, `QMetaType.Type.QString`).
+   - Valid in PyQt 5.12+ and mandatory in PyQt6.
+3. **Modern API Methods**:
+   - Replaced deprecated `.exec_()` with standard Python 3 `.exec()`.
+   - Replaced removed `QgsMapMouseEvent.pos()` with `event.pixelPoint()`.
+4. **macOS Floating Tool Window Menu Decoupling**:
+   - On macOS, Qt binds `QMenuBar` to the global system bar by default, but ignores floating `Qt.WindowType.Tool` windows (resulting in invisible 0-height menus).
+   - In `plugin.py`, `self.menu_bar.setNativeMenuBar(False)` is explicitly enforced, guaranteeing that the menu ribbon is rendered inside the tool window across all operating systems.
+5. **Clean Type Handling**:
+   - `QFont("Arial", 9, QFont.Weight.Normal, True)` correctly specifies font weight (3rd argument) and italic boolean (4th argument), preventing runtime `TypeError` under strict Qt6 signatures.
+6. **Robust Dynamic Module Resolution**:
+   - Format handlers dynamically resolve `BufferCalculator.__module__` when altering global calculation parameters (such as `BUFFER_SEGMENTS`), preventing coupling to specific folder or package names (`QUCORE`, `QUCORE-main`).
 
+---
+
+## 5. Resolved Structural Couplings (v0.8.0 - v0.9.0 Refactoring)
+
+1. **Config Decoupling**: Default parameter resolution queries `ConfigManager` directly, eliminating heavy GUI instantiation during background tasks and unit testing.
+2. **Dumb Views (Dialog Separation)**: All dialogs are decoupled from the QGIS Map Canvas, communicating strictly via native PyQt signals.
+3. **Info Dialog Extraction**: `AboutDialog` and `FormatsInfoDialog` reside in `info_dialogs.py`.
+4. **Map Tool Extraction**: `WaypointMapTool` in `map_tools.py` uses callback injection to prevent memory leaks and circular dependencies.
+5. **Importer/Exporter Facade**: Monolithic export logic is cleanly decomposed into specialized format handlers under `formats/`.
+6. **Unified Async Workflows**: `PopulationDensityDialog` utilizes parallel background `QgsTask` workers for non-blocking spatial computation.

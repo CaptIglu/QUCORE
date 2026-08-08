@@ -47,7 +47,7 @@ class FlightplanHandler:
                     lon = dms_to_decimal(p)
             return lon, lat
 
-        from PyQt5.QtXml import QDomDocument
+        from qgis.PyQt.QtXml import QDomDocument
         
         doc = QDomDocument()
         with open(file_path, 'rb') as f:

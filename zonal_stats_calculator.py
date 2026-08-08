@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-from PyQt5.QtCore import Qt
+from qgis.PyQt.QtCore import Qt
 from qgis.core import (
     QgsProject,
     QgsCoordinateReferenceSystem,
@@ -117,7 +117,7 @@ class ZonalStatsCalculator:
             try:
                 from qgis.core import QgsVectorLayer, QgsFeature, QgsGeometry, QgsRasterLayer, QgsField
                 from qgis.analysis import QgsZonalStatistics
-                from PyQt5.QtCore import QVariant
+                from qgis.PyQt.QtCore import QVariant
                 
                 # Create a local in-memory vector layer inside worker thread
                 temp_lyr = QgsVectorLayer(f"Polygon?crs={raster_crs_auth}", "temp_zstats", "memory")
