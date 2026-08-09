@@ -19,17 +19,17 @@ from qgis.PyQt.QtWidgets import (
     QCheckBox
 )
 from .translation_manager import TranslationManager
+from .dialog_utils import QucoreBaseDialog
 
 from qgis.PyQt.QtCore import pyqtSignal
 
-class AltitudeTableDialog(QDialog):
+class AltitudeTableDialog(QucoreBaseDialog):
     sigToggleWaypointLabels = pyqtSignal(bool)
     sigWaypointFocused = pyqtSignal(int)
     sigClearFocus = pyqtSignal()
 
     def __init__(self, parent=None, waypoints=None, params=None, on_change_callback=None, geometry_type="Corridor"):
-        super(AltitudeTableDialog, self).__init__(parent)
-        self.resize(1150, 450) # increased width to fit all 10 columns beautifully
+        super(AltitudeTableDialog, self).__init__(parent, dialog_key="AltitudeTableDialog")
         self.setModal(False)
         
         # self.waypoints is a list of tuples: (lon, lat, height, speed, fg_width)

@@ -15,11 +15,11 @@ from qgis.PyQt.QtWidgets import (
     QGroupBox
 )
 from .translation_manager import TranslationManager
+from .dialog_utils import QucoreBaseDialog
 
-class VlosCalculatorDialog(QDialog):
+class VlosCalculatorDialog(QucoreBaseDialog):
     def __init__(self, parent=None, uas_type="FixedWing", cd=3.6, current_params=None):
-        super(VlosCalculatorDialog, self).__init__(parent)
-        self.resize(450, 340)
+        super(VlosCalculatorDialog, self).__init__(parent, dialog_key="VlosCalculatorDialog")
         self.setModal(True)
         self.uas_type = uas_type
         self.cd = cd

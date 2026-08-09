@@ -1,4 +1,4 @@
-# QUCORE QGIS Plugin: Architecture Analysis (v1.0.0)
+# QUCORE QGIS Plugin: Architecture Analysis (v1.0.1)
 
 This document provides a comprehensive analysis of the macro-structure of the **QUCORE** (QGIS UAS Corridor Outlining & Routing Engine) plugin codebase following the v0.9.0 release cycle and the cross-platform / QGIS 4.x compatibility audit. It maps the end-to-end data flow, defines the public interfaces of each module, and demonstrates the decoupled Model-View-Presenter (MVP) architecture.
 
@@ -146,6 +146,9 @@ Contains the static information views (`AboutDialog` and `FormatsInfoDialog`), i
 
 ### `map_tools.py`
 Houses `WaypointMapTool`, bridging the QGIS canvas and the presenter without hard dependencies on `plugin.py`. Uses dependency injected callbacks to transmit coordinates.
+
+### `dialog_utils.py`
+Provides `QucoreBaseDialog`, a unified base dialog class that manages window geometry persistence (`saveGeometry()` / `restoreGeometry()`) via `QgsSettings`, screens boundary validation against disconnected external monitors, and centralized reset-to-defaults capabilities across all UI dialogs.
 
 ### `report_generator.py`
 Handles Word report serialization and template substitution. Uses a zero-dependency string-replacement approach for XML files inside zipped `.docx` structures.

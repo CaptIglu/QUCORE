@@ -49,5 +49,17 @@
   "opacity_adjacentarea": 0,
   "opacity_vlos": 0,
   "enableAsymmetricBufferWinddrift": false,
-  "windDirection": 0.0
+  "windDirection": 0.0,
+  "dialog_defaults": {
+    "ParameterDialog": [680, 480],
+    "AltitudeTableDialog": [1150, 450],
+    "AdvancedSettingsDialog": [550, 480],
+    "PopulationDensityDialog": [750, 580],
+    "WindDriftDialog": [520, 580],
+    "VlosCalculatorDialog": [450, 340],
+    "ExportSettingsDialog": [350, 220],
+    "AboutDialog": [550, 530],
+    "FormatsInfoDialog": [820, 360],
+    "ControlPanel": [350, 720]
+  }
 }

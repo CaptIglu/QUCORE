@@ -29,11 +29,11 @@ from qgis.core import (
 from .config_manager import ConfigManager
 from .translation_manager import TranslationManager
 from .zonal_stats_calculator import ZonalStatsCalculator
+from .dialog_utils import QucoreBaseDialog
 
-class PopulationDensityDialog(QDialog):
+class PopulationDensityDialog(QucoreBaseDialog):
     def __init__(self, parent=None, lyr_aga=None, lyr_grb=None, lyr_cv=None, lyr_fg=None, current_params=None):
-        super(PopulationDensityDialog, self).__init__(parent)
-        self.resize(750, 580)
+        super(PopulationDensityDialog, self).__init__(parent, dialog_key="PopulationDensityDialog")
         self.setModal(True)
         self.lyr_aga = lyr_aga
         self.lyr_grb = lyr_grb

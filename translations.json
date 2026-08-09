@@ -1,4 +1,12 @@
 {
+  "menu_reset_geometry": {
+    "de": "Fensterpositionen und -größen zurücksetzen",
+    "en": "Reset Window Layouts & Sizes"
+  },
+  "msg_geometry_reset_success": {
+    "de": "Alle Fenstergrößen und -positionen wurden auf die Standardwerte zurückgesetzt.",
+    "en": "All window sizes and positions have been reset to default values."
+  },
   "msg_wind_drift_simplified_warning": {
     "de": "⚠️ Hinweis: Die 1:1 Regel (Simplified) ist aktuell als GRB-Methode ausgewählt. Der Wind-Drift hat bei dieser Methode laut Vorgaben keine Auswirkung auf den Puffer. Bitte wechsle im Parameter-Dialog auf 'Fallschirm', 'Ballistisch' oder 'Gleitflug', um asymmetrische Puffer zu berechnen.",
     "en": "⚠️ Note: The 1:1 Rule (Simplified) is currently selected as GRB method. Wind drift has no effect on the buffer for this method. Please switch to 'Parachute', 'Ballistic', or 'Glide' in the Parameter Dialog to calculate asymmetric buffers."

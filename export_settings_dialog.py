@@ -16,11 +16,11 @@ from qgis.PyQt.QtWidgets import (
 )
 from .translation_manager import TranslationManager
 from .config_manager import ConfigManager
+from .dialog_utils import QucoreBaseDialog
 
-class ExportSettingsDialog(QDialog):
+class ExportSettingsDialog(QucoreBaseDialog):
     def __init__(self, parent=None, default_height=None, default_speed=None, default_fg_width=None, params=None, is_qgc_plan=False, is_waypoints_export=False):
-        super(ExportSettingsDialog, self).__init__(parent)
-        self.resize(350, 220)
+        super(ExportSettingsDialog, self).__init__(parent, dialog_key="ExportSettingsDialog")
         self.setModal(True)
         self.params = params if params is not None else {}
         self.is_qgc_plan = is_qgc_plan

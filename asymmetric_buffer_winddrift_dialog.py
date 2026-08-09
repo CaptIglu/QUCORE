@@ -7,6 +7,7 @@ from qgis.PyQt.QtWidgets import (
     QCheckBox, QDoubleSpinBox, QLabel, QPushButton, QWidget
 )
 from .config_manager import ConfigManager
+from .dialog_utils import QucoreBaseDialog
 
 class WindCompassWidget(QWidget):
     def __init__(self, parent=None):
@@ -140,9 +141,9 @@ class WindCompassWidget(QWidget):
         painter.drawText(text_rect_unit, Qt.AlignmentFlag.AlignCenter, "m/s")
 
 
-class WindDriftDialog(QDialog):
+class WindDriftDialog(QucoreBaseDialog):
     def __init__(self, parent, params, tr_fn, recalculate_callback):
-        super(WindDriftDialog, self).__init__(parent)
+        super(WindDriftDialog, self).__init__(parent, dialog_key="WindDriftDialog")
         self.params = params
         self.tr = tr_fn
         self.recalculate_callback = recalculate_callback
@@ -153,7 +154,6 @@ class WindDriftDialog(QDialog):
         
     def init_ui(self):
         layout = QVBoxLayout(self)
-        layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetFixedSize)
         
         # Enable Checkbox
         self.chk_enable = QCheckBox(self.tr("wind_drift_enable", "Asymmetrische Wind-Drift Puffer Berechnung aktivieren"))

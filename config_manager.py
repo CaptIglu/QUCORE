@@ -106,6 +106,23 @@ class ConfigManager:
         raise KeyError(f"Parameter '{key}' fehlt in config.json. Dies ist nicht erlaubt.")
 
     @classmethod
+    def get_dialog_default_size(cls, dialog_key):
+        """
+        Retrieves the default (width, height) for a dialog from config.json.
+        Raises KeyError if the dialog_key or dialog_defaults is missing in config.json (Fail-Fast).
+        """
+        inst = cls.get_instance()
+        dialog_defaults = inst._defaults.get("dialog_defaults")
+        if dialog_defaults and dialog_key in dialog_defaults:
+            size_list = dialog_defaults[dialog_key]
+            if isinstance(size_list, (list, tuple)) and len(size_list) >= 2:
+                return (int(size_list[0]), int(size_list[1]))
+
+        msg = f"Standard-Fenstergröße für Dialog '{dialog_key}' fehlt unter 'dialog_defaults' in config.json."
+        QgsMessageLog.logMessage(msg, "QUCORE_Config", Qgis.Critical)
+        raise KeyError(msg)
+
+    @classmethod
     def get_param(cls, params_dict, key):
         """
         Retrieves a parameter from the provided params_dict. 

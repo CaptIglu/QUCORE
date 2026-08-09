@@ -97,16 +97,67 @@ if not HAS_REAL_QGIS:
 
     # Mock PyQt5 modules with simple mock types so subclasses execute normal python initialization
     qt_widgets = types.ModuleType("QtWidgets")
+    class MockStandardButton:
+        Ok = 1
+        Cancel = 2
+        Yes = 16384
+        No = 65536
+        RestoreDefaults = 3
+
+    class MockDialogCode:
+        Accepted = 1
+        Rejected = 0
+
+    class MockResizeMode:
+        Stretch = 1
+        ResizeToContents = 2
+        Interactive = 0
+        Fixed = 3
+
+    class MockEditTrigger:
+        NoEditTriggers = 0
+
+    class MockSignal:
+        def __init__(self, owner=None, *args, **kwargs):
+            self.owner = owner
+            self._slots = []
+            self.disconnect = MagicMock()
+        def connect(self, slot):
+            self._slots.append(slot)
+        def emit(self, *args, **kwargs):
+            MockQWidget._current_sender = self.owner
+            for slot in list(self._slots):
+                try:
+                    slot(*args, **kwargs)
+                except TypeError:
+                    try:
+                        slot()
+                    except Exception:
+                        pass
+            MockQWidget._current_sender = None
+
     class MockQWidget:
         Ok = 1
         Cancel = 2
         Yes = 16384
         No = 65536
         RestoreDefaults = 3
+        StandardButton = MockStandardButton
+        DialogCode = MockDialogCode
+        EditTrigger = MockEditTrigger
+        _current_sender = None
         
         def __init__(self, parent=None, *args, **kwargs):
             self._val = 100.0
             self._idx = 0
+            self.valueChanged = MockSignal(self)
+            self.toggled = MockSignal(self)
+            self.currentIndexChanged = MockSignal(self)
+            self.clicked = MockSignal(self)
+            self.triggered = MockSignal(self)
+            self.finished = MockSignal(self)
+        def sender(self):
+            return MockQWidget._current_sender
         def palette(self):
             m = MagicMock()
             m.color.return_value.lightness.return_value = 200 # light theme default
@@ -153,8 +204,9 @@ if not HAS_REAL_QGIS:
     qt_widgets.QCheckBox = MockQWidget
     qt_widgets.QLineEdit = MockQWidget
     qt_widgets.QApplication = MagicMock
-    class MockQHeaderView:
+    class MockQHeaderView(MockQWidget):
         Stretch = 1
+        ResizeMode = MockResizeMode
     qt_widgets.QHeaderView = MockQHeaderView
     class MockQTableWidgetItemClass:
         def __init__(self, text=""):
@@ -178,6 +230,8 @@ if not HAS_REAL_QGIS:
     class MockQTableWidget(MockQWidget):
         NoEditTriggers = 0
         NoSelection = 0
+        SelectionMode = MagicMock()
+        SelectionBehavior = MagicMock()
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self._items = {}
@@ -253,6 +307,9 @@ if not HAS_REAL_QGIS:
     qt_core.Qt = MagicMock()
     qt_core.QRectF = DummyClass
     qt_core.QPointF = DummyClass
+    qt_core.QRect = DummyClass
+    qt_core.QPoint = DummyClass
+    qt_core.QByteArray = DummyClass
     qt_core.QVariant = DummyClass
 
     class MockQMetaType:
@@ -261,7 +318,8 @@ if not HAS_REAL_QGIS:
         QString = 10
     qt_core.QMetaType = MockQMetaType
     qt_core.QUrl = DummyClass
-    qt_core.pyqtSignal = MagicMock
+    
+    qt_core.pyqtSignal = lambda *args, **kwargs: MockSignal()
     qt_core.QDateTime = DummyClass
     qt_core.QSettings = DummyClass
     sys.modules['PyQt5.QtCore'] = qt_core
@@ -329,6 +387,22 @@ if not HAS_REAL_QGIS:
 
     qt_xml.QDomDocument = MockQDomDocument
     sys.modules['PyQt5.QtXml'] = qt_xml
+
+    # Register qgis.PyQt mock modules
+    qgis_pyqt = types.ModuleType("qgis.PyQt")
+    qgis_pyqt.QtWidgets = qt_widgets
+    qgis_pyqt.QtCore = qt_core
+    qgis_pyqt.QtGui = qt_gui
+    qgis_pyqt.QtXml = qt_xml
+    qgis_pyqt.sip = MagicMock()
+    qgis_mock.PyQt = qgis_pyqt
+
+    sys.modules['qgis.PyQt'] = qgis_pyqt
+    sys.modules['qgis.PyQt.QtWidgets'] = qt_widgets
+    sys.modules['qgis.PyQt.QtCore'] = qt_core
+    sys.modules['qgis.PyQt.QtGui'] = qt_gui
+    sys.modules['qgis.PyQt.QtXml'] = qt_xml
+    sys.modules['qgis.PyQt.sip'] = qgis_pyqt.sip
 
 
 # 2. Add parent directory of QUCORE package to sys.path dynamically
@@ -1613,6 +1687,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             'QUCORE.zonal_stats_calculator',
             'QUCORE.plugin',
             'QUCORE.asymmetric_buffer_winddrift_dialog',
+            'QUCORE.dialog_utils',
         ]
         for mod_name in modules:
             with self.subTest(module=mod_name):

@@ -19,11 +19,11 @@ from qgis.PyQt.QtWidgets import (
 )
 from .config_manager import ConfigManager
 from .translation_manager import TranslationManager
+from .dialog_utils import QucoreBaseDialog
 
-class ParameterDialog(QDialog):
+class ParameterDialog(QucoreBaseDialog):
     def __init__(self, parent=None, current_params=None, waypoints=None):
-        super(ParameterDialog, self).__init__(parent)
-        self.resize(680, 480)
+        super(ParameterDialog, self).__init__(parent, dialog_key="ParameterDialog")
         self.setModal(True)
         
         self.waypoints = waypoints

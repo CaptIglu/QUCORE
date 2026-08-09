@@ -357,6 +357,16 @@
     "grb_max_raw_value": {
       "type": "number",
       "description": "Maximaler Rohwert der Bevölkerungsdaten im Ground Risk Buffer."
+    },
+    "dialog_defaults": {
+      "type": "object",
+      "description": "Standard Fenstermaße [Breite, Höhe] für QUCORE UI Dialoge.",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "integer" },
+        "minItems": 2,
+        "maxItems": 2
+      }
     }
   },
   "required": [

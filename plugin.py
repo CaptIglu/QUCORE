@@ -3,7 +3,7 @@ import os
 import math
 import uuid
 import tempfile
-from qgis.PyQt.QtCore import Qt, QVariant, QMetaType
+from qgis.PyQt.QtCore import Qt, QVariant, QMetaType, QByteArray
 from qgis.PyQt.QtGui import QIcon, QColor
 from qgis.PyQt.QtWidgets import (
     QAction,
@@ -315,47 +315,49 @@ class DroneCorridorPlanner(object):
         if hasattr(self, 'gui') and self.gui:
             try:
                 self.gui.finished.disconnect(self.on_gui_finished)
+            except (TypeError, RuntimeError):
+                pass
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 889): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Hinweis beim Trennen von gui.finished: {e}", "QUCORE", Qgis.Info)
             try:
                 self.gui.close()
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 893): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+            except Exception:
+                pass
             try:
                 self.gui.deleteLater()
-            except Exception as e:
-                from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 897): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+            except Exception:
+                pass
 
-        # Remove layers and group silently on unload
+        # Remove layers and group on unload
         try:
             self.remove_layers_and_group()
         except Exception as e:
             from qgis.core import QgsMessageLog, Qgis
-            import traceback
-            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 903): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+            QgsMessageLog.logMessage(f"Fehler beim Entfernen der temporären Layer: {e}", "QUCORE", Qgis.Warning)
 
         # 1. Disconnect UI action triggers
         if self.action:
             try:
                 self.action.triggered.disconnect(self.run)
+            except (TypeError, RuntimeError):
+                # Expected when signal was not connected yet
+                pass
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Entwickler-Warnung beim Trennen der Hauptaktion: {e}", "QUCORE", Qgis.Info)
+                QgsMessageLog.logMessage(f"Fehler beim Trennen der Hauptaktion: {e}", "QUCORE", Qgis.Warning)
             self.iface.removePluginVectorMenu("QUCORE", self.action)
             self.iface.removeVectorToolBarIcon(self.action)
             
         if hasattr(self, 'help_action') and self.help_action:
             try:
                 self.help_action.triggered.disconnect(self.open_help)
+            except (TypeError, RuntimeError):
+                # Expected when signal was not connected yet
+                pass
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Entwickler-Warnung beim Trennen der Hilfeaktion: {e}", "QUCORE", Qgis.Info)
+                QgsMessageLog.logMessage(f"Fehler beim Trennen der Hilfeaktion: {e}", "QUCORE", Qgis.Warning)
             self.iface.removePluginVectorMenu("QUCORE", self.help_action)
 
         # 2. Safely disconnect global application exit listener
@@ -363,18 +365,23 @@ class DroneCorridorPlanner(object):
             try:
                 from qgis.core import QgsApplication
                 QgsApplication.instance().aboutToQuit.disconnect(self.gui.reject)
+            except (TypeError, RuntimeError):
+                # Expected when signal was not connected yet
+                pass
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 929): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Fehler beim Trennen von aboutToQuit: {e}", "QUCORE", Qgis.Warning)
 
         # 3. Disconnect and clean up map tools
         if hasattr(self, 'pilot_tool') and self.pilot_tool:
             try:
                 self.pilot_tool.canvasClicked.disconnect(self.on_pilot_clicked)
+            except (TypeError, RuntimeError):
+                # Expected when signal was not connected yet
+                pass
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Entwickler-Warnung beim Trennen des Piloten-Werkzeugs: {e}", "QUCORE", Qgis.Info)
+                QgsMessageLog.logMessage(f"Fehler beim Trennen des Piloten-Werkzeugs: {e}", "QUCORE", Qgis.Warning)
 
         # 4. Deactivate tools if active on the canvas
         if hasattr(self, 'wp_tool') and hasattr(self, 'pilot_tool'):
@@ -387,17 +394,18 @@ class DroneCorridorPlanner(object):
                 self.wp_tool.cleanup()
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 949): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Fehler beim Bereinigen des WaypointMapTools: {e}", "QUCORE", Qgis.Warning)
 
         # Disconnect project cleared signal
         try:
             from qgis.core import QgsProject
             QgsProject.instance().cleared.disconnect(self.on_project_cleared)
+        except (TypeError, RuntimeError):
+            # Expected when signal was not connected yet
+            pass
         except Exception as e:
             from qgis.core import QgsMessageLog, Qgis
-            import traceback
-            QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 956): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+            QgsMessageLog.logMessage(f"Fehler beim Trennen des Project-Signals: {e}", "QUCORE", Qgis.Warning)
 
         # 6. Nullify references to trigger Python Garbage Collection
         self.wp_tool = None
@@ -465,9 +473,26 @@ class DroneCorridorPlanner(object):
         if not self.gui:
             self.gui = QDialog(self.iface.mainWindow())
             self.gui.setWindowTitle(self.tr("dialog_title", "QUCORE – UAS-Korridorplanung (FG/CV/GRB)"))
-            self.gui.resize(330, 580)
             self.gui.setWindowFlags(Qt.WindowType.Tool)
             
+            # Restore ControlPanel geometry from QgsSettings or apply default
+            from qgis.core import QgsSettings
+            from .dialog_utils import is_rect_visible_on_screens
+            w_def, h_def = ConfigManager.get_dialog_default_size("ControlPanel")
+            settings = QgsSettings()
+            saved_geom = settings.value("QUCORE/geometry/ControlPanel", None)
+            restored = False
+            if saved_geom is not None:
+                if isinstance(saved_geom, (bytes, bytearray)):
+                    saved_geom = QByteArray(saved_geom)
+                if isinstance(saved_geom, QByteArray) and not saved_geom.isEmpty():
+                    restored = self.gui.restoreGeometry(saved_geom)
+            
+            if restored:
+                if not is_rect_visible_on_screens(self.gui.geometry()):
+                    self.gui.resize(w_def, h_def)
+            else:
+                self.gui.resize(w_def, h_def)
             
             # Close dialog when QGIS is about to quit to prevent blocking modal exit dialogs
             from qgis.core import QgsApplication
@@ -525,6 +550,9 @@ class DroneCorridorPlanner(object):
             
             self.adv_settings_action = self.settings_menu.addAction("Erweiterte Einstellungen...")
             self.adv_settings_action.triggered.connect(self.open_advanced_settings_dialog)
+            
+            self.reset_geometry_action = self.settings_menu.addAction(self.tr("menu_reset_geometry", "Fensterpositionen und -größen zurücksetzen"))
+            self.reset_geometry_action.triggered.connect(self.reset_window_geometries)
             
             self.settings_menu.addSeparator()
             
@@ -893,6 +921,8 @@ class DroneCorridorPlanner(object):
             self.settings_menu.setTitle(self.tr("menu_settings", "Einstellungen"))
             self.calc_params_action.setText(self.tr("menu_calc_params", "Berechnungsparameter..."))
             self.adv_settings_action.setText(self.tr("menu_adv_settings", "Erweiterte Einstellungen..."))
+            if hasattr(self, 'reset_geometry_action'):
+                self.reset_geometry_action.setText(self.tr("menu_reset_geometry", "Fensterpositionen und -größen zurücksetzen"))
             self.lang_menu.setTitle(self.tr("menu_lang", "Sprache / Language"))
             self.lang_de_action.setText(self.tr("menu_lang_de", "🇩🇪 Deutsch (DE)"))
             self.lang_en_action.setText(self.tr("menu_lang_en", "🇬🇧 English (EN)"))
@@ -1298,12 +1328,40 @@ class DroneCorridorPlanner(object):
         layer.triggerRepaint()
 
     def on_gui_finished(self, result):
+        if self.gui:
+            try:
+                from qgis.core import QgsSettings
+                settings = QgsSettings()
+                settings.setValue("QUCORE/geometry/ControlPanel", self.gui.saveGeometry())
+            except Exception:
+                pass
         if self.canvas.mapTool() in [self.wp_tool, self.pilot_tool]:
             self.canvas.unsetMapTool(self.canvas.mapTool())
         if hasattr(self, 'btn_draw_wp'):
             self.btn_draw_wp.setChecked(False)
         if hasattr(self, 'btn_set_pilot'):
             self.btn_set_pilot.setChecked(False)
+
+    def reset_window_geometries(self):
+        """
+        Resets all dialog geometries and sizes to their default values.
+        """
+        from .dialog_utils import reset_all_qucore_geometries
+        reset_all_qucore_geometries()
+        if self.gui:
+            w_def, h_def = ConfigManager.get_dialog_default_size("ControlPanel")
+            self.gui.resize(w_def, h_def)
+            if self.gui.layout():
+                self.gui.layout().invalidate()
+                self.gui.layout().activate()
+            self.gui.update()
+        
+        from qgis.PyQt.QtWidgets import QMessageBox
+        QMessageBox.information(
+            self.gui if self.gui else self.iface.mainWindow(),
+            self.tr("menu_reset_geometry", "Fensterpositionen und -größen zurücksetzen"),
+            self.tr("msg_geometry_reset_success", "Alle Fenstergrößen und -positionen wurden auf die Standardwerte zurückgesetzt.")
+        )
 
     def toggle_waypoint_drawing(self, checked):
         if checked:

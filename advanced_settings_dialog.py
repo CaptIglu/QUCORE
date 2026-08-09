@@ -22,12 +22,12 @@ from qgis.PyQt.QtWidgets import (
 )
 from .translation_manager import TranslationManager
 from .config_manager import ConfigManager
+from .dialog_utils import QucoreBaseDialog
 
-class AdvancedSettingsDialog(QDialog):
+class AdvancedSettingsDialog(QucoreBaseDialog):
     def __init__(self, parent=None, config_path=None, current_step_size=50.0, current_params=None):
-        super(AdvancedSettingsDialog, self).__init__(parent)
+        super(AdvancedSettingsDialog, self).__init__(parent, dialog_key="AdvancedSettingsDialog")
         self.setWindowTitle("Erweiterte Einstellungen & Standardwerte")
-        self.resize(550, 480)
         self.setModal(True)
         self.config_path = config_path
         self.step_size = current_step_size

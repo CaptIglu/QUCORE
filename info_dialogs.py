@@ -4,17 +4,17 @@ from qgis.PyQt.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QDia
                              QTableWidget, QTableWidgetItem, QPushButton, QHeaderView, QGroupBox, QLineEdit, QMessageBox)
 from qgis.PyQt.QtGui import QPixmap
 from qgis.PyQt.QtCore import Qt, QSettings, QDateTime
+from .dialog_utils import QucoreBaseDialog
 
-class AboutDialog(QDialog):
+class AboutDialog(QucoreBaseDialog):
     def __init__(self, parent, metadata, plugin):
-        super(AboutDialog, self).__init__(parent)
+        super(AboutDialog, self).__init__(parent, dialog_key="AboutDialog")
         self.metadata = metadata
         self.plugin = plugin
         self.plugin_dir = plugin.plugin_dir
         self.tr = plugin.tr
         
         self.setWindowTitle(self.tr("dialog_about_title", "Über QUCORE"))
-        self.resize(550, 530)
         self.setModal(True)
         self.init_ui()
         
@@ -40,7 +40,7 @@ class AboutDialog(QDialog):
         title_layout.setSpacing(4)
         
         name = self.metadata.get('name', 'QUCORE (Variable UAS Corridor Planning)')
-        version = self.metadata.get('version', '1.0.0')
+        version = self.metadata.get('version', '1.0.1')
         
         lbl_name = QLabel(f'<span style="font-size: 16px; font-weight: bold; color: #2c3e50;">{name}</span>')
         lbl_version = QLabel(f'<span style="font-size: 12px; color: #7f8c8d; font-weight: 500;">Version {version}</span>')
@@ -291,15 +291,14 @@ class AboutDialog(QDialog):
 
 
 
-class FormatsInfoDialog(QDialog):
+class FormatsInfoDialog(QucoreBaseDialog):
     def __init__(self, parent, plugin):
-        super(FormatsInfoDialog, self).__init__(parent)
+        super(FormatsInfoDialog, self).__init__(parent, dialog_key="FormatsInfoDialog")
         self.plugin = plugin
         self.tr = plugin.tr
         
         self.setObjectName("FormatsInfoDialog")
         self.setWindowTitle(self.tr("dialog_formats_title", "QUCORE – Dateiformate im Vergleich"))
-        self.resize(820, 360)
         
         layout = QVBoxLayout(self)
         
