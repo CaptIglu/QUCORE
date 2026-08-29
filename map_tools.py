@@ -44,7 +44,7 @@ class WaypointMapTool(QgsMapTool):
                     except Exception as e:
                         from qgis.core import QgsMessageLog, Qgis
                         import traceback
-                        QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 81): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+                        QgsMessageLog.logMessage(f"Silent exception caught in plugin.py (line 81): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.MessageLevel.Warning)
             self.midpoint_markers = []
 
     def cleanup(self):
@@ -91,7 +91,7 @@ class WaypointMapTool(QgsMapTool):
             # Create a QgsVertexMarker
             marker = QgsVertexMarker(self.canvas)
             marker.setCenter(pt_canvas)
-            marker.setIconType(QgsVertexMarker.ICON_CROSS)
+            marker.setIconType(QgsVertexMarker.IconType.ICON_CROSS)
             marker.setIconSize(10)
             marker.setPenWidth(2)
             marker.setColor(QColor(235, 87, 87)) # Premium coral red matching theme colors

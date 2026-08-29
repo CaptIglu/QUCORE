@@ -58,7 +58,7 @@ def _log_silent_exception(e, context=""):
     from qgis.core import QgsMessageLog, Qgis
     import traceback
     QgsMessageLog.logMessage(
-        f"QUCORE {context}: {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+        f"QUCORE {context}: {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.MessageLevel.Warning)
 
 
 
@@ -116,7 +116,7 @@ def hex_to_rgba(hex_str, opacity):
         from qgis.core import QgsMessageLog, Qgis
         QgsMessageLog.logMessage(
             f"Ungültiger Hex-Farbwert '{hex_str}' oder Opazität '{opacity}': {e}",
-            "QUCORE", Qgis.Warning
+            "QUCORE", Qgis.MessageLevel.Warning
         )
         return "200,200,200,40"
 
@@ -132,7 +132,7 @@ def hex_to_border_rgba(hex_str, default_fallback="100,100,100,255"):
         from qgis.core import QgsMessageLog, Qgis
         QgsMessageLog.logMessage(
             f"Ungültiger Hex-Farbwert für Rahmen '{hex_str}': {e}",
-            "QUCORE", Qgis.Warning
+            "QUCORE", Qgis.MessageLevel.Warning
         )
         return default_fallback
 
@@ -231,7 +231,7 @@ class DroneCorridorPlanner(object):
                 from qgis.core import QgsMessageLog, Qgis
                 QgsMessageLog.logMessage(
                     f"Fehler beim Laden von config.json: {e}",
-                    "QUCORE", Qgis.Warning
+                    "QUCORE", Qgis.MessageLevel.Warning
                 )
                 
         # Restore active session style overrides
@@ -319,24 +319,24 @@ class DroneCorridorPlanner(object):
                 pass
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Hinweis beim Trennen von gui.finished: {e}", "QUCORE", Qgis.Info)
+                QgsMessageLog.logMessage(f"Hinweis beim Trennen von gui.finished: {e}", "QUCORE", Qgis.MessageLevel.Info)
             try:
                 self.gui.close()
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Hinweis beim Schließen der GUI: {e}", "QUCORE", Qgis.Info)
+                QgsMessageLog.logMessage(f"Hinweis beim Schließen der GUI: {e}", "QUCORE", Qgis.MessageLevel.Info)
             try:
                 self.gui.deleteLater()
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Hinweis beim Freigeben der GUI-Ressourcen: {e}", "QUCORE", Qgis.Info)
+                QgsMessageLog.logMessage(f"Hinweis beim Freigeben der GUI-Ressourcen: {e}", "QUCORE", Qgis.MessageLevel.Info)
 
         # Remove layers and group on unload
         try:
             self.remove_layers_and_group()
         except Exception as e:
             from qgis.core import QgsMessageLog, Qgis
-            QgsMessageLog.logMessage(f"Fehler beim Entfernen der temporären Layer: {e}", "QUCORE", Qgis.Warning)
+            QgsMessageLog.logMessage(f"Fehler beim Entfernen der temporären Layer: {e}", "QUCORE", Qgis.MessageLevel.Warning)
 
         # 1. Disconnect UI action triggers
         if self.action:
@@ -347,7 +347,7 @@ class DroneCorridorPlanner(object):
                 pass
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Fehler beim Trennen der Hauptaktion: {e}", "QUCORE", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Fehler beim Trennen der Hauptaktion: {e}", "QUCORE", Qgis.MessageLevel.Warning)
             self.iface.removePluginVectorMenu("QUCORE", self.action)
             self.iface.removeVectorToolBarIcon(self.action)
             
@@ -359,7 +359,7 @@ class DroneCorridorPlanner(object):
                 pass
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Fehler beim Trennen der Hilfeaktion: {e}", "QUCORE", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Fehler beim Trennen der Hilfeaktion: {e}", "QUCORE", Qgis.MessageLevel.Warning)
             self.iface.removePluginVectorMenu("QUCORE", self.help_action)
 
         # 2. Safely disconnect global application exit listener
@@ -372,7 +372,7 @@ class DroneCorridorPlanner(object):
                 pass
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Fehler beim Trennen von aboutToQuit: {e}", "QUCORE", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Fehler beim Trennen von aboutToQuit: {e}", "QUCORE", Qgis.MessageLevel.Warning)
 
         # 3. Disconnect and clean up map tools
         if hasattr(self, 'pilot_tool') and self.pilot_tool:
@@ -383,7 +383,7 @@ class DroneCorridorPlanner(object):
                 pass
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Fehler beim Trennen des Piloten-Werkzeugs: {e}", "QUCORE", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Fehler beim Trennen des Piloten-Werkzeugs: {e}", "QUCORE", Qgis.MessageLevel.Warning)
 
         # 4. Deactivate tools if active on the canvas
         if hasattr(self, 'wp_tool') and hasattr(self, 'pilot_tool'):
@@ -396,7 +396,7 @@ class DroneCorridorPlanner(object):
                 self.wp_tool.cleanup()
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Fehler beim Bereinigen des WaypointMapTools: {e}", "QUCORE", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Fehler beim Bereinigen des WaypointMapTools: {e}", "QUCORE", Qgis.MessageLevel.Warning)
 
         # Disconnect project cleared signal
         try:
@@ -407,7 +407,7 @@ class DroneCorridorPlanner(object):
             pass
         except Exception as e:
             from qgis.core import QgsMessageLog, Qgis
-            QgsMessageLog.logMessage(f"Fehler beim Trennen des Project-Signals: {e}", "QUCORE", Qgis.Warning)
+            QgsMessageLog.logMessage(f"Fehler beim Trennen des Project-Signals: {e}", "QUCORE", Qgis.MessageLevel.Warning)
 
         # 6. Nullify references to trigger Python Garbage Collection
         self.wp_tool = None
@@ -455,7 +455,7 @@ class DroneCorridorPlanner(object):
             for group in groups:
                 # Remove all child layers in the group from the map layer registry
                 for child in list(group.children()):
-                    if child.nodeType() == QgsLayerTreeNode.NodeLayer:
+                    if child.nodeType() == QgsLayerTreeNode.NodeType.NodeLayer:
                         layer = child.layer()
                         if layer:
                             QgsProject.instance().removeMapLayer(layer.id())
@@ -858,7 +858,7 @@ class DroneCorridorPlanner(object):
                 from qgis.core import QgsMessageLog, Qgis
                 QgsMessageLog.logMessage(
                     f"Fehler beim Laden der Wegpunkte aus dem existierenden Layer beim Start: {e}",
-                    "QUCORE", Qgis.Warning
+                    "QUCORE", Qgis.MessageLevel.Warning
                 )
 
         if self.is_layer_valid(self.lyr_pilot) and self.pilot_pos is None:
@@ -872,7 +872,7 @@ class DroneCorridorPlanner(object):
                 from qgis.core import QgsMessageLog, Qgis
                 QgsMessageLog.logMessage(
                     f"Fehler beim Laden der Pilotenposition aus dem existierenden Layer beim Start: {e}",
-                    "QUCORE", Qgis.Warning
+                    "QUCORE", Qgis.MessageLevel.Warning
                 )
 
         self.gui.show()
@@ -1083,14 +1083,14 @@ class DroneCorridorPlanner(object):
                     from qgis.core import QgsMessageLog, Qgis
                     QgsMessageLog.logMessage(
                         f"Fehler beim Verschieben der Layer-Gruppe an die Spitze des Baums: {e}",
-                        "QUCORE", Qgis.Warning
+                        "QUCORE", Qgis.MessageLevel.Warning
                     )
 
         # Smart Re-Binding of existing project layers to avoid duplicate creation upon plugin reload
         if self.layer_group:
             from qgis.core import QgsLayerTreeNode
             for child in self.layer_group.children():
-                if child.nodeType() == QgsLayerTreeNode.NodeLayer:
+                if child.nodeType() == QgsLayerTreeNode.NodeType.NodeLayer:
                     layer = child.layer()
                     if layer:
                         name = layer.name()
@@ -1203,7 +1203,7 @@ class DroneCorridorPlanner(object):
                         from qgis.core import QgsMessageLog, Qgis
                         QgsMessageLog.logMessage(
                             f"Fehler beim Sortieren des Layers '{lyr.name()}': {e}",
-                            "QUCORE", Qgis.Warning
+                            "QUCORE", Qgis.MessageLevel.Warning
                         )
 
     def is_layer_valid(self, layer):
@@ -1325,7 +1325,7 @@ class DroneCorridorPlanner(object):
                 settings.setValue("QUCORE/geometry/ControlPanel", self.gui.saveGeometry())
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Hinweis beim Speichern der ControlPanel-Geometrie: {e}", "QUCORE", Qgis.Info)
+                QgsMessageLog.logMessage(f"Hinweis beim Speichern der ControlPanel-Geometrie: {e}", "QUCORE", Qgis.MessageLevel.Info)
         if self.canvas.mapTool() in [self.wp_tool, self.pilot_tool]:
             self.canvas.unsetMapTool(self.canvas.mapTool())
         if hasattr(self, 'btn_draw_wp'):
@@ -1479,7 +1479,7 @@ class DroneCorridorPlanner(object):
             return transform.transform(point_canvas)
         except Exception as e:
             from qgis.core import QgsMessageLog, Qgis
-            QgsMessageLog.logMessage(f"CRS-Transformationsfehler (zu WGS84): {e}", "QUCORE", Qgis.Warning)
+            QgsMessageLog.logMessage(f"CRS-Transformationsfehler (zu WGS84): {e}", "QUCORE", Qgis.MessageLevel.Warning)
             return point_canvas
 
     def transform_from_wgs84(self, point_wgs):
@@ -1493,7 +1493,7 @@ class DroneCorridorPlanner(object):
             return transform.transform(point_wgs)
         except Exception as e:
             from qgis.core import QgsMessageLog, Qgis
-            QgsMessageLog.logMessage(f"CRS-Transformationsfehler (aus WGS84): {e}", "QUCORE", Qgis.Warning)
+            QgsMessageLog.logMessage(f"CRS-Transformationsfehler (aus WGS84): {e}", "QUCORE", Qgis.MessageLevel.Warning)
             return point_wgs
 
 
@@ -1551,7 +1551,7 @@ class DroneCorridorPlanner(object):
         groups = [g for g in root.findGroups() if g.name() == "Active QUCORE-Plan"]
         for layer_group in groups:
             for child in list(layer_group.children()):
-                if child.nodeType() == QgsLayerTreeNode.NodeLayer:
+                if child.nodeType() == QgsLayerTreeNode.NodeType.NodeLayer:
                     layer = child.layer()
                     if layer:
                         project.removeMapLayer(layer.id())
@@ -1853,7 +1853,7 @@ class DroneCorridorPlanner(object):
                     self.lyr_vlos.dataProvider().addFeatures([f_vlos])
                 except Exception as e:
                     from qgis.core import QgsMessageLog, Qgis
-                    QgsMessageLog.logMessage(f"VLOS circle error: {e}", "DroneCorridorPlanner", Qgis.Warning)
+                    QgsMessageLog.logMessage(f"VLOS circle error: {e}", "DroneCorridorPlanner", Qgis.MessageLevel.Warning)
         
         self.lyr_pilot.updateExtents()
         self.lyr_pilot.triggerRepaint()
@@ -2216,7 +2216,7 @@ class DroneCorridorPlanner(object):
         
         self.focus_marker = QgsVertexMarker(self.canvas)
         self.focus_marker.setCenter(pt_canvas)
-        self.focus_marker.setIconType(QgsVertexMarker.ICON_BOX)
+        self.focus_marker.setIconType(QgsVertexMarker.IconType.ICON_BOX)
         self.focus_marker.setIconSize(16)
         self.focus_marker.setPenWidth(2)
         self.focus_marker.setColor(QColor(0, 255, 0))
@@ -2232,7 +2232,7 @@ class DroneCorridorPlanner(object):
                         sip.delete(self.focus_marker)
                 except Exception as e:
                     from qgis.core import QgsMessageLog, Qgis
-                    QgsMessageLog.logMessage(f"Hinweis beim Entfernen des Fokus-Markers: {e}", "QUCORE", Qgis.Info)
+                    QgsMessageLog.logMessage(f"Hinweis beim Entfernen des Fokus-Markers: {e}", "QUCORE", Qgis.MessageLevel.Info)
             self.focus_marker = None
 
     def reset_planning(self):
@@ -2298,7 +2298,7 @@ class DroneCorridorPlanner(object):
         geom_type = layer.geometryType()
         if self.geometry_type == "Polygon":
             # In Polygon mode, we only allow Polygon layers (no Lines or Points!)
-            allowed_geoms = [QgsWkbTypes.PolygonGeometry]
+            allowed_geoms = [QgsWkbTypes.GeometryType.PolygonGeometry]
             if geom_type not in allowed_geoms:
                 QMessageBox.warning(
                     self.gui,
@@ -2308,9 +2308,9 @@ class DroneCorridorPlanner(object):
                 return
         else:
             # In Corridor/Circle mode, we only allow Line and Point layers (no Polygons!)
-            allowed_geoms = [QgsWkbTypes.LineGeometry, QgsWkbTypes.PointGeometry]
+            allowed_geoms = [QgsWkbTypes.GeometryType.LineGeometry, QgsWkbTypes.GeometryType.PointGeometry]
             if geom_type not in allowed_geoms:
-                if geom_type == QgsWkbTypes.PolygonGeometry:
+                if geom_type == QgsWkbTypes.GeometryType.PolygonGeometry:
                     # Specific helpful error explaining they must switch to Polygon mode first
                     QMessageBox.warning(
                         self.gui,
@@ -2431,9 +2431,9 @@ class DroneCorridorPlanner(object):
             if self.geometry_type == "Polygon":
                 # Keep it as Polygon mode!
                 pass
-            elif geom_type == QgsWkbTypes.LineGeometry:
+            elif geom_type == QgsWkbTypes.GeometryType.LineGeometry:
                 self.geometry_type = "Corridor"
-            elif geom_type == QgsWkbTypes.PointGeometry:
+            elif geom_type == QgsWkbTypes.GeometryType.PointGeometry:
                 self.geometry_type = "Corridor"
 
             # Sync GUI geometry type selection combobox if visible
@@ -2516,7 +2516,7 @@ class DroneCorridorPlanner(object):
         # Setup vector file writer options
         options = QgsVectorFileWriter.SaveVectorOptions()
         options.driverName = "GPKG"
-        options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
+        options.actionOnExistingFile = QgsVectorFileWriter.ActionOnExistingFile.CreateOrOverwriteFile
         
         transform_context = QgsProject.instance().transformContext()
 
@@ -2530,7 +2530,7 @@ class DroneCorridorPlanner(object):
             
             options.layerName = layer_name
             if not first_layer:
-                options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
+                options.actionOnExistingFile = QgsVectorFileWriter.ActionOnExistingFile.CreateOrOverwriteLayer
 
             err, err_str, path, new_lyr_name = QgsVectorFileWriter.writeAsVectorFormatV3(
                 lyr,
@@ -2539,7 +2539,7 @@ class DroneCorridorPlanner(object):
                 options
             )
             
-            if err == QgsVectorFileWriter.NoError:
+            if err == QgsVectorFileWriter.WriterError.NoError:
                 first_layer = False
             else:
                 error_occurred = True
@@ -2741,7 +2741,7 @@ class DroneCorridorPlanner(object):
         results = []
 
         for child in root.children():
-            if child.nodeType() != QgsLayerTreeNode.NodeGroup:
+            if child.nodeType() != QgsLayerTreeNode.NodeType.NodeGroup:
                 continue
             group = child
             group_name = group.name()
@@ -2752,7 +2752,7 @@ class DroneCorridorPlanner(object):
 
             # Search all layers in this group for a qucore_state field
             for layer_node in group.children():
-                if layer_node.nodeType() != QgsLayerTreeNode.NodeLayer:
+                if layer_node.nodeType() != QgsLayerTreeNode.NodeType.NodeLayer:
                     continue
                 layer = layer_node.layer()
                 if not layer or not isinstance(layer, QgsVectorLayer):
@@ -2852,7 +2852,7 @@ class DroneCorridorPlanner(object):
             from qgis.core import QgsMessageLog, Qgis
             QgsMessageLog.logMessage(
                 f"Fehler beim Reaktivieren der persistenten Gruppe '{group_name}': {e}",
-                "QUCORE", Qgis.Warning
+                "QUCORE", Qgis.MessageLevel.Warning
             )
             QMessageBox.warning(
                 self.gui,
@@ -3273,7 +3273,7 @@ class DroneCorridorPlanner(object):
                 import traceback
                 QgsMessageLog.logMessage(
                     f"Silent exception in _do_sora_export: {e}\n{traceback.format_exc()}",
-                    "QUCORE", Qgis.Warning
+                    "QUCORE", Qgis.MessageLevel.Warning
                 )
 
         ReportGenerator.export_sora_docx(
@@ -3289,7 +3289,7 @@ class DroneCorridorPlanner(object):
                     os.remove(p)
                 except (OSError, PermissionError) as e:
                     from qgis.core import QgsMessageLog, Qgis
-                    QgsMessageLog.logMessage(f"Hinweis: Temporäre Datei '{p}' konnte nicht entfernt werden: {e}", "QUCORE", Qgis.Info)
+                    QgsMessageLog.logMessage(f"Hinweis: Temporäre Datei '{p}' konnte nicht entfernt werden: {e}", "QUCORE", Qgis.MessageLevel.Info)
 
     def export_sora_report(self):
         if not self.waypoints:

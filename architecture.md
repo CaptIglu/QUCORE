@@ -1,4 +1,4 @@
-# QUCORE QGIS Plugin: Architecture Analysis (v1.0.1)
+# QUCORE QGIS Plugin: Architecture Analysis (v1.0.2)
 
 This document provides a comprehensive analysis of the macro-structure of the **QUCORE** (QGIS UAS Corridor Outlining & Routing Engine) plugin codebase following the v0.9.0 release cycle and the cross-platform / QGIS 4.x compatibility audit. It maps the end-to-end data flow, defines the public interfaces of each module, and demonstrates the decoupled Model-View-Presenter (MVP) architecture.
 

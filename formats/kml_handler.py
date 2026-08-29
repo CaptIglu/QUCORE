@@ -50,7 +50,7 @@ class KmlHandler:
                         max_height = float(ConfigManager.get_param(params, "maxFlightHeight"))
                         return waypoints, pilot_pos, width, max_height, params, geom_type, warnings
                     except Exception as e:
-                        QgsMessageLog.logMessage(f"Failed to restore state from KML qucore_state: {e}", "QUCORE", Qgis.Warning)
+                        QgsMessageLog.logMessage(f"Failed to restore state from KML qucore_state: {e}", "QUCORE", Qgis.MessageLevel.Warning)
 
         # 2. Fallback: Parse only geometry and pilot from KML
         waypoints = []
@@ -213,7 +213,7 @@ class KmlHandler:
                 try:
                     poly = geom.constGet().geometryN(0).asPolygon() if hasattr(geom.constGet(), 'geometryN') else []
                 except Exception as e:
-                    QgsMessageLog.logMessage(f"KML geometry parsing fallback: {e}", "QUCORE", Qgis.Info)
+                    QgsMessageLog.logMessage(f"KML geometry parsing fallback: {e}", "QUCORE", Qgis.MessageLevel.Info)
             if not poly:
                 return ""
             

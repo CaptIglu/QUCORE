@@ -32,7 +32,7 @@ class ConfigManager:
                 with open(schema_path, 'r', encoding='utf-8') as f:
                     self._schema = json.load(f)
             except Exception as e:
-                QgsMessageLog.logMessage(f"Fehler beim Laden von config.schema.json: {e}", "QUCORE_Config", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Fehler beim Laden von config.schema.json: {e}", "QUCORE_Config", Qgis.MessageLevel.Warning)
 
         # Load limits first so we can use them to clamp defaults if necessary
         if os.path.exists(limits_path):
@@ -40,7 +40,7 @@ class ConfigManager:
                 with open(limits_path, 'r', encoding='utf-8') as f:
                     self._limits = json.load(f)
             except Exception as e:
-                QgsMessageLog.logMessage(f"Fehler beim Laden von config_limits.json: {e}", "QUCORE_Config", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Fehler beim Laden von config_limits.json: {e}", "QUCORE_Config", Qgis.MessageLevel.Warning)
 
         # Load main config
         if os.path.exists(config_path):
@@ -48,9 +48,9 @@ class ConfigManager:
                 with open(config_path, 'r', encoding='utf-8') as f:
                     self._defaults = json.load(f)
             except Exception as e:
-                QgsMessageLog.logMessage(f"Fehler beim Laden von config.json: {e}", "QUCORE_Config", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Fehler beim Laden von config.json: {e}", "QUCORE_Config", Qgis.MessageLevel.Warning)
         else:
-            QgsMessageLog.logMessage("Kritischer Fehler: config.json nicht gefunden!", "QUCORE_Config", Qgis.Critical)
+            QgsMessageLog.logMessage("Kritischer Fehler: config.json nicht gefunden!", "QUCORE_Config", Qgis.MessageLevel.Critical)
             raise FileNotFoundError("config.json fehlt. Die Konfiguration kann nicht geladen werden.")
 
     @classmethod
@@ -119,7 +119,7 @@ class ConfigManager:
                 return (int(size_list[0]), int(size_list[1]))
 
         msg = f"Standard-Fenstergröße für Dialog '{dialog_key}' fehlt unter 'dialog_defaults' in config.json."
-        QgsMessageLog.logMessage(msg, "QUCORE_Config", Qgis.Critical)
+        QgsMessageLog.logMessage(msg, "QUCORE_Config", Qgis.MessageLevel.Critical)
         raise KeyError(msg)
 
     @classmethod
@@ -265,7 +265,7 @@ class ConfigManager:
         sanitized_state["params"] = sanitized_params
         
         for w in warnings:
-            QgsMessageLog.logMessage(f"Sanitization Warning: {w}", "QUCORE_Import", Qgis.Warning)
+            QgsMessageLog.logMessage(f"Sanitization Warning: {w}", "QUCORE_Import", Qgis.MessageLevel.Warning)
             
         return sanitized_state, warnings
 

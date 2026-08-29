@@ -46,7 +46,7 @@ def reset_all_qucore_geometries():
             settings.sync()
         return True
     except Exception as e:
-        QgsMessageLog.logMessage(f"Fehler beim Zurücksetzen der Fenstergeometrien: {e}", "QUCORE", Qgis.Warning)
+        QgsMessageLog.logMessage(f"Fehler beim Zurücksetzen der Fenstergeometrien: {e}", "QUCORE", Qgis.MessageLevel.Warning)
         return False
 
 
@@ -90,7 +90,7 @@ class QucoreBaseDialog(QDialog):
                 self.center_on_parent()
 
         except Exception as e:
-            QgsMessageLog.logMessage(f"Fehler beim Wiederherstellen der Geometrie für {self.dialog_key}: {e}", "QUCORE", Qgis.Warning)
+            QgsMessageLog.logMessage(f"Fehler beim Wiederherstellen der Geometrie für {self.dialog_key}: {e}", "QUCORE", Qgis.MessageLevel.Warning)
             w, h = 500, 400
             hint = self.sizeHint() if hasattr(self, 'sizeHint') else None
             if hint and hasattr(hint, 'isValid') and callable(hint.isValid) and hint.isValid() is True:
@@ -100,7 +100,7 @@ class QucoreBaseDialog(QDialog):
                     if isinstance(hint.height(), (int, float)) and hint.height() > 0:
                         h = int(hint.height())
                 except Exception as e:
-                    QgsMessageLog.logMessage(f"Hinweis bei sizeHint-Ermittlung für {self.dialog_key}: {e}", "QUCORE", Qgis.Info)
+                    QgsMessageLog.logMessage(f"Hinweis bei sizeHint-Ermittlung für {self.dialog_key}: {e}", "QUCORE", Qgis.MessageLevel.Info)
             self.resize(w, h)
             self.center_on_parent()
             
@@ -126,7 +126,7 @@ class QucoreBaseDialog(QDialog):
                     y = avail.y() + (avail.height() - self.height()) // 2
                     self.move(max(0, x), max(0, y))
         except Exception as e:
-            QgsMessageLog.logMessage(f"Fehler beim Zentrieren des Dialogs {self.dialog_key}: {e}", "QUCORE", Qgis.Warning)
+            QgsMessageLog.logMessage(f"Fehler beim Zentrieren des Dialogs {self.dialog_key}: {e}", "QUCORE", Qgis.MessageLevel.Warning)
 
     def save_dialog_geometry(self):
         """
@@ -139,7 +139,7 @@ class QucoreBaseDialog(QDialog):
             geom = self.saveGeometry()
             settings.setValue(f"QUCORE/geometry/{self.dialog_key}", geom)
         except Exception as e:
-            QgsMessageLog.logMessage(f"Fehler beim Speichern der Geometrie für {self.dialog_key}: {e}", "QUCORE", Qgis.Warning)
+            QgsMessageLog.logMessage(f"Fehler beim Speichern der Geometrie für {self.dialog_key}: {e}", "QUCORE", Qgis.MessageLevel.Warning)
 
     def showEvent(self, event):
         if not self._geometry_restored:
@@ -165,4 +165,4 @@ class QucoreBaseDialog(QDialog):
             self.resize(w_def, h_def)
             self.center_on_parent()
         except Exception as e:
-            QgsMessageLog.logMessage(f"Fehler beim Zurücksetzen der Geometrie für {self.dialog_key}: {e}", "QUCORE", Qgis.Warning)
+            QgsMessageLog.logMessage(f"Fehler beim Zurücksetzen der Geometrie für {self.dialog_key}: {e}", "QUCORE", Qgis.MessageLevel.Warning)

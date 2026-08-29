@@ -149,9 +149,9 @@ class ZonalStatsCalculator:
                     stat_count = Qgis.ZonalStatistic.Count
                     stat_max = Qgis.ZonalStatistic.Max
                 except ImportError:
-                    stat_sum = QgsZonalStatistics.Sum
-                    stat_count = QgsZonalStatistics.Count
-                    stat_max = QgsZonalStatistics.Max
+                    stat_sum = QgsZonalStatistics.Statistic.Sum
+                    stat_count = QgsZonalStatistics.Statistic.Count
+                    stat_max = QgsZonalStatistics.Statistic.Max
                     
                 # Setup stats
                 zonal_stats = QgsZonalStatistics(

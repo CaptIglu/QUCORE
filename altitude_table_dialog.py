@@ -321,7 +321,7 @@ class AltitudeTableDialog(QucoreBaseDialog):
                 except ValueError as e:
                     from qgis.core import QgsMessageLog, Qgis
                     import traceback
-                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 324): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 324): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.MessageLevel.Warning)
                     
             # Calculate distance
             dist = 0.0
@@ -356,7 +356,7 @@ class AltitudeTableDialog(QucoreBaseDialog):
                 except ValueError as e:
                     from qgis.core import QgsMessageLog, Qgis
                     import traceback
-                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 357): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 357): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.MessageLevel.Warning)
             
             if spd < 0.1:
                 spd = 0.1
@@ -627,7 +627,7 @@ class AltitudeTableDialog(QucoreBaseDialog):
                 except ValueError as e:
                     from qgis.core import QgsMessageLog, Qgis
                     import traceback
-                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 622): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 622): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.MessageLevel.Warning)
             
             # Read Altitude (col 2)
             alt_val = alt_prev
@@ -640,7 +640,7 @@ class AltitudeTableDialog(QucoreBaseDialog):
                 except ValueError as e:
                     from qgis.core import QgsMessageLog, Qgis
                     import traceback
-                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 633): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 633): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.MessageLevel.Warning)
             
             # Read Speed (col 3)
             spd_val = spd_prev
@@ -653,7 +653,7 @@ class AltitudeTableDialog(QucoreBaseDialog):
                 except ValueError as e:
                     from qgis.core import QgsMessageLog, Qgis
                     import traceback
-                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 644): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 644): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.MessageLevel.Warning)
                     
             # Read FG Width (col 4)
             fg_val = fg_prev
@@ -666,7 +666,7 @@ class AltitudeTableDialog(QucoreBaseDialog):
                 except ValueError as e:
                     from qgis.core import QgsMessageLog, Qgis
                     import traceback
-                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 655): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+                    QgsMessageLog.logMessage(f"Silent exception caught in altitude_table_dialog.py (line 655): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.MessageLevel.Warning)
                     
             updated_params.append((lon_val, lat_val, alt_val, spd_val, fg_val))
         return updated_params

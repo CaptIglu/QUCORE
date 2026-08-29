@@ -27,9 +27,9 @@ class TranslationManager:
                     self._translations = json.load(f)
             except Exception as e:
                 import traceback
-                QgsMessageLog.logMessage(f"Fehler beim Laden von translations.json: {e}\n{traceback.format_exc()}", "QUCORE_Translation", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Fehler beim Laden von translations.json: {e}\n{traceback.format_exc()}", "QUCORE_Translation", Qgis.MessageLevel.Warning)
         else:
-            QgsMessageLog.logMessage("Warnung: translations.json nicht gefunden!", "QUCORE_Translation", Qgis.Warning)
+            QgsMessageLog.logMessage("Warnung: translations.json nicht gefunden!", "QUCORE_Translation", Qgis.MessageLevel.Warning)
 
     @classmethod
     def get_instance(cls):

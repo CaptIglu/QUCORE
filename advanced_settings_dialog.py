@@ -393,7 +393,7 @@ class AdvancedSettingsDialog(QucoreBaseDialog):
                 except Exception as e:
                     from qgis.core import QgsMessageLog, Qgis
                     import traceback
-                    QgsMessageLog.logMessage(f"Silent exception caught in advanced_settings_dialog.py (line 415): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+                    QgsMessageLog.logMessage(f"Silent exception caught in advanced_settings_dialog.py (line 415): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.MessageLevel.Warning)
             
             if not fresh_config:
                 return

@@ -349,9 +349,9 @@ class PopulationDensityDialog(QucoreBaseDialog):
         except (ImportError, AttributeError):
             try:
                 from qgis.analysis import QgsZonalStatistics
-                stat_sum = QgsZonalStatistics.Sum
-                stat_count = QgsZonalStatistics.Count
-                stat_max = QgsZonalStatistics.Max
+                stat_sum = QgsZonalStatistics.Statistic.Sum
+                stat_count = QgsZonalStatistics.Statistic.Count
+                stat_max = QgsZonalStatistics.Statistic.Max
             except (ImportError, AttributeError):
                 stat_sum = 1
                 stat_count = 2
@@ -442,5 +442,5 @@ class PopulationDensityDialog(QucoreBaseDialog):
                 calc.cancel()
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Hinweis beim Abbrechen der ZonalStats-Berechnung: {e}", "QUCORE", Qgis.Info)
+                QgsMessageLog.logMessage(f"Hinweis beim Abbrechen der ZonalStats-Berechnung: {e}", "QUCORE", Qgis.MessageLevel.Info)
         super(PopulationDensityDialog, self).closeEvent(event)

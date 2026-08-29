@@ -114,7 +114,7 @@ class ReportGenerator:
                         return w, h
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Failed to parse PNG dimensions for {filepath}: {e}", "QUCORE", Qgis.Info)
+                QgsMessageLog.logMessage(f"Failed to parse PNG dimensions for {filepath}: {e}", "QUCORE", Qgis.MessageLevel.Info)
             return None
             
         # 1. Path to template file in the plugin directory
@@ -159,9 +159,9 @@ class ReportGenerator:
                                 try:
                                     existing_rids.append(int(rid[3:]))
                                 except ValueError as e:
-                                    QgsMessageLog.logMessage(f"Failed to parse relationship ID '{rid}' in docx rels: {e}", "QUCORE", Qgis.Warning)
+                                    QgsMessageLog.logMessage(f"Failed to parse relationship ID '{rid}' in docx rels: {e}", "QUCORE", Qgis.MessageLevel.Warning)
         except Exception as e:
-            QgsMessageLog.logMessage(f"Failed to parse docx rels: {e}", "QUCORE", Qgis.Warning)
+            QgsMessageLog.logMessage(f"Failed to parse docx rels: {e}", "QUCORE", Qgis.MessageLevel.Warning)
             
         overview_zip_path = f"word/{overview_target}"
             
@@ -195,7 +195,7 @@ class ReportGenerator:
             try:
                 pilot_str = f"N{pilot_pos.y():.6f} E{pilot_pos.x():.6f}"
             except Exception as e:
-                QgsMessageLog.logMessage(f"Failed to format pilot_pos using coordinates: {e}", "QUCORE", Qgis.Info)
+                QgsMessageLog.logMessage(f"Failed to format pilot_pos using coordinates: {e}", "QUCORE", Qgis.MessageLevel.Info)
                 pilot_str = str(pilot_pos)
         else:
             pilot_str = "No pilot position defined" if is_en else "Keine Pilotenposition definiert"
@@ -1092,7 +1092,7 @@ class ReportGenerator:
                     from qgis.core import QgsMessageLog, Qgis
                     QgsMessageLog.logMessage(
                         tr("log_remove_docx_failed", "Fehler beim Entfernen der existierenden DOCX-Datei: {error}").format(error=str(e)),
-                        "QUCORE", Qgis.Critical
+                        "QUCORE", Qgis.MessageLevel.Critical
                     )
                     raise IOError(tr("error_docx_overwrite_failed", "Zieldatei konnte nicht überschrieben werden (Möglicherweise geöffnet?): {error}").format(error=str(e)))
             
@@ -1105,12 +1105,12 @@ class ReportGenerator:
                 from qgis.core import QgsMessageLog, Qgis
                 QgsMessageLog.logMessage(
                     tr("log_remove_temp_zip_failed", "Fehler beim Löschen der temporären ZIP-Datei: {error}").format(error=str(e)),
-                    "QUCORE", Qgis.Warning
+                    "QUCORE", Qgis.MessageLevel.Warning
                 )
         except Exception as e:
             from qgis.core import QgsMessageLog, Qgis
             QgsMessageLog.logMessage(
                 tr("log_save_docx_failed", "Fehler beim Speichern der finalen DOCX-Datei auf dem Ziellaufwerk: {error}").format(error=str(e)),
-                "QUCORE", Qgis.Critical
+                "QUCORE", Qgis.MessageLevel.Critical
             )
             raise IOError(tr("error_docx_save_failed", "Fehler beim Speichern der finalen DOCX-Datei auf dem Ziellaufwerk: {error}").format(error=str(e)))

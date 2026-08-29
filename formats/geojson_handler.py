@@ -234,7 +234,7 @@ class GeoJsonHandler:
         try:
             fg_geom, cv_geom, grb_geom, aga_geom = BufferCalculator.generate_buffers(waypoints, params, geometry_type)
         except Exception as e:
-            QgsMessageLog.logMessage(f"Failed to generate buffers for GeoJSON: {e}", "QUCORE", Qgis.Critical)
+            QgsMessageLog.logMessage(f"Failed to generate buffers for GeoJSON: {e}", "QUCORE", Qgis.MessageLevel.Critical)
             raise ValueError(f"Sicherheitskorridore konnten nicht generiert werden: {e}")
             
         def get_geojson_coordinates(geom):
@@ -248,7 +248,7 @@ class GeoJsonHandler:
                     try:
                         poly = geom.constGet().geometryN(0).asPolygon() if hasattr(geom.constGet(), 'geometryN') else []
                     except Exception as e:
-                        QgsMessageLog.logMessage(f"GeoJSON geometry parsing fallback: {e}", "QUCORE", Qgis.Info)
+                        QgsMessageLog.logMessage(f"GeoJSON geometry parsing fallback: {e}", "QUCORE", Qgis.MessageLevel.Info)
                 if not poly or len(poly) == 0:
                     return []
                 
@@ -257,7 +257,7 @@ class GeoJsonHandler:
                     coords.append([float(pt.x()), float(pt.y())])
                 return coords
             except Exception as e:
-                QgsMessageLog.logMessage(f"Failed to extract GeoJSON coordinates from geometry: {e}", "QUCORE", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Failed to extract GeoJSON coordinates from geometry: {e}", "QUCORE", Qgis.MessageLevel.Warning)
                 return []
                 
         fg_coords = get_geojson_coordinates(fg_geom)

@@ -277,7 +277,7 @@ class BufferCalculator:
                 # Ignore malformed points
                 from qgis.core import QgsMessageLog, Qgis
                 import traceback
-                QgsMessageLog.logMessage(f"Silent exception caught in buffer_calculator.py (line 204): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Silent exception caught in buffer_calculator.py (line 204): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.MessageLevel.Warning)
 
         if not parsed_wpts:
             return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
@@ -344,7 +344,7 @@ class BufferCalculator:
                 return fg_geom, cv_geom, grb_geom, aga_geom
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Fehler bei Kreis-Geometrieberechnung: {e}", "QUCORE", Qgis.Critical)
+                QgsMessageLog.logMessage(f"Fehler bei Kreis-Geometrieberechnung: {e}", "QUCORE", Qgis.MessageLevel.Critical)
                 return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
             
         elif geometry_type == "Polygon":
@@ -496,7 +496,7 @@ class BufferCalculator:
                 return fg_geom, cv_geom, grb_geom, aga_geom
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Fehler bei Polygon-Geometrieberechnung: {e}", "QUCORE", Qgis.Critical)
+                QgsMessageLog.logMessage(f"Fehler bei Polygon-Geometrieberechnung: {e}", "QUCORE", Qgis.MessageLevel.Critical)
                 return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
             
         else: # Corridor (Default)
@@ -561,7 +561,7 @@ class BufferCalculator:
                     return fg_geom, cv_geom, grb_geom, aga_geom
                 except Exception as e:
                     from qgis.core import QgsMessageLog, Qgis
-                    QgsMessageLog.logMessage(f"Fehler bei Einzelwegpunkt-Corridor-Geometrieberechnung: {e}", "QUCORE", Qgis.Critical)
+                    QgsMessageLog.logMessage(f"Fehler bei Einzelwegpunkt-Corridor-Geometrieberechnung: {e}", "QUCORE", Qgis.MessageLevel.Critical)
                     return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
     
             # For multiple waypoints, build tapered capsules for each segment.
@@ -608,7 +608,7 @@ class BufferCalculator:
                     grb_capsules.append(grb_capsule)
                 except Exception as e:
                     from qgis.core import QgsMessageLog, Qgis
-                    QgsMessageLog.logMessage(f"Fehler bei Kapsel-Berechnung für Segment {i}: {e}", "QUCORE", Qgis.Warning)
+                    QgsMessageLog.logMessage(f"Fehler bei Kapsel-Berechnung für Segment {i}: {e}", "QUCORE", Qgis.MessageLevel.Warning)
                     
             if not fg_capsules:
                 return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()
@@ -646,7 +646,7 @@ class BufferCalculator:
                 aga_merged.transform(inverse_transform_mid)
             except Exception as e:
                 from qgis.core import QgsMessageLog, Qgis
-                QgsMessageLog.logMessage(f"Fehler bei Adjacent-Area-Berechnung: {e}", "QUCORE", Qgis.Warning)
+                QgsMessageLog.logMessage(f"Fehler bei Adjacent-Area-Berechnung: {e}", "QUCORE", Qgis.MessageLevel.Warning)
             
             # Enforce validity of final output geometries
             if fg_merged and not fg_merged.isGeosValid():

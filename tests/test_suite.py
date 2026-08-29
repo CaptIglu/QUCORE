@@ -1275,7 +1275,7 @@ class TestBufferCalculatorSuite(unittest.TestCase):
         self.assertEqual(dialog.spin_v0.value(), 35.0)
 
         # Test speed validation check safety net (v0 > vmax)
-        from PyQt5.QtWidgets import QMessageBox
+        from qgis.PyQt.QtWidgets import QMessageBox
         from unittest.mock import MagicMock, patch
         
         QMessageBox.warning = MagicMock()
@@ -1437,7 +1437,10 @@ class TestBufferCalculatorSuite(unittest.TestCase):
             
             # Patch QMessageBox.question to return QMessageBox.StandardButton.Yes / QMessageBox.Yes to confirm restoration
             from qgis.PyQt.QtWidgets import QMessageBox
-            yes_val = getattr(getattr(QMessageBox, 'StandardButton', QMessageBox), 'Yes', QMessageBox.Yes)
+            if hasattr(QMessageBox, 'StandardButton') and hasattr(QMessageBox.StandardButton, 'Yes'):
+                yes_val = QMessageBox.StandardButton.Yes
+            else:
+                yes_val = getattr(QMessageBox, 'Yes', 0x00004000)
             with patch.object(QMessageBox, 'question', return_value=yes_val):
                 dialog.restore_defaults()
                 
