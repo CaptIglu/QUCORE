@@ -99,8 +99,8 @@ class QucoreBaseDialog(QDialog):
                         w = int(hint.width())
                     if isinstance(hint.height(), (int, float)) and hint.height() > 0:
                         h = int(hint.height())
-                except Exception:
-                    pass
+                except Exception as e:
+                    QgsMessageLog.logMessage(f"Hinweis bei sizeHint-Ermittlung für {self.dialog_key}: {e}", "QUCORE", Qgis.Info)
             self.resize(w, h)
             self.center_on_parent()
             

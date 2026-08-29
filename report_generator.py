@@ -83,7 +83,6 @@ class ReportGenerator:
     @staticmethod
     def get_document_xml_template(lang="de"):
         """Reads the report XML structure from the template file."""
-        import os
         plugin_dir = os.path.dirname(os.path.abspath(__file__))
         template_xml_name = f"report_template_{lang}.xml"
         template_xml_path = os.path.join(plugin_dir, template_xml_name)
@@ -100,13 +99,6 @@ class ReportGenerator:
         Exports SORA-relevant documentation as a native Word .docx file.
         Uses report_template.docx as a base and modifies its zip contents.
         """
-        import os
-        import zipfile
-        import shutil
-        import tempfile
-        import uuid
-        from datetime import datetime
-        
         lang = ConfigManager.get_param(params, "language")
         if lang not in ["de", "en"]:
             lang = "de"
@@ -145,7 +137,6 @@ class ReportGenerator:
             with zipfile.ZipFile(template_path, 'r') as z:
                 if "word/_rels/document.xml.rels" in z.namelist():
                     rels_xml = z.read("word/_rels/document.xml.rels").decode('utf-8')
-                    import re
                     # Robust attribute-order-agnostic parsing of Relationship tags
                     for rel in re.findall(r'<Relationship\s+[^>]+>', rels_xml):
                         rid_m = re.search(r'Id="([^"]+)"', rel)
@@ -168,9 +159,7 @@ class ReportGenerator:
                                 try:
                                     existing_rids.append(int(rid[3:]))
                                 except ValueError as e:
-                                    from qgis.core import QgsMessageLog, Qgis
-                                    import traceback
-                                    QgsMessageLog.logMessage(f"Silent exception caught in importer_exporter.py (line 973): {str(e)}\n{traceback.format_exc()}", "QUCORE", Qgis.Warning)
+                                    QgsMessageLog.logMessage(f"Failed to parse relationship ID '{rid}' in docx rels: {e}", "QUCORE", Qgis.Warning)
         except Exception as e:
             QgsMessageLog.logMessage(f"Failed to parse docx rels: {e}", "QUCORE", Qgis.Warning)
             

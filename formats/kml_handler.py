@@ -37,7 +37,6 @@ class KmlHandler:
                 if val_elem is not None and val_elem.text():
                     state_json = val_elem.text()
                     try:
-                        import json
                         state = json.loads(state_json)
                         state, warnings = ConfigManager.sanitize_imported_state(state)
                         waypoints = [tuple(wp) for wp in state.get("waypoints", [])]
@@ -188,9 +187,6 @@ class KmlHandler:
         Exports safety corridors and routing data to an official KML file.
         Uses individual waypoint parameters (height, speed, FG width) to export the corridor exactly as defined.
         """
-        import json
-        import uuid
-        
         # Serialize full planning state
         state = {
             "waypoints": waypoints,

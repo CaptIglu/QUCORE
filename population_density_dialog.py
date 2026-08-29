@@ -346,10 +346,16 @@ class PopulationDensityDialog(QucoreBaseDialog):
             stat_sum = Qgis.ZonalStatistic.Sum
             stat_count = Qgis.ZonalStatistic.Count
             stat_max = Qgis.ZonalStatistic.Max
-        except ImportError:
-            stat_sum = QgsZonalStatistics.Sum
-            stat_count = QgsZonalStatistics.Count
-            stat_max = QgsZonalStatistics.Max
+        except (ImportError, AttributeError):
+            try:
+                from qgis.analysis import QgsZonalStatistics
+                stat_sum = QgsZonalStatistics.Sum
+                stat_count = QgsZonalStatistics.Count
+                stat_max = QgsZonalStatistics.Max
+            except (ImportError, AttributeError):
+                stat_sum = 1
+                stat_count = 2
+                stat_max = 8
 
         def create_task(zone_id, row, layer, is_active, prefix, stat_flags):
             if not is_active:
@@ -434,6 +440,7 @@ class PopulationDensityDialog(QucoreBaseDialog):
         for calc in getattr(self, 'calculators', []):
             try:
                 calc.cancel()
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(f"Hinweis beim Abbrechen der ZonalStats-Berechnung: {e}", "QUCORE", Qgis.Info)
         super(PopulationDensityDialog, self).closeEvent(event)

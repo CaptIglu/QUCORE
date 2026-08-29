@@ -322,12 +322,14 @@ class DroneCorridorPlanner(object):
                 QgsMessageLog.logMessage(f"Hinweis beim Trennen von gui.finished: {e}", "QUCORE", Qgis.Info)
             try:
                 self.gui.close()
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(f"Hinweis beim Schließen der GUI: {e}", "QUCORE", Qgis.Info)
             try:
                 self.gui.deleteLater()
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(f"Hinweis beim Freigeben der GUI-Ressourcen: {e}", "QUCORE", Qgis.Info)
 
         # Remove layers and group on unload
         try:
@@ -1321,8 +1323,9 @@ class DroneCorridorPlanner(object):
                 from qgis.core import QgsSettings
                 settings = QgsSettings()
                 settings.setValue("QUCORE/geometry/ControlPanel", self.gui.saveGeometry())
-            except Exception:
-                pass
+            except Exception as e:
+                from qgis.core import QgsMessageLog, Qgis
+                QgsMessageLog.logMessage(f"Hinweis beim Speichern der ControlPanel-Geometrie: {e}", "QUCORE", Qgis.Info)
         if self.canvas.mapTool() in [self.wp_tool, self.pilot_tool]:
             self.canvas.unsetMapTool(self.canvas.mapTool())
         if hasattr(self, 'btn_draw_wp'):
@@ -2208,8 +2211,6 @@ class DroneCorridorPlanner(object):
         self.on_clear_focus()
         if row < 0 or row >= len(self.waypoints): return
         lon, lat = self.waypoints[row][0], self.waypoints[row][1]
-        from qgis.core import QgsPointXY
-        from qgis.gui import QgsVertexMarker
         pt_wgs = QgsPointXY(lon, lat)
         pt_canvas = self.transform_from_wgs84(pt_wgs)
         
@@ -2229,8 +2230,9 @@ class DroneCorridorPlanner(object):
                         self.canvas.scene().removeItem(self.focus_marker)
                     if not sip.isdeleted(self.focus_marker):
                         sip.delete(self.focus_marker)
-                except Exception:
-                    pass
+                except Exception as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    QgsMessageLog.logMessage(f"Hinweis beim Entfernen des Fokus-Markers: {e}", "QUCORE", Qgis.Info)
             self.focus_marker = None
 
     def reset_planning(self):
@@ -2391,7 +2393,6 @@ class DroneCorridorPlanner(object):
 
                 # Extract vertices from geometry
                 for vertex in geom.vertices():
-                    from qgis.core import QgsPointXY
                     pt_xy = QgsPointXY(vertex.x(), vertex.y())
                     pt_wgs = transform.transform(pt_xy)
                     raw_waypoints.append((pt_wgs.x(), pt_wgs.y(), alt, spd, fg))
@@ -2469,8 +2470,6 @@ class DroneCorridorPlanner(object):
         Returns a tuple: (success_boolean, error_msg_string)
         """
         from qgis.core import QgsVectorFileWriter, QgsProject, QgsField, QgsFeature, QgsGeometry, QgsVectorLayer
-        from qgis.PyQt.QtCore import QVariant
-        import os
 
         if not self.waypoints:
             return False, "Es gibt keine Wegpunkte zum Exportieren."
@@ -2587,7 +2586,7 @@ class DroneCorridorPlanner(object):
         and adds them permanently to the QGIS project.
         """
         from qgis.core import QgsProject, QgsVectorLayer
-        from qgis.PyQt.QtWidgets import QFileDialog, QMessageBox, QInputDialog
+        from qgis.PyQt.QtWidgets import QFileDialog
         
         if not self.waypoints:
             QMessageBox.warning(
@@ -2790,8 +2789,6 @@ class DroneCorridorPlanner(object):
         to select one for reactivation. Restores the complete planning state
         including all per-waypoint values and calculation parameters.
         """
-        from qgis.PyQt.QtWidgets import QMessageBox, QInputDialog
-
         groups = self.find_reactivatable_groups()
 
         if not groups:
@@ -2871,8 +2868,6 @@ class DroneCorridorPlanner(object):
         3. Landing area (500x500m zoom around last waypoint)
         Restores the user's original map extent afterward.
         """
-        import uuid
-        import tempfile
         from qgis.PyQt.QtCore import QSize
         from qgis.core import (
             QgsRectangle, 
@@ -3263,9 +3258,6 @@ class DroneCorridorPlanner(object):
 
     def _do_sora_export(self, file_path):
         """Captures map screenshots and generates SORA DOCX report."""
-        import os, tempfile, uuid
-        from .report_generator import ReportGenerator
-        
         overview_path, start_path, end_path = self.capture_map_views()
         temp_sora_path = None
         if hasattr(self, 'sora_viz') and self.sora_viz is not None:
@@ -3295,8 +3287,9 @@ class DroneCorridorPlanner(object):
             if p and os.path.exists(p):
                 try:
                     os.remove(p)
-                except Exception:
-                    pass
+                except (OSError, PermissionError) as e:
+                    from qgis.core import QgsMessageLog, Qgis
+                    QgsMessageLog.logMessage(f"Hinweis: Temporäre Datei '{p}' konnte nicht entfernt werden: {e}", "QUCORE", Qgis.Info)
 
     def export_sora_report(self):
         if not self.waypoints:
