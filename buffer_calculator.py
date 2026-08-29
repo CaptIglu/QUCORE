@@ -495,8 +495,6 @@ class BufferCalculator:
                 
                 return fg_geom, cv_geom, grb_geom, aga_geom
             except Exception as e:
-                import traceback
-                traceback.print_exc()
                 from qgis.core import QgsMessageLog, Qgis
                 QgsMessageLog.logMessage(f"Fehler bei Polygon-Geometrieberechnung: {e}", "QUCORE", Qgis.Critical)
                 return QgsGeometry(), QgsGeometry(), QgsGeometry(), QgsGeometry()

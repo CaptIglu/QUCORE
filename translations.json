@@ -1,7 +1,7 @@
 {
   "menu_reset_geometry": {
     "de": "Fensterpositionen und -größen zurücksetzen",
-    "en": "Reset Window Layouts & Sizes"
+    "en": "Reset Window Layouts and Sizes"
   },
   "msg_geometry_reset_success": {
     "de": "Alle Fenstergrößen und -positionen wurden auf die Standardwerte zurückgesetzt.",
